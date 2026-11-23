@@ -55,7 +55,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 
 | # | Phase | Status | File |
 |---|---|---|---|
-| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (P0-T1, P0-T2 done; next P0-T3) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
+| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (P0-T1, P0-T2 done; P0-T3 built, awaiting manual check) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
@@ -87,6 +87,7 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-23: The project stays at `C:\Users\yadds\OneDrive\Documents\Projects\Keyflow`. OneDrive is disabled on this machine, so the path is a plain local folder with no sync concerns.
 - 2026-11-23: The P0-T2 hardware check page is deployed as a second Vite entry (`/spike/hardware.html`), not kept dev-only. Firefox reportedly skips the add-on prompt on loopback origins, and P0-T2 must record when that prompt appears. It is removed when P0-T3 lands.
 - 2026-11-23: P0-T2 findings adopted. Firefox and Chrome both stay supported (both feel instant; Firefox adds about 25 ms of MIDI delay, handled by per-browser calibration). MIDI input accepts all channels, and the pedal is down if CC64 on any channel is ≥ 64 (the YPT-380 sends the pedal on ch 1–3, and ch 3 always reads 0). P0-T5 must find a supported way to read `outputLatency` and `getOutputTimestamp`, which Tone's context wrapper hides. Details are in Findings in the Phase 0 file.
+- 2026-11-23: P0-T3 MIDI layer: listen to all inputs by default (device selector when there are several); "invert pedal" inverts the any-channel aggregate, not each channel; unplugging releases held notes and the pedal; MIDI onboarding keeps the six specified states plus a `checking` flag for the moment before the permission query answers. The P0-T2 spike page is deleted (recoverable from c25542f).
 
 ---
 

@@ -77,6 +77,8 @@ There are three clocks. Keep them straight.
 
 ## Core types (sketch; refine in Phase 0)
 
+`InputSource` and `InputEvent` are implemented in `src/input/types.ts` (P0-T3); the rest is still a sketch.
+
 ```ts
 type InputSource = "midi" | "computer" | "onscreen" | "sim";
 
@@ -104,7 +106,8 @@ interface HarmonyAt {       // what's sounding at a moment in a groove or song
 ## MIDI parsing facts
 
 - Note-on with velocity 0 **is a note-off**. The YPT-380 only sends note-off this way (verified in P0-T2).
-- Sustain pedal = Control Change 64. Values of 64 and above mean down. Some pedals are reversed (polarity), so offer an "invert pedal" setting. **Track CC64 per channel; the pedal is down if any channel is down.** The YPT-380 sends each pedal change on channels 1–3, and channel 3 always sends 0 (P0-T2).
+- Sustain pedal = Control Change 64. Values of 64 and above mean down. Some pedals are reversed (polarity), so offer an "invert pedal" setting. **Track CC64 per channel; the pedal is down if any channel is down.** The YPT-380 sends each pedal change on channels 1–3, and channel 3 always sends 0 (P0-T2). "Invert pedal" inverts that aggregate, never each channel (inverted per channel, the constant channel-3 zero reads as held forever). Implemented in `src/input/midi/parse.ts`.
+- On disconnect, release every held note and the pedal, so nothing downstream sticks.
 - Accept notes on all channels, and don't clamp to the 61-key range: transpose can shift notes outside 36–96.
 - Drop Active Sensing (0xFE) and Clock (0xF8) first, before any other work; don't log them. The YPT-380 streams clock constantly, thousands of messages a minute. Ignore unused messages such as bank select, program change and other CCs; the keyboard sends a burst of them on every voice change.
 - Handle devices being plugged in or out while the app runs (`MIDIAccess.onstatechange`).

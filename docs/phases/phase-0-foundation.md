@@ -36,7 +36,7 @@ Vite + React + TypeScript (strict), oxlint, Prettier, Vitest, Playwright, an MIT
 - Initialize git and create the GitHub repo first (see the open questions in `PLAN.md`).
 
 ### P0-T2: Hardware and browser check (spike) [done 2026-11-23]
-_Spike page: `spike/hardware.html` + `src/spike/`, a second Vite build entry, so it is deployed at https://y4dd.github.io/Keyflow/spike/hardware.html (Firefox may skip the add-on prompt on localhost, so the real prompt has to be observed on the https origin). It has a "Copy report" button that produces JSON for the Findings section. Delete `spike/`, `src/spike/` and the `hardware` input in `vite.config.ts` once P0-T3 lands._
+_The spike page (`spike/hardware.html` + `src/spike/`, deployed as a second Vite entry) was deleted in P0-T3. To run it again, restore it from commit c25542f; it has a "Copy report" button that produces JSON for the Findings section._
 
 A throwaway dev page that requests MIDI access, lists inputs and logs raw messages, and plays a basic sine on note-on using `Tone.immediate()`.
 - **Manual (the user, in Firefox and in Chrome, one browser at a time):**
@@ -52,7 +52,18 @@ A throwaway dev page that requests MIDI access, lists inputs and logs raw messag
   - Read out `outputLatency`, `baseLatency` and `getOutputTimestamp()` support.
 - **Output:** a "Findings" section appended to this file with the results. If latency is unplayable in one browser, stop and discuss before continuing.
 
-### P0-T3: Input bus and MIDI layer
+### P0-T3: Input bus and MIDI layer [in progress]
+_Built 2026-11-23; waiting for the manual check on the deployed page. Code: `src/input/types.ts` and `bus.ts` (synchronous bus); `src/input/midi/parse.ts` (pure parser, one per input), `onboarding.ts` (pure state machine), `connection.ts` (access, hot-plug, device selection, "no input yet" hint; tested with a fake `MIDIAccess`) and `browser.ts`; `src/state/midi.ts` (Zustand store, changes only on status and device changes); `src/ui/MidiPanel.tsx` and `LiveInput.tsx` (held notes and pedal, written to the DOM once per frame). Choices: listen to all inputs by default (a selector appears with more than one); "invert pedal" inverts the any-channel aggregate, not each channel, since inverted per channel the YPT-380's constant ch 3 zero would read as held forever; on unplug or deselect, held notes and the pedal are released; a `checking` flag (not a seventh state) covers the moment before the permission query answers; the "no input yet" hint counts any byte, clock included, as proof the port delivers, and shows after 4 s of silence or when `open()` fails._
+
+**Manual checks (deployed page, Firefox and Chrome, one at a time):**
+1. The page connects (no prompt is expected: the origin was granted during P0-T2) and shows `Digital Keyboard-1`.
+2. Play single notes and chords: "Held notes" shows them and clears on release.
+3. Hold the pedal for a few seconds: it reads **down the whole time**, then **up** on release.
+4. Hold a key and unplug the USB cable: the panel shows "No keyboard found". Plug it back in: "Keyboard connected", and notes show again, without a reload.
+5. Optional: with the page open in Chrome, open it in Firefox too. Note which panel the second browser shows ("Keyboard connected" with notes, the "Nothing has arrived" hint, or "No keyboard found").
+
+**Not yet verified (copy avoids claiming them):** what Firefox does with no device connected on the first request; what cancelling Firefox's add-on prompt returns; how to undo a refusal in each browser. Check them when convenient by clearing the site's permission.
+
 - `input/midi/`: access, device selection, hot-plug and parsing into `InputEvent` (see the MIDI parsing facts in `architecture.md`).
 - Apply the P0-T2 findings (see Findings below): drop 0xF8 and 0xFE before any other work; accept notes on all channels; track CC64 per channel, with the pedal down if any channel is ≥ 64 (the YPT-380 sends ch 3 = 0 on every press); ignore bank select, program change and other unused CCs; don't clamp notes to 36–96.
 - Delete the spike: `spike/`, `src/spike/` and the `hardware` input in `vite.config.ts`.
@@ -112,6 +123,7 @@ A throwaway dev page that requests MIDI access, lists inputs and logs raw messag
 ## Open questions
 - Preferred default split point and octave layout after trying it on the real keyboard?
 - Laptop bend key: Space? Shift? Decide after trying it.
+- Notes sometimes arrive on ch 2 and 3 (P0-T2, cause unknown). If the same pitch ever arrives on two channels at once, the bus sees two note-ons and two note-offs; P0-T3 passes them through unchanged. Settle it with the P0-T4 fixture recording, and decide then whether to ref-count notes across channels.
 - ~~Does Firefox latency on this laptop feel close enough to Chrome's?~~ Yes: both feel instant (P0-T2). Firefox delivers MIDI about 25 ms later, so calibrate per browser.
 
 ## Done when

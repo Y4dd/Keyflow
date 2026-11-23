@@ -46,3 +46,51 @@ h1 {
 .muted {
   color: var(--muted);
 }
+
+.panel {
+  margin-top: 32px;
+  padding: 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
+  border-radius: 8px;
+}
+
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.panel button,
+.panel select {
+  font: inherit;
+  padding: 6px 14px;
+}
+
+.panel button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.hint {
+  padding: 8px 12px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.live {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live dt {
+  color: var(--muted);
+}
+
+.live dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
