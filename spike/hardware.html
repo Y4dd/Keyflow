@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Keyflow hardware check</title>
+  </head>
+  <body>
+    <main class="shell spike">
+      <h1>Hardware check</h1>
+      <p class="muted">
+        P0-T2 spike. Plug in the keyboard, close other browsers and music apps, then go through the
+        steps. When you're done, copy the report and paste it into the chat.
+      </p>
+
+      <section>
+        <h2>1. Audio</h2>
+        <button id="start-audio" type="button">Start audio</button>
+        <dl id="audio-info" class="facts"></dl>
+      </section>
+
+      <section>
+        <h2>2. MIDI</h2>
+        <button id="request-midi" type="button">Connect MIDI</button>
+        <p id="midi-status" class="muted">Not requested yet.</p>
+        <ul id="inputs"></ul>
+      </section>
+
+      <section>
+        <h2>3. Play</h2>
+        <p class="muted">
+          Play the lowest key, the highest key, very soft and very hard notes, and press and release
+          the pedal a few times. Every note plays a plain sine wave.
+        </p>
+        <dl id="stats" class="facts"></dl>
+        <button id="panic" type="button">Stop all notes</button>
+        <pre id="log" aria-live="off"></pre>
+      </section>
+
+      <section>
+        <h2>4. Your observations</h2>
+        <form id="manual">
+          <fieldset>
+            <legend>Did Windows need a Yamaha driver?</legend>
+            <label><input type="radio" name="driver" value="none" /> No, it just appeared</label>
+            <label><input type="radio" name="driver" value="needed" /> Yes, I installed one</label>
+            <label><input type="radio" name="driver" value="unsure" /> Not sure</label>
+          </fieldset>
+          <fieldset>
+            <legend>Did plugging it in switch Windows' sound output to the keyboard?</legend>
+            <label><input type="radio" name="audioSwitched" value="no" /> No</label>
+            <label><input type="radio" name="audioSwitched" value="yes" /> Yes</label>
+            <label><input type="radio" name="audioSwitched" value="unsure" /> Not sure</label>
+          </fieldset>
+          <fieldset>
+            <legend>Does the keyboard have a Local Control setting?</legend>
+            <label
+              ><input type="radio" name="localControl" value="yes" /> Yes, and I turned it
+              off</label
+            >
+            <label
+              ><input type="radio" name="localControl" value="no" /> No, I turned its volume
+              down</label
+            >
+            <label><input type="radio" name="localControl" value="unsure" /> Not sure</label>
+          </fieldset>
+          <fieldset>
+            <legend>How does the sine feel to play?</legend>
+            <label><input type="radio" name="feel" value="instant" /> Feels instant</label>
+            <label><input type="radio" name="feel" value="slight lag" /> Slight lag</label>
+            <label><input type="radio" name="feel" value="unplayable" /> Unplayable</label>
+          </fieldset>
+          <fieldset id="firefox-only" hidden>
+            <legend>Firefox: when did the add-on prompt appear?</legend>
+            <label
+              ><input type="radio" name="ffPrompt" value="on connect" /> When I clicked Connect
+              MIDI</label
+            >
+            <label><input type="radio" name="ffPrompt" value="none" /> It never appeared</label>
+            <label
+              ><input type="radio" name="ffPrompt" value="other" /> Something else (describe
+              below)</label
+            >
+            <label class="block"
+              >With the keyboard unplugged, what did Connect MIDI do?
+              <select name="ffNoDevice">
+                <option value="">Didn't try</option>
+                <option value="prompt">The add-on prompt still appeared</option>
+                <option value="granted">Access granted, no prompt</option>
+                <option value="rejected">Rejected with an error</option>
+              </select>
+            </label>
+          </fieldset>
+          <label class="block"
+            >Anything else (keyboard function number for Local Control, odd behaviour, ...)
+            <textarea name="notes" rows="3"></textarea>
+          </label>
+        </form>
+      </section>
+
+      <section>
+        <h2>5. Report</h2>
+        <button id="copy-report" type="button">Copy report</button>
+        <span id="copy-status" class="muted"></span>
+        <pre id="report"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/spike/hardware.ts"></script>
+  </body>
+</html>

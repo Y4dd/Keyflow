@@ -55,7 +55,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 
 | # | Phase | Status | File |
 |---|---|---|---|
-| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (P0-T1 done; next P0-T2) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
+| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (P0-T1 done; P0-T2 waiting on the user's keyboard test) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
@@ -85,6 +85,7 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-23: Toolchain is Node 26, TypeScript 7.0.2 and exact-pinned dependencies with a committed lockfile. CI uses `npm ci`. End-to-end tests run in Chromium and Firefox.
 - 2026-11-23: Public GitHub repo `Y4dd/Keyflow`, deployed to GitHub Pages at the `/Keyflow/` sub-path. The `LICENSE` holder is the GitHub username `Y4dd`. Commits use GitHub's no-reply address, set in the repo-local git config, so no personal email is exposed in a public repo.
 - 2026-11-23: The project stays at `C:\Users\yadds\OneDrive\Documents\Projects\Keyflow`. OneDrive is disabled on this machine, so the path is a plain local folder with no sync concerns.
+- 2026-11-23: The P0-T2 hardware check page is deployed as a second Vite entry (`/spike/hardware.html`), not kept dev-only. Firefox reportedly skips the add-on prompt on loopback origins, and P0-T2 must record when that prompt appears. It is removed when P0-T3 lands.
 
 ---
 

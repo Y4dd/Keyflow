@@ -35,7 +35,9 @@ Vite + React + TypeScript (strict), oxlint, Prettier, Vitest, Playwright, an MIT
 - **Manual:** the deployed page loads.
 - Initialize git and create the GitHub repo first (see the open questions in `PLAN.md`).
 
-### P0-T2: Hardware and browser check (spike)
+### P0-T2: Hardware and browser check (spike) [in progress]
+_Spike page: `spike/hardware.html` + `src/spike/`, a second Vite build entry, so it is deployed at https://y4dd.github.io/Keyflow/spike/hardware.html (Firefox may skip the add-on prompt on localhost, so the real prompt has to be observed on the https origin). It has a "Copy report" button that produces JSON for the Findings section. Delete `spike/`, `src/spike/` and the `hardware` input in `vite.config.ts` once P0-T3 lands._
+
 A throwaway dev page that requests MIDI access, lists inputs and logs raw messages, and plays a basic sine on note-on using `Tone.immediate()`.
 - **Manual (the user, in Firefox and in Chrome, one browser at a time):**
   - **Close the other browser and any music apps first.** On Windows, a MIDI device may be usable by only one app at a time, so a second open browser can make the device look broken.
