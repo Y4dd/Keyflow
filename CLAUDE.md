@@ -37,8 +37,8 @@ TypeScript 7 (strict) · Vite 8 · React 19 · Zustand · Tone.js over Web Audio
 - Don't state unverified browser, library or hardware facts as true in code comments or docs. Verify them (Phase 0 records the findings).
 
 ## Hardware and environment (the user's setup)
-- **Yamaha YPT-380:** 61 keys, velocity-sensitive, USB-to-host MIDI, **no pitch bend wheel**. Expected note range is MIDI 36–96 (verify in P0-T2). Its own sound should be silenced with **Local Control off** (confirm the setting exists in P0-T2; otherwise turn its volume to zero) so it doesn't double the app's sound.
-- **One sustain pedal** (CC64), the only pedal, so its function is a mode setting: Sustain / Bend / Glide-hold. Offer "invert pedal".
+- **Yamaha YPT-380:** 61 keys, velocity-sensitive, USB-to-host MIDI, **no pitch bend wheel**. Note range MIDI 36–96, verified (transpose can shift it, so don't clamp). It appears as `Digital Keyboard-1` on Windows' built-in MIDI driver. Silence its own sound with **Local Control off** (the setting exists) so it doesn't double the app's sound.
+- **One sustain pedal** (CC64), the only pedal, so its function is a mode setting: Sustain / Bend / Glide-hold. Offer "invert pedal". Polarity is normal (127 = down), but it's sent on ch 1–3 and ch 3 always reads 0: the pedal is down if any channel is down.
 - Bend substitutes: legato glide, pedal-bend, laptop bend (key or wheel), and scale-aware bend.
 - Windows 11 gaming laptop. **Firefox and Chrome are both supported.** Firefox gates Web MIDI behind an auto-generated site-permission add-on prompt, and the onboarding must explain it. On Windows, another music app may hold the MIDI device.
 - Note-on with velocity 0 = note-off.

@@ -35,7 +35,7 @@ Vite + React + TypeScript (strict), oxlint, Prettier, Vitest, Playwright, an MIT
 - **Manual:** the deployed page loads.
 - Initialize git and create the GitHub repo first (see the open questions in `PLAN.md`).
 
-### P0-T2: Hardware and browser check (spike) [in progress]
+### P0-T2: Hardware and browser check (spike) [done 2026-11-23]
 _Spike page: `spike/hardware.html` + `src/spike/`, a second Vite build entry, so it is deployed at https://y4dd.github.io/Keyflow/spike/hardware.html (Firefox may skip the add-on prompt on localhost, so the real prompt has to be observed on the https origin). It has a "Copy report" button that produces JSON for the Findings section. Delete `spike/`, `src/spike/` and the `hardware` input in `vite.config.ts` once P0-T3 lands._
 
 A throwaway dev page that requests MIDI access, lists inputs and logs raw messages, and plays a basic sine on note-on using `Tone.immediate()`.
@@ -54,6 +54,8 @@ A throwaway dev page that requests MIDI access, lists inputs and logs raw messag
 
 ### P0-T3: Input bus and MIDI layer
 - `input/midi/`: access, device selection, hot-plug and parsing into `InputEvent` (see the MIDI parsing facts in `architecture.md`).
+- Apply the P0-T2 findings (see Findings below): drop 0xF8 and 0xFE before any other work; accept notes on all channels; track CC64 per channel, with the pedal down if any channel is ≥ 64 (the YPT-380 sends ch 3 = 0 on every press); ignore bank select, program change and other unused CCs; don't clamp notes to 36–96.
+- Delete the spike: `spike/`, `src/spike/` and the `hardware` input in `vite.config.ts`.
 - Firefox onboarding state machine: `unsupported` → `needsPermission` → `waitingForAddon` → `granted` / `denied` / `noDevices`, each with clear UI copy built from the P0-T2 findings.
 - Windows "device busy" hint when no input arrives.
 - **Automated:** unit tests for parsing (note-on with velocity 0 = note-off, CC64 thresholds, inverted pedal, ignored message types) and for state transitions.
@@ -70,6 +72,7 @@ A throwaway dev page that requests MIDI access, lists inputs and logs raw messag
 ### P0-T5: Audio engine and presets
 - One AudioContext (`latencyHint: "interactive"`), resumed on the first user gesture, with a clear "click to start audio" state.
 - Master chain: gain → limiter, so nothing clips.
+- **Latency readouts (from P0-T2):** Tone's wrapped context (standardized-audio-context) doesn't expose `outputLatency` or `getOutputTimestamp`, and `Tone.setContext(nativeContext)` fails in Firefox ("param must be an AudioParam"). Pick a supported way to get these values (check Tone and standardized-audio-context options first; the private `_nativeAudioContext` field is a last resort) and log the choice.
 - Voice types: **poly** for keys; **mono, last-note priority** for lead and bass.
 - Presets, stored as data:
   - **Funk Lead:** saw plus square, low-pass filter with envelope, **legato-only glide**. Glide happens when a new note starts while another is held; otherwise there is no glide. Tone's MonoSynth portamento applies always, so control it per note.
@@ -109,7 +112,7 @@ A throwaway dev page that requests MIDI access, lists inputs and logs raw messag
 ## Open questions
 - Preferred default split point and octave layout after trying it on the real keyboard?
 - Laptop bend key: Space? Shift? Decide after trying it.
-- Does Firefox latency on this laptop feel close enough to Chrome's? (Answered by P0-T2.)
+- ~~Does Firefox latency on this laptop feel close enough to Chrome's?~~ Yes: both feel instant (P0-T2). Firefox delivers MIDI about 25 ms later, so calibrate per browser.
 
 ## Done when
 You can plug in the YPT-380 in Firefox or Chrome, pass onboarding, calibrate, and play left-hand wobble bass plus right-hand funk lead with pedal bends, all feeling responsive. CI is green and the app is deployed.
@@ -128,3 +131,38 @@ _(Filled in during P0-T2 and P0-T8.)_
 - **Timing:** `performance.now() - event.timeStamp` at the handler was **28–32 ms (median 30)** every time. Either Firefox delivers MIDI about 30 ms late or its event timestamps use a different basis. Compare with Chrome.
 - **Audio:** `baseLatency` 0 ms, `outputLatency` 32 ms (steady), `getOutputTimestamp` supported. Sample rate 44.1 kHz.
 - **Bug found:** `Tone.setContext(nativeAudioContext)` throws "param must be an AudioParam" in Firefox, though it works in Chromium, so nothing played and the latency feel wasn't rated. Tone's own wrapped context (standardized-audio-context) works in both, but it **only exposes `baseLatency`, not `outputLatency` or `getOutputTimestamp`**. The spike now reads them through the wrapper's private `_nativeAudioContext` field. **P0-T5 must decide** how the real engine gets these values (the timing model needs them).
+
+### P0-T2, Firefox run 2 (2026-11-23, after the fix)
+- **Feel: "instant"** with the sine through Tone's own context. Firefox latency is playable. `outputLatency` was again a steady 32 ms, and `baseLatency` 0.
+- **Pedal polarity: unconfirmed.** The user first answered "127" but corrected it during the Chrome run: the live value reads 0 both at rest and held, and 127 only flashes while the pedal moves. See the Chrome run.
+- **Permission:** already `granted`, so the second visit had no prompt (the request took 16 ms).
+- **Handler delay:** 24–30 ms (median 25), consistent again. Still to compare with Chrome.
+- **Channels:** 125 note-ons on ch 1, 6 on ch 2, 3 on ch 3. The user reported Dual and Split as off.
+- **The keyboard sends other controllers:** CC0 and CC32 (bank select) plus program change (0xC0), and CC7, CC10, CC72 and CC91. That's the burst a Yamaha keyboard sends when a voice is selected. The parser must ignore anything it doesn't use.
+- **Lowest note was 33 (A1)**, below the physical 36. The keyboard's transpose or octave setting probably shifts the transmitted notes. **Don't hard-limit input to 36–96**; the canvas keyboard should cope with notes outside the 61 keys.
+
+### P0-T2, Chrome run (2026-11-23, Chrome 158, deployed https page)
+- **Feel: "instant."**
+- **Driver:** the port's manufacturer reads **"Microsoft Corporation"**, version 1.0 (Firefox showed it blank). This is Windows' built-in USB MIDI class driver, not a Yamaha driver, so the keyboard works class-compliant.
+- **Permission:** a standard Chrome prompt (`prompt` → `granted`, 3.3 s including the user's click).
+- **Handler delay: 1–2 ms (median 1.1)**, against Firefox's 24–30 ms. **Firefox adds about 25 ms of MIDI delivery delay** (or offsets its timestamps); Chrome doesn't. For P0-T8, **calibrate per browser**, and consider having onboarding mention that Chrome responds slightly faster.
+- **Audio:** `baseLatency` 10 ms, `outputLatency` 40 ms (Firefox: 0 and 32). `getOutputTimestamp` supported. Estimated key-to-ear: Chrome ≈ 1 + 40 ms, Firefox ≈ 25 + 32 ms. Both felt instant.
+- **Notes:** range 36–96 with no transpose this time. Note-off is note-on with velocity 0 (31 of 31). All 31 note-ons were on ch 1.
+- **Pedal:** **120 CC64 events for 31 notes, arriving on channels 1, 2 and 3**, even though no note came on ch 2 or 3. The keyboard appears to send each pedal change on 3 channels (main, dual and split parts?). The parser should treat CC64 from any channel as the one pedal and drop the duplicates.
+- **Pedal polarity: normal, resolved by a raw-log capture.** One press, held about 3.8 s, then released:
+  ```
+  11.059s  [b0 40 7f] CC64 = 127 ch 1   <- press
+  11.059s  [b1 40 7f] CC64 = 127 ch 2
+  11.059s  [b2 40 00] CC64 = 0   ch 3   <- ch 3 says "up" even on press
+  14.832s  [b0 40 00] CC64 = 0   ch 1   <- release
+  14.832s  [b1 40 00] CC64 = 0   ch 2
+  14.832s  [b2 40 00] CC64 = 0   ch 3
+  ```
+  Down = 127 and up = 0 on ch 1 and ch 2. **Ch 3 always sends 0.** The spike's "Pedal right now" field showed the last message in each burst, ch 3's 0, which is why the user saw 127 only flash. The pedal was connected before power-on, so the polarity-at-power-on theory doesn't apply.
+- **Parser rule for P0-T3:** keep CC64 state per channel; **the pedal is down if any channel reports ≥ 64**. Reading only the last CC64 message gets it wrong on this keyboard.
+
+### P0-T2 summary
+- Both browsers are playable ("instant") with Local Control off, and the keyboard works on Windows' built-in MIDI driver.
+- Firefox: the add-on prompt appears on the first `requestMIDIAccess()` with the device connected. Then access is remembered. MIDI arrives about 25 ms later than in Chrome.
+- Messages to handle: note-off as velocity-0 note-on; CC64 on ch 1–3 (use any-channel-down); constant 0xF8 clock and 0xFE active sensing (drop first, cheaply); voice-change bursts (bank select, program change, CC7/10/72/91: ignore); occasional notes on ch 2 and 3 (accept all channels); notes outside 36–96 when transposed (don't clamp).
+- Audio: `outputLatency` and `getOutputTimestamp` work in both browsers, but **Tone's context wrapper hides them** and a native context can't be handed to Tone in Firefox. P0-T5 must solve this. Calibration (P0-T8) is per browser.

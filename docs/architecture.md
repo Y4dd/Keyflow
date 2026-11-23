@@ -103,12 +103,13 @@ interface HarmonyAt {       // what's sounding at a moment in a groove or song
 
 ## MIDI parsing facts
 
-- Note-on with velocity 0 **is a note-off**. Many keyboards send it that way.
-- Sustain pedal = Control Change 64. Values of 64 and above mean down. Some pedals are reversed (polarity), so offer an "invert pedal" setting.
-- Ignore Active Sensing (0xFE) and Clock (0xF8) messages; don't log them.
+- Note-on with velocity 0 **is a note-off**. The YPT-380 only sends note-off this way (verified in P0-T2).
+- Sustain pedal = Control Change 64. Values of 64 and above mean down. Some pedals are reversed (polarity), so offer an "invert pedal" setting. **Track CC64 per channel; the pedal is down if any channel is down.** The YPT-380 sends each pedal change on channels 1–3, and channel 3 always sends 0 (P0-T2).
+- Accept notes on all channels, and don't clamp to the 61-key range: transpose can shift notes outside 36–96.
+- Drop Active Sensing (0xFE) and Clock (0xF8) first, before any other work; don't log them. The YPT-380 streams clock constantly, thousands of messages a minute. Ignore unused messages such as bank select, program change and other CCs; the keyboard sends a burst of them on every voice change.
 - Handle devices being plugged in or out while the app runs (`MIDIAccess.onstatechange`).
 - **Windows:** older MIDI drivers often let only one app open a device at a time. If no input arrives, tell the user to close other music software.
-- **Firefox:** `navigator.requestMIDIAccess()` triggers a prompt to install an auto-generated site-permission add-on. It reportedly appears only when a MIDI device is connected, possibly only if the device was connected before Firefox started. Verify this in Phase 0 and write the exact behavior into the onboarding copy.
+- **Firefox:** `navigator.requestMIDIAccess()` triggers a prompt to install an auto-generated site-permission add-on. Verified in P0-T2 (Firefox 160, device connected): the prompt appears on the first request, and after that access is granted without a prompt. It's untested with no device connected. Firefox delivers MIDI events about 25 ms after their timestamps (Chrome: 1–2 ms), so latency calibration is per browser.
 
 ## Simulated MIDI source (required)
 
