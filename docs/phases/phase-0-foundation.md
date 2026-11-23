@@ -25,8 +25,8 @@ The implementer (AI) can't play the keyboard. Every task lists **Automated** che
 
 ## Tasks
 
-### P0-T1: Scaffold [in progress]
-_Local scaffold done 2026-11-23: typecheck, lint, format check, unit tests, build and e2e (Chromium + Firefox) all pass locally. Still needed: a GitHub repo, the first push, Pages enabled, CI green and the deployed page checked. ESLint was replaced by oxlint (see the decisions log)._
+### P0-T1: Scaffold [done 2026-11-23]
+_Repo: https://github.com/Y4dd/Keyflow (public). CI is green: checks, then deploy. Live at https://y4dd.github.io/Keyflow/ (page, CSS and favicon load under the sub-path). ESLint was replaced by oxlint (see the decisions log)._
 
 Vite + React + TypeScript (strict), oxlint, Prettier, Vitest, Playwright, an MIT `LICENSE`, a GitHub Actions workflow that builds and deploys to GitHub Pages, and a README stub.
 - Before installing, check the current stable versions and licenses of the stack libraries in `architecture.md`. Pin the versions.

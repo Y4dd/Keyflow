@@ -55,7 +55,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 
 | # | Phase | Status | File |
 |---|---|---|---|
-| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (task P0-T1) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
+| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (P0-T1 done; next P0-T2) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
