@@ -40,7 +40,8 @@ const report = {
   },
   audio: {
     started: false,
-    toneOnNativeContext: null as null | 'ok' | string,
+    toneSetup: null as null | 'ok' | string,
+    nativeContextReachable: null as boolean | null,
     sampleRate: null as number | null,
     baseLatencyMs: null as number | null,
     outputLatencyMs: null as number | null,
@@ -67,8 +68,10 @@ const report = {
     velocityMax: null as number | null,
     cc64Values: [] as number[],
     cc64Events: 0,
+    lastPedalValue: null as number | null,
     otherControllers: {} as Record<string, number>,
     channels: [] as number[],
+    noteOnsByChannel: {} as Record<string, number>,
     clockMessages: 0,
     activeSensingMessages: 0,
     otherMessages: {} as Record<string, number>,
@@ -110,7 +113,7 @@ function render() {
   const a = report.audio
   facts(el('audio-info'), [
     ['Started', a.started],
-    ['Tone on native context', a.toneOnNativeContext],
+    ['Synth', a.toneSetup],
     ['Sample rate', a.sampleRate],
     ['baseLatency (ms)', a.baseLatencyMs],
     ['outputLatency (ms)', a.outputLatencyMs],
@@ -122,8 +125,14 @@ function render() {
     ['Note-offs (0x80 / note-on vel 0)', `${p.noteOffs0x80} / ${p.noteOnVelocity0}`],
     ['Lowest / highest note', `${p.lowest ?? '-'} / ${p.highest ?? '-'}`],
     ['Velocity min / max', `${p.velocityMin ?? '-'} / ${p.velocityMax ?? '-'}`],
+    ['Pedal right now (last CC64 value)', p.lastPedalValue],
     ['Pedal (CC64) values seen', p.cc64Values.join(', ') || '-'],
-    ['Channels', p.channels.join(', ') || '-'],
+    [
+      'Note-ons by channel',
+      Object.entries(p.noteOnsByChannel)
+        .map(([ch, n]) => `ch ${ch}: ${n}`)
+        .join(', ') || '-',
+    ],
     [
       'Handler delay ms (min / median / max)',
       p.handlerDelayMs
@@ -168,31 +177,38 @@ function sampleLatency() {
   invalidate()
 }
 
+let audioStarting = false
 el('start-audio').addEventListener('click', async () => {
-  if (ctx) return
-  // A native context, so the readouts are the browser's own values rather than a wrapper's.
-  ctx = new AudioContext({ latencyHint: 'interactive' })
-  report.audio.sampleRate = ctx.sampleRate
+  if (audioStarting) return
+  audioStarting = true
+  // Tone builds its own wrapped context. Handing Tone a native AudioContext failed in Firefox
+  // ("param must be an AudioParam"), so it isn't an option.
+  const toneCtx = new Tone.Context({ latencyHint: 'interactive' })
+  Tone.setContext(toneCtx)
   try {
-    Tone.setContext(ctx)
     await Tone.start()
     synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'sine' },
       envelope: { attack: 0.003, decay: 0.1, sustain: 0.8, release: 0.25 },
     }).toDestination()
     synth.volume.value = -10
-    report.audio.toneOnNativeContext = 'ok'
+    report.audio.toneSetup = 'ok'
   } catch (err) {
-    report.audio.toneOnNativeContext = err instanceof Error ? err.message : String(err)
-    await ctx.resume()
+    report.audio.toneSetup = err instanceof Error ? err.message : String(err)
   }
-  report.audio.started = ctx.state === 'running'
+  report.audio.sampleRate = toneCtx.sampleRate
+  report.audio.started = toneCtx.state === 'running'
+  // Tone's wrapper (standardized-audio-context) only exposes baseLatency, not outputLatency or
+  // getOutputTimestamp. Spike only: reach the browser's context through the wrapper's private field.
+  const raw = toneCtx.rawContext as unknown as { _nativeAudioContext?: AudioContext }
+  ctx = raw._nativeAudioContext ?? null
+  report.audio.nativeContextReachable = ctx !== null
   el<HTMLButtonElement>('start-audio').disabled = true
   sampleLatency()
   // outputLatency can change once audio is actually flowing, so keep sampling for a while.
   const timer = setInterval(sampleLatency, 1000)
   setTimeout(() => clearInterval(timer), 30_000)
-  log(`audio started, state=${ctx.state}`)
+  log(`audio started, state=${toneCtx.state}, synth=${report.audio.toneSetup}`)
 })
 
 el('panic').addEventListener('click', () => {
@@ -236,6 +252,7 @@ function handleMessage(data: Uint8Array, eventTime: number) {
 
   if (type === 0x90 && d2 > 0) {
     p.noteOns++
+    p.noteOnsByChannel[channel] = (p.noteOnsByChannel[channel] ?? 0) + 1
     if (d1 < lowest) {
       lowest = d1
       p.lowest = noteLabel(d1)
@@ -257,6 +274,7 @@ function handleMessage(data: Uint8Array, eventTime: number) {
   } else if (type === 0xb0) {
     if (d1 === 64) {
       p.cc64Events++
+      p.lastPedalValue = d2
       cc64.add(d2)
       p.cc64Values = [...cc64].sort((x, y) => x - y)
       log(`[${hex(data)}] pedal CC64 = ${d2} ch ${channel}`)

@@ -116,3 +116,15 @@ You can plug in the YPT-380 in Firefox or Chrome, pass onboarding, calibrate, an
 
 ## Findings
 _(Filled in during P0-T2 and P0-T8.)_
+
+### P0-T2, Firefox run 1 (2026-11-23, Firefox 160, deployed https page)
+- **Device:** appears as input and output `Digital Keyboard-1`, with an empty manufacturer and version. The user installed a Yamaha driver long ago, so it's unknown whether class-compliant mode alone works.
+- **Windows audio:** plugging in did not switch the default output to the keyboard. **Local Control exists**, and the user turned it off.
+- **Firefox permission:** `permissions.query({name:'midi'})` returned `prompt` before and `granted` after. The add-on prompt appeared on the first `requestMIDIAccess()` (resolved after 3.6 s of user interaction, with the keyboard already plugged in). A second request resolved in 0 ms.
+- **Notes:** note-off arrives as **note-on with velocity 0** (79 of 79 releases; never 0x80). Range **36–96 (C2–C7)**, confirmed. Velocity 1–127.
+- **Pedal:** CC64 sends only 0 and 127 (a switch pedal). Polarity not yet confirmed.
+- **Channels:** note-ons arrived on **channels 1, 2 and 3**. Cause unknown (Dual or Split mode?), and run 2 asks. The app should not assume channel 1.
+- **Realtime messages:** the keyboard streams **MIDI clock (0xF8)** and **active sensing (0xFE)** constantly: about 16k clock messages in a few minutes. The parser must drop these cheaply.
+- **Timing:** `performance.now() - event.timeStamp` at the handler was **28–32 ms (median 30)** every time. Either Firefox delivers MIDI about 30 ms late or its event timestamps use a different basis. Compare with Chrome.
+- **Audio:** `baseLatency` 0 ms, `outputLatency` 32 ms (steady), `getOutputTimestamp` supported. Sample rate 44.1 kHz.
+- **Bug found:** `Tone.setContext(nativeAudioContext)` throws "param must be an AudioParam" in Firefox, though it works in Chromium, so nothing played and the latency feel wasn't rated. Tone's own wrapped context (standardized-audio-context) works in both, but it **only exposes `baseLatency`, not `outputLatency` or `getOutputTimestamp`**. The spike now reads them through the wrapper's private `_nativeAudioContext` field. **P0-T5 must decide** how the real engine gets these values (the timing model needs them).
