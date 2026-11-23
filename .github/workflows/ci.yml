@@ -30,6 +30,16 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npx playwright install --with-deps chromium firefox
+      # The runner has no sound device. Chromium falls back to a silent output on its own;
+      # Firefox's AudioContext never starts without one, so give it a silent PulseAudio sink.
+      - name: Add a silent audio device
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=silent
+          pactl set-default-sink silent
+          pactl info
       - run: npm run test:e2e
         env:
           # e2e serves the build at the local root, not the Pages sub-path.
