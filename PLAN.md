@@ -1,0 +1,93 @@
+# Keyflow: Plan
+
+Keyflow is a browser app that teaches piano to adults through a MIDI keyboard, aimed at one goal: **playing synth solos and chords over grooves**, in the spirit of electro-funk and soul synth playing. It teaches theory by doing (drills, jamming, comping), built on established learning and motor-skill principles, with a built-in synth that sounds good from the first note.
+
+It is a personal tool first, released as open source (MIT) for others to enjoy.
+
+> **This file is the single source of truth for phase status, decisions and open questions.** Phase details live in `docs/phases/`. Phases are open to discussion: to change one, propose the change, then update the phase file **and** add a line to the decisions log below.
+
+---
+
+## The learner (primary user)
+
+- Adult, 6-year software developer, knows very general theory: can tell how C major is built but not E minor offhand, and knows how scales are constructed in principle. Knowledge is fragmented and memorized, not worked out or automatic.
+- Can play a couple of chords from memory.
+- Inspiration: playing by ear over songs with synths. Smooth melodic synth solos over soul and funk tracks; deep, heavy distorted bass with sub-bass; **pitch-bent leads**.
+- Genres: everything, but especially **electro-funk synth solos and soul**.
+- Practice time: 5 to 60 minutes a day. More if it is fun.
+- **No sheet music.** Notation reading is out of scope.
+
+### Priorities (ranked by the user)
+1. **Solo:** improvising over a groove
+2. **Comping:** rhythmic chord accompaniment
+3. **Chords:** knowing and building chords and voicings
+4. **Leads:** learning set melodic lines, riffs and licks
+5. **Learn songs:** playing over real songs
+
+### Hardware
+- **Yamaha YPT-380**, 61 keys, velocity-sensitive, USB-to-host MIDI, **no pitch bend wheel**.
+- **One sustain pedal**, the only pedal.
+- Gaming laptop, Windows 11. Browsers: **Firefox and Chrome are both supported.**
+
+---
+
+## Product pillars
+
+| Pillar | What it is |
+|---|---|
+| Play | Built-in synth (funk lead with glide, wobble bass plus sub, electric piano keys) and a split keyboard. Pitch-bend substitutes: legato glide, pedal-bend mode, laptop bend. |
+| Jam | Original grooves built from pattern data, so the app always knows the current chord. It highlights chord tones and scale tones live and records and replays takes. |
+| Learn | Spaced, interleaved drills for scales, chords and voicings, with hints that fade as you learn. Tracks speed, aiming for automaticity, not just correctness. |
+| Comp | Play chord changes in time over grooves. Scored on chord accuracy, timing, voice leading and rhythm. |
+| Ear | Call and response, scale-degree hearing, find-the-key and chord-quality games. |
+| Songs | Import your own audio locally. Key and tempo detection, looping, slowdown, chord chart, then jam over it. |
+| Sound | A guided sound-design lab and a library of original licks. |
+
+Learning principles behind all of this: [`docs/learning-design.md`](docs/learning-design.md). Stack and code structure: [`docs/architecture.md`](docs/architecture.md).
+
+---
+
+## Phases
+
+Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteria, open questions and done-when. AI sessions should take **one task ID at a time**, by default in the order listed.
+
+**Task status** is tracked in each phase file by adding a marker after the task heading, e.g. `### P0-T3: Input bus and MIDI layer [done 2026-12-01]` or `[in progress]`. Headings with no marker are not started. This table tracks phase-level status.
+
+| # | Phase | Status | File |
+|---|---|---|---|
+| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (task P0-T1) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
+| 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
+| 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
+| 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
+| 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
+| 5 | Song import | Not started | [phase-5-song-import.md](docs/phases/phase-5-song-import.md) |
+| 6 | Sound lab and leads library | Not started | [phase-6-sound-lab-leads.md](docs/phases/phase-6-sound-lab-leads.md) |
+
+Status values: `Not started`, `In progress (task X)`, `Done`, `Revised (see log)`.
+
+---
+
+## Decisions log
+
+Newest last. Format: `YYYY-MM-DD: decision. Reason.`
+
+- 2026-11-23: Feature order approved: Foundation → Jam → Drills → Comping → Solo coaching and ear → Songs → Sound lab and leads. The user's ranked priorities put soloing first, and jamming is the most motivating first experience.
+- 2026-11-23: No sheet music or notation reading. The user doesn't want it.
+- 2026-11-23: "Solo" means improvising; "Leads" means learning set melodic lines, riffs and licks. Confirmed by the user.
+- 2026-11-23: The keyboard has no pitch bend wheel. Bends come from three substitutes: legato glide, pedal-bend mode and laptop bend. Confirmed by the user.
+- 2026-11-23: There is one sustain pedal, so **pedal function is a mode setting** (Sustain / Bend / Glide-hold). In Bend mode, sustain is unavailable. One pedal can't do both.
+- 2026-11-23: Support both Firefox and Chrome. It's the same Web MIDI API; the extra cost is a Firefox onboarding screen (site-permission add-on prompt) and testing in two browsers.
+- 2026-11-23: Stack is TypeScript + Vite + React + Tone.js + Zustand + Dexie + ts-fsrs + tonal. Chosen for performance (audio runs in native Web Audio nodes off the UI thread) and ease of AI generation (all widely used). Details and rationale are in `docs/architecture.md`.
+- 2026-11-23: Local-first, with no backend or accounts. Static deploy to GitHub Pages.
+- 2026-11-23: All musical content (grooves, progressions, licks, presets) is original. No copyrighted recordings or transcriptions ship with the app. Nothing is named after real artists. The user's own song files are processed locally and never uploaded.
+- 2026-11-23: MIT license. Dependencies must have MIT, Apache-2.0, BSD or ISC licenses. GPL, LGPL and AGPL are not allowed without an explicit decision logged here.
+- 2026-11-23: Lint with **oxlint instead of ESLint**. The current Vite template ships TypeScript 7 plus oxlint, and `typescript-eslint` requires `typescript <6.1`, so ESLint can't type-lint TS 7. The React hooks rules are enabled in oxlint. Revisit if typescript-eslint adds TS 7 support and a needed rule is missing.
+- 2026-11-23: Toolchain is Node 26, TypeScript 7.0.2 and exact-pinned dependencies with a committed lockfile. CI uses `npm ci`. End-to-end tests run in Chromium and Firefox.
+- 2026-11-23: Public GitHub repo `Y4dd/Keyflow`, deployed to GitHub Pages at the `/Keyflow/` sub-path. The `LICENSE` holder is the GitHub username `Y4dd`. Commits use GitHub's no-reply address, set in the repo-local git config, so no personal email is exposed in a public repo.
+- 2026-11-23: The project stays at `C:\Users\yadds\OneDrive\Documents\Projects\Keyflow`. OneDrive is disabled on this machine, so the path is a plain local folder with no sync concerns.
+
+---
+
+## Open questions
+
+- Per-phase open questions are listed in each phase file.

@@ -1,0 +1,8 @@
+dist
+node_modules
+package-lock.json
+playwright-report
+test-results
+# Docs are hand-formatted Markdown; don't let Prettier rewrap them.
+*.md
+docs
