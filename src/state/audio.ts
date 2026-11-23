@@ -1,0 +1,161 @@
+// The audio controller and the Zustand store the UI reads. It doesn't import Tone.js: the
+// engine (src/audio/tone/engine.ts) loads on the first click or key press, because browsers
+// only let audio start after a user gesture, and importing Tone creates its AudioContext.
+// MIDI notes aren't gestures, so a keyboard alone can't start audio; the UI says so.
+//
+// The store changes on status, preset and knob changes, never per note.
+
+import { create } from 'zustand'
+import type { LatencyReadout } from '../audio/latency.ts'
+import { defaultKnobs, getPreset, PRESETS } from '../audio/presets/index.ts'
+import type { KnobValues, PresetId } from '../audio/presets/types.ts'
+import type { ContextState, Engine } from '../audio/tone/engine.ts'
+import type { InputEvent } from '../input/types.ts'
+
+export type AudioStatus = 'off' | 'starting' | 'running' | 'suspended' | 'failed' | 'unsupported'
+
+export interface AudioState {
+  status: AudioStatus
+  error: string | null
+  presetId: PresetId
+  knobs: Record<PresetId, KnobValues>
+  /** A note arrived while audio was off: tell the user to click. */
+  notesWaiting: boolean
+  latency: LatencyReadout | null
+  latencyHint: string | null
+}
+
+export const DEFAULT_PRESET: PresetId = 'funk-lead'
+
+const hasWebAudio = () =>
+  typeof window !== 'undefined' &&
+  (typeof window.AudioContext === 'function' ||
+    typeof (window as { webkitAudioContext?: unknown }).webkitAudioContext === 'function')
+
+export const useAudioStore = create<AudioState>(() => ({
+  status: hasWebAudio() ? 'off' : 'unsupported',
+  error: null,
+  presetId: DEFAULT_PRESET,
+  knobs: Object.fromEntries(PRESETS.map((p) => [p.id, defaultKnobs(p)])) as Record<
+    PresetId,
+    KnobValues
+  >,
+  notesWaiting: false,
+  latency: null,
+  latencyHint: null,
+}))
+
+let engine: Engine | null = null
+let loading: Promise<void> | null = null
+// Notes pressed while audio is starting (e.g. the on-screen key whose click started it). Still
+// held when sound first runs, they play then.
+const pendingNotes = new Map<number, number>()
+
+const set = useAudioStore.setState
+const get = useAudioStore.getState
+
+// outputLatency can read differently a moment after the device opens; read it again then.
+const LATENCY_REREAD_MS = 1000
+
+function onContextState(state: ContextState) {
+  if (state === 'running') {
+    set({ status: 'running', notesWaiting: false })
+    playPending()
+    refreshLatency()
+    setTimeout(refreshLatency, LATENCY_REREAD_MS)
+  } else if (state === 'suspended') {
+    // Before the first resume succeeds this is still "starting", not a pause.
+    if (get().status !== 'starting') set({ status: 'suspended' })
+  } else set({ status: 'failed', error: 'The browser closed the audio output.' })
+}
+
+function playPending() {
+  if (!engine) return
+  const time = performance.now()
+  for (const [note, velocity] of pendingNotes) {
+    engine.handle({ kind: 'noteOn', note, velocity, time, source: 'onscreen' })
+  }
+  pendingNotes.clear()
+}
+
+function refreshLatency() {
+  if (engine) set({ latency: engine.latency(), latencyHint: engine.latencyHint() })
+}
+
+function noteWaiting() {
+  if (!get().notesWaiting) set({ notesWaiting: true })
+}
+
+export const audio = {
+  /**
+   * Starts audio, or resumes it if the browser hasn't let it run yet or paused it. Call from a
+   * user gesture; safe to call repeatedly. The returned promise may never settle when the call
+   * didn't come with user activation, so callers don't wait on it.
+   */
+  start(): Promise<void> {
+    const { status } = get()
+    if (status === 'unsupported') return Promise.resolve()
+    if (engine) return engine.state() === 'running' ? Promise.resolve() : engine.resume()
+    if (loading) return loading
+    set({ status: 'starting', error: null })
+    loading = import('../audio/tone/engine.ts')
+      .then(({ createEngine }) => {
+        const { presetId, knobs } = get()
+        engine = createEngine({ presetId, knobs, onStateChange: onContextState })
+        loading = null
+        onContextState(engine.state())
+      })
+      .catch((err: unknown) => {
+        loading = null
+        pendingNotes.clear()
+        set({ status: 'failed', error: err instanceof Error ? err.message : String(err) })
+      })
+    return loading
+  },
+
+  /** Input bus listener (hot path). */
+  handle(event: InputEvent) {
+    if (engine) {
+      engine.handle(event) // drops note-ons itself while the context isn't running
+      if (engine.state() === 'running') return
+    }
+    if (get().status === 'starting') {
+      if (event.kind === 'noteOn') pendingNotes.set(event.note, event.velocity)
+      else if (event.kind === 'noteOff') pendingNotes.delete(event.note)
+    } else if (event.kind === 'noteOn') noteWaiting()
+  },
+
+  setPreset(id: PresetId) {
+    getPreset(id) // throws on an unknown id
+    set({ presetId: id })
+    engine?.setPreset(id)
+  },
+
+  setKnob(presetId: PresetId, id: string, value: number) {
+    const { knobs } = get()
+    set({ knobs: { ...knobs, [presetId]: { ...knobs[presetId], [id]: value } } })
+    engine?.setKnob(presetId, id, value)
+  },
+
+  refreshLatency,
+
+  /** Dev tools only. */
+  engine: () => engine,
+}
+
+/**
+ * Starts audio on any click, tap or key press until it runs, and resumes it the same way if
+ * the browser pauses it later. Capture phase, so it runs before the piano's own handlers.
+ */
+export function attachAudioUnlock(target: Window): () => void {
+  const unlock = () => {
+    const { status } = get()
+    if (status === 'off' || status === 'starting' || status === 'suspended') void audio.start()
+  }
+  target.addEventListener('pointerdown', unlock, true)
+  target.addEventListener('keydown', unlock, true)
+  return () => {
+    target.removeEventListener('pointerdown', unlock, true)
+    target.removeEventListener('keydown', unlock, true)
+  }
+}

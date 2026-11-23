@@ -5,6 +5,9 @@ import { inputBus } from '../input/bus.ts'
 import { fixtureToSimEvents, parseFixture } from '../input/sim/fixture.ts'
 import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
+import { audio } from '../state/audio.ts'
+import type { LatencyReadout } from '../audio/latency.ts'
+import type { RenderResult, RenderSpec } from './render.ts'
 
 export const simPlayer = createSimPlayer(
   {
@@ -25,6 +28,15 @@ export interface KeyflowDevApi {
   heldNotes(): number[]
   chord: typeof chord
   sequence: typeof sequence
+  audio: {
+    /** Pitches the current instrument holds; 0 before audio starts. */
+    heldCount(): number
+    /** The audio context's clock, s, or null before audio starts. */
+    currentTime(): number | null
+    latency(): LatencyReadout | null
+  }
+  /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
+  render(spec: RenderSpec): Promise<RenderResult>
 }
 
 declare global {
@@ -41,5 +53,12 @@ export function installDevTools() {
     heldNotes: () => simPlayer.heldNotes(),
     chord,
     sequence,
+    audio: {
+      heldCount: () => audio.engine()?.heldCount() ?? 0,
+      currentTime: () => audio.engine()?.currentTime() ?? null,
+      latency: () => audio.engine()?.latency() ?? null,
+    },
+    // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
+    render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),
   }
 }

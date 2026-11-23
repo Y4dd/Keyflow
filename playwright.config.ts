@@ -13,8 +13,18 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    // Muted: tests start real audio, and it shouldn't come out of the speakers.
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], launchOptions: { args: ['--mute-audio'] } },
+    },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+        launchOptions: { firefoxUserPrefs: { 'media.volume_scale': '0.0' } },
+      },
+    },
   ],
   // A separate build with dev tools on (window.__keyflow, for sim injection), in its own
   // folder so it can never be mistaken for the production build in dist/.

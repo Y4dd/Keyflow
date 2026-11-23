@@ -21,7 +21,6 @@ export function PlayPanel() {
       </p>
       <OnscreenPiano baseNote={base} />
       <LiveInput />
-      <p className="muted">No sound yet: the synth comes next. This shows what Keyflow hears.</p>
     </section>
   )
 }

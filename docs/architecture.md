@@ -54,6 +54,14 @@ src/
 4. **Canvas reads state on each frame** from a mutable ref or `store.getState()`. It does not subscribe React components to per-note updates.
 5. **One AudioContext** for the app, created and resumed on a user gesture with `latencyHint: "interactive"`.
 
+## Audio engine (P0-T5)
+
+- **Loading:** `src/state/audio.ts` (no Tone import) owns the status and the store. On the first click or key press it dynamically imports `src/audio/tone/engine.ts`; importing Tone creates the one AudioContext, so none exists before a gesture. It doesn't wait for `resume()`, which may never settle without user activation; every click or key press retries it until the context runs. Notes pressed while starting and still held when sound first runs play then.
+- **Hot path:** input bus → `audio.handle` → `engine.handle` → instrument, synchronously, at `Tone.immediate()`. Every per-note param write passes that time explicitly (Tone's `param.value =` and `rampTo()` without a time use `Tone.now()`).
+- **Instruments** are instances built from preset data (`src/audio/presets/`): pure voice logic (`src/audio/voices.ts`) decides, Tone graphs (`src/audio/tone/voices.ts`) sound. Connecting a signal to a Tone param overrides the param's value, so knobs drive the modulator (filter-envelope base, LFO min and max), not the param.
+- **Master:** gain → limiter (DynamicsCompressor, about 6 ms of delay) → safety clip (WaveShaper, linear to 0.9, no delay) → destination. Whether to keep the limiter is an open question in the Phase 0 file.
+- **Latency readout:** `src/audio/latency.ts` reads the native context through standardized-audio-context's private `_nativeAudioContext` field, feature-checked; see the decisions log.
+
 ## Timing model
 
 There are three clocks. Keep them straight.

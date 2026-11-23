@@ -175,3 +175,42 @@ h1 {
   padding: 8px;
   background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
+
+.presets {
+  margin: 16px 0;
+  padding: 0;
+  border: 0;
+}
+
+.presets legend {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.preset {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.knobs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) 5.5em;
+  gap: 8px 12px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.knob {
+  display: contents;
+}
+
+.knob input {
+  width: 100%;
+}
+
+.knob output {
+  text-align: right;
+}

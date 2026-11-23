@@ -123,11 +123,24 @@ export function createComputerKeyboard(
   }
 }
 
-function isTextEntry(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false
+// Inputs that take letters. Radios, checkboxes, sliders and buttons don't, so after clicking a
+// preset or a knob the computer keys keep playing.
+const NON_TEXT_INPUTS = new Set([
+  'radio',
+  'checkbox',
+  'range',
+  'button',
+  'submit',
+  'reset',
+  'color',
+])
+
+export function isTextEntry(target: EventTarget | null): boolean {
+  if (typeof HTMLElement === 'undefined' || !(target instanceof HTMLElement)) return false
   if (target.isContentEditable) return true
   const tag = target.tagName
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+  if (tag === 'INPUT') return !NON_TEXT_INPUTS.has((target as HTMLInputElement).type)
+  return tag === 'TEXTAREA' || tag === 'SELECT'
 }
 
 /** Listens on the window. Returns a detach function. */
