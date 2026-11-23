@@ -16,8 +16,11 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
   ],
+  // A separate build with dev tools on (window.__keyflow, for sim injection), in its own
+  // folder so it can never be mistaken for the production build in dist/.
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    command: `npx vite build --outDir dist-e2e && npx vite preview --outDir dist-e2e --port ${PORT} --strictPort`,
+    env: { KEYFLOW_DEV_TOOLS: 'true' },
     port: PORT,
     reuseExistingServer: !process.env.CI,
   },

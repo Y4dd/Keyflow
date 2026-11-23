@@ -66,8 +66,15 @@ export interface MidiConnection {
   request(): Promise<void>
   select(id: string | null): void
   getSnapshot(): MidiSnapshot
+  /**
+   * Hears every raw message from the listened inputs (clock included) before parsing. For the
+   * dev inspector's fixture recorder. Returns an unsubscribe function.
+   */
+  tapRaw(listener: RawMidiListener): () => void
   dispose(): void
 }
+
+export type RawMidiListener = (data: Uint8Array, time: number, inputName: string) => void
 
 export const NO_INPUT_HINT_MS = 4000
 
@@ -94,6 +101,7 @@ export function createMidiConnection(
   const attached = new Map<string, Attached>()
   let heard = false
   let timer: unknown = null
+  let rawTaps: readonly RawMidiListener[] = []
 
   function update(patch: Partial<MidiSnapshot>) {
     snap = { ...snap, ...patch }
@@ -127,6 +135,7 @@ export function createMidiConnection(
       if (!heard) markHeard() // any byte, even clock, proves the port delivers
       if (e.data === null) return
       if (snap.selectedId !== null && snap.selectedId !== port.id) return
+      if (rawTaps.length > 0) for (const tap of rawTaps) tap(e.data, e.timeStamp, port.name ?? '')
       const event = parser.parse(e.data, e.timeStamp)
       if (event !== null) emit(event)
     }
@@ -229,6 +238,12 @@ export function createMidiConnection(
       }
     },
     getSnapshot: () => snap,
+    tapRaw(listener) {
+      rawTaps = [...rawTaps, listener]
+      return () => {
+        rawTaps = rawTaps.filter((l) => l !== listener)
+      }
+    },
     dispose() {
       const now = env.now()
       for (const entry of [...attached.values()]) detach(entry, now)

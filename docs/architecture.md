@@ -118,8 +118,10 @@ interface HarmonyAt {       // what's sounding at a moment in a groove or song
 
 Most implementation is done by AI, which cannot press keys. So from Phase 0 there is a `sim` input that:
 - plays scripted `InputEvent` sequences (for example "Em triad held 500 ms at 0.8 velocity"),
-- replays recorded fixtures (JSON event logs captured from the real keyboard with the dev event inspector),
-- is exposed in dev builds as `window.__keyflow.inject(events)` for Playwright.
+- replays recorded fixtures: JSON files of **raw MIDI messages** (format `keyflow-midi-fixture` v1, `src/input/sim/fixture.ts`) captured from the real keyboard with the dev event inspector and stored in `tests/fixtures/`; replay runs them through the real MIDI parser,
+- is exposed in dev builds as `window.__keyflow.inject(events)` for Playwright. "Dev builds" are the dev server and builds made with `KEYFLOW_DEV_TOOLS=true` (the Playwright build in `dist-e2e/`); the production build drops the code through a compile-time constant, and CI checks that it did.
+
+Implemented in P0-T4: `src/input/sim/` and `src/dev/`.
 
 Every graded feature (drills, comping, ear training) must be testable end-to-end through this source.
 

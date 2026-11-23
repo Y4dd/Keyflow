@@ -1,6 +1,5 @@
 import { detectBrowser } from '../input/midi/browser.ts'
 import { midi, useMidiStore } from '../state/midi.ts'
-import { LiveInput } from './LiveInput.tsx'
 
 const browser = detectBrowser()
 const browserName =
@@ -125,10 +124,6 @@ export function MidiPanel() {
               unplug the keyboard and plug it back in.
             </p>
           )}
-          <LiveInput />
-          <p className="muted">
-            No sound yet: the synth comes next. This shows what Keyflow hears.
-          </p>
         </section>
       )
   }

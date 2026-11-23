@@ -2,10 +2,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.tsx'
 import './index.css'
+import { attachComputerKeyboard } from './input/computer/keyboard.ts'
+import { computerKeyboard } from './state/input.ts'
 import { midi } from './state/midi.ts'
 
-// Outside React so StrictMode's double effects can't start it twice.
+// Outside React so StrictMode's double effects can't start them twice.
 void midi.start()
+attachComputerKeyboard(computerKeyboard, window)
+
+// window.__keyflow (sim injection) for Playwright and the dev server; absent in production.
+if (__KEYFLOW_DEV_TOOLS__) void import('./dev/devtools.ts').then((m) => m.installDevTools())
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Missing #root element')

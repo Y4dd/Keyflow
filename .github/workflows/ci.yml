@@ -35,6 +35,12 @@ jobs:
           # e2e serves the build at the local root, not the Pages sub-path.
           VITE_BASE: /
       - run: npm run build
+      - name: Check dev tools are not in the production build
+        run: |
+          if grep -rl "__keyflow" dist; then
+            echo "Dev tools (window.__keyflow) leaked into the production build."
+            exit 1
+          fi
       - uses: actions/upload-pages-artifact@v5
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:

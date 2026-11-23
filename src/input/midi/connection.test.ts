@@ -303,3 +303,27 @@ describe('createMidiConnection: "no input yet" hint (device may be busy)', () =>
     expect(t.conn.getSnapshot().noInputYet).toBe(true)
   })
 })
+
+describe('createMidiConnection: raw tap (fixture recording)', () => {
+  it('hears every raw message from listened inputs, clock included, until unsubscribed', async () => {
+    const t = setup({ permission: 'granted' })
+    const a = new FakePort('a')
+    const b = new FakePort('b', 'Other', '')
+    t.access.ports.set('a', a)
+    t.access.ports.set('b', b)
+    await t.conn.start()
+    const heard: [number[], number, string][] = []
+    const untap = t.conn.tapRaw((data, time, name) => heard.push([[...data], time, name]))
+    a.send([0xf8], 1)
+    a.send([0x90, 60, 100], 2)
+    t.conn.select('a')
+    b.send([0x90, 62, 100], 3) // not listened to
+    untap()
+    a.send([0x90, 60, 0], 4)
+    expect(heard).toEqual([
+      [[0xf8], 1, 'Digital Keyboard-1'],
+      [[0x90, 60, 100], 2, 'Digital Keyboard-1'],
+    ])
+    expect(t.events.filter((e) => e.kind === 'noteOn')).toHaveLength(1)
+  })
+})

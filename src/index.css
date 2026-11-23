@@ -94,3 +94,84 @@ h1 {
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+.piano {
+  position: relative;
+  height: 140px;
+  margin: 16px 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.piano-key {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 4px;
+  border-radius: 0 0 4px 4px;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.piano-key.white {
+  height: 100%;
+  background: #fbfaf7;
+  color: #5d586b;
+  border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
+}
+
+.piano-key.black {
+  z-index: 1;
+  height: 60%;
+  background: #24202e;
+  color: #c9c4d6;
+}
+
+.piano-key[data-held='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.piano-letter {
+  font-weight: 600;
+}
+
+.piano-name {
+  opacity: 0.75;
+}
+
+.dev {
+  border-style: dashed;
+}
+
+.dev-field input {
+  font: inherit;
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px 8px;
+}
+
+.dev-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dev-log {
+  max-height: 16em;
+  overflow: auto;
+  font-size: 0.8rem;
+  padding: 8px;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
