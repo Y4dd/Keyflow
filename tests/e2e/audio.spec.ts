@@ -31,6 +31,7 @@ interface DevApi {
   stop(): void
   audio: {
     heldCount(): number
+    heldByZone(): { main: number; left: number }
     currentTime(): number | null
     latency(): {
       baseLatencyMs: number | null
@@ -49,6 +50,12 @@ async function open(page: Page) {
 
 const status = (page: Page) => page.getByTestId('audio-status')
 const held = (page: Page) => page.evaluate(() => (window as DevWindow).__keyflow!.audio.heldCount())
+const heldByZone = (page: Page) =>
+  page.evaluate(() => (window as DevWindow).__keyflow!.audio.heldByZone())
+const inject = (page: Page, events: { kind: 'noteOn' | 'noteOff'; note: number }[]) =>
+  page.evaluate((e) => (window as DevWindow).__keyflow!.inject(e), events)
+const zone = (page: Page, title: 'Main sound' | 'Left sound') =>
+  page.getByRole('group', { name: new RegExp(`^${title}`) })
 const render = (page: Page, spec: RenderSpec) =>
   page.evaluate((s) => (window as DevWindow).__keyflow!.render(s), spec)
 
@@ -79,8 +86,11 @@ test('sound starts on a click, reads the output latency, and plays injected note
     .poll(() => page.evaluate(() => (window as DevWindow).__keyflow!.audio.currentTime()))
     .toBeGreaterThan(t0! + 0.1)
 
-  // Notes reach the engine: three held on EP Keys (poly), released by stop().
-  await page.getByLabel(/EP Keys/).check()
+  // Notes reach the engine: three held on EP Keys (poly), released by stop(). They're above the
+  // split point, so the main sound plays them.
+  await zone(page, 'Main sound')
+    .getByLabel(/EP Keys/)
+    .check()
   await page.evaluate(() =>
     (window as DevWindow).__keyflow!.inject([
       { kind: 'noteOn', note: 60 },
@@ -93,7 +103,9 @@ test('sound starts on a click, reads the output latency, and plays injected note
   expect(await held(page)).toBe(0)
 
   // Funk Lead (mono) holds a stack of keys and releases them all.
-  await page.getByLabel(/Funk Lead/).check()
+  await zone(page, 'Main sound')
+    .getByLabel(/Funk Lead/)
+    .check()
   await page.evaluate(() =>
     (window as DevWindow).__keyflow!.inject([
       { kind: 'noteOn', note: 60 },
@@ -101,6 +113,68 @@ test('sound starts on a click, reads the output latency, and plays injected note
     ]),
   )
   expect(await held(page)).toBe(2)
+  await page.evaluate(() => (window as DevWindow).__keyflow!.stop())
+  expect(await held(page)).toBe(0)
+})
+
+test('the split keyboard plays each hand on its own sound, and no note sticks', async ({
+  page,
+}) => {
+  await open(page)
+  await page.getByRole('button', { name: 'Start audio' }).click()
+  await expect(status(page)).toHaveAttribute('data-status', 'running')
+  await expect(page.getByTestId('split-summary')).toHaveText(/^Keys below G3 play the left sound/)
+  await expect(zone(page, 'Left sound').getByLabel(/Wobble Bass/)).toBeChecked()
+  await expect(zone(page, 'Main sound').getByLabel(/Funk Lead/)).toBeChecked()
+
+  // F#3 is the left sound's top key and G3 the main sound's lowest.
+  await inject(page, [
+    { kind: 'noteOn', note: 40 },
+    { kind: 'noteOn', note: 54 },
+    { kind: 'noteOn', note: 55 },
+    { kind: 'noteOn', note: 67 },
+  ])
+  expect(await heldByZone(page)).toEqual({ left: 2, main: 2 })
+
+  // Moving the split and shifting an octave while keys are held: their note-offs still find
+  // the notes they started.
+  await page.getByLabel('Split point').selectOption({ label: 'C3' })
+  // The menu lets go of focus, so the computer keys play again instead of picking a note.
+  await expect(page.getByLabel('Split point')).not.toBeFocused()
+  await zone(page, 'Main sound')
+    .getByRole('combobox', { name: /^Octave/ })
+    .selectOption('1')
+  await inject(page, [{ kind: 'noteOn', note: 50 }]) // D3: now the main sound's
+  expect(await heldByZone(page)).toEqual({ left: 2, main: 3 })
+  await inject(page, [
+    { kind: 'noteOff', note: 54 },
+    { kind: 'noteOff', note: 55 },
+  ])
+  expect(await heldByZone(page)).toEqual({ left: 1, main: 2 })
+
+  // Changing one zone's preset releases that zone only.
+  await zone(page, 'Left sound')
+    .getByLabel(/EP Keys/)
+    .check()
+  expect(await heldByZone(page)).toEqual({ left: 0, main: 2 })
+  await page.evaluate(() => (window as DevWindow).__keyflow!.stop())
+  expect(await heldByZone(page)).toEqual({ left: 0, main: 0 })
+
+  // The split point can be set by pressing a key; that key doesn't sound.
+  await page.getByRole('button', { name: 'Set by pressing a key' }).click()
+  await inject(page, [{ kind: 'noteOn', note: 52 }])
+  await expect(page.getByTestId('split-summary')).toHaveText(/^Keys below E3/)
+  expect(await held(page)).toBe(0)
+  await inject(page, [{ kind: 'noteOff', note: 52 }])
+  await inject(page, [{ kind: 'noteOn', note: 51 }])
+  expect(await heldByZone(page)).toEqual({ left: 1, main: 0 })
+  await page.evaluate(() => (window as DevWindow).__keyflow!.stop())
+
+  // With the split off, the main sound covers every key.
+  await page.getByLabel('Split keyboard').uncheck()
+  await expect(zone(page, 'Left sound')).toHaveCount(0)
+  await inject(page, [{ kind: 'noteOn', note: 40 }])
+  expect(await heldByZone(page)).toEqual({ left: 0, main: 1 })
   await page.evaluate(() => (window as DevWindow).__keyflow!.stop())
   expect(await held(page)).toBe(0)
 })

@@ -3,13 +3,21 @@
 // only let audio start after a user gesture, and importing Tone creates its AudioContext.
 // MIDI notes aren't gestures, so a keyboard alone can't start audio; the UI says so.
 //
-// The store changes on status, preset and knob changes, never per note.
+// The store changes on status, layout and knob changes, never per note (except the one note
+// that sets the split point).
 
 import { create } from 'zustand'
 import type { LatencyReadout } from '../audio/latency.ts'
 import { defaultKnobs, getPreset, PRESETS } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
 import type { ContextState, Engine } from '../audio/tone/engine.ts'
+import {
+  clampOctave,
+  clampSplitNote,
+  DEFAULT_LAYOUT,
+  type KeyboardLayout,
+  type ZoneId,
+} from '../audio/zones.ts'
 import type { InputEvent } from '../input/types.ts'
 
 export type AudioStatus = 'off' | 'starting' | 'running' | 'suspended' | 'failed' | 'unsupported'
@@ -17,15 +25,15 @@ export type AudioStatus = 'off' | 'starting' | 'running' | 'suspended' | 'failed
 export interface AudioState {
   status: AudioStatus
   error: string | null
-  presetId: PresetId
+  layout: KeyboardLayout
+  /** Waiting for a key press to set the split point. */
+  learningSplit: boolean
   knobs: Record<PresetId, KnobValues>
   /** A note arrived while audio was off: tell the user to click. */
   notesWaiting: boolean
   latency: LatencyReadout | null
   latencyHint: string | null
 }
-
-export const DEFAULT_PRESET: PresetId = 'funk-lead'
 
 const hasWebAudio = () =>
   typeof window !== 'undefined' &&
@@ -35,7 +43,8 @@ const hasWebAudio = () =>
 export const useAudioStore = create<AudioState>(() => ({
   status: hasWebAudio() ? 'off' : 'unsupported',
   error: null,
-  presetId: DEFAULT_PRESET,
+  layout: DEFAULT_LAYOUT,
+  learningSplit: false,
   knobs: Object.fromEntries(PRESETS.map((p) => [p.id, defaultKnobs(p)])) as Record<
     PresetId,
     KnobValues
@@ -50,6 +59,10 @@ let loading: Promise<void> | null = null
 // Notes pressed while audio is starting (e.g. the on-screen key whose click started it). Still
 // held when sound first runs, they play then.
 const pendingNotes = new Map<number, number>()
+// Mirrors learningSplit for the hot path. The key that sets the split doesn't sound, and
+// neither does its note-off.
+let learningSplit = false
+const swallowed = new Set<number>()
 
 const set = useAudioStore.setState
 const get = useAudioStore.getState
@@ -100,8 +113,8 @@ export const audio = {
     set({ status: 'starting', error: null })
     loading = import('../audio/tone/engine.ts')
       .then(({ createEngine }) => {
-        const { presetId, knobs } = get()
-        engine = createEngine({ presetId, knobs, onStateChange: onContextState })
+        const { layout, knobs } = get()
+        engine = createEngine({ layout, knobs, onStateChange: onContextState })
         loading = null
         onContextState(engine.state())
       })
@@ -115,6 +128,14 @@ export const audio = {
 
   /** Input bus listener (hot path). */
   handle(event: InputEvent) {
+    if (learningSplit && event.kind === 'noteOn') {
+      learningSplit = false
+      swallowed.add(event.note)
+      set({ learningSplit: false })
+      setLayout({ ...get().layout, splitNote: clampSplitNote(event.note) })
+      return
+    }
+    if (event.kind === 'noteOff' && swallowed.delete(event.note)) return
     if (engine) {
       engine.handle(event) // drops note-ons itself while the context isn't running
       if (engine.state() === 'running') return
@@ -125,10 +146,30 @@ export const audio = {
     } else if (event.kind === 'noteOn') noteWaiting()
   },
 
-  setPreset(id: PresetId) {
+  setSplit(on: boolean) {
+    setLayout({ ...get().layout, split: on })
+    if (!on) audio.learnSplit(false)
+  },
+
+  setSplitNote(note: number) {
+    setLayout({ ...get().layout, splitNote: clampSplitNote(note) })
+  },
+
+  /** The next key pressed sets the split point (it becomes the main sound's lowest key). */
+  learnSplit(on: boolean) {
+    learningSplit = on
+    set({ learningSplit: on })
+  },
+
+  setZonePreset(zone: ZoneId, id: PresetId) {
     getPreset(id) // throws on an unknown id
-    set({ presetId: id })
-    engine?.setPreset(id)
+    const { layout } = get()
+    setLayout({ ...layout, [zone]: { ...layout[zone], presetId: id } })
+  },
+
+  setZoneOctave(zone: ZoneId, octave: number) {
+    const { layout } = get()
+    setLayout({ ...layout, [zone]: { ...layout[zone], octave: clampOctave(octave) } })
   },
 
   setKnob(presetId: PresetId, id: string, value: number) {
@@ -141,6 +182,11 @@ export const audio = {
 
   /** Dev tools only. */
   engine: () => engine,
+}
+
+function setLayout(layout: KeyboardLayout) {
+  set({ layout })
+  engine?.setLayout(layout)
 }
 
 /**

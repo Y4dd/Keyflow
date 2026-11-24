@@ -113,6 +113,17 @@ _Built and pushed as 9823a0f (CI fix bd32a39: a silent PulseAudio device so Fire
 - Two zones with a movable split point (default: a sensible point such as F3 or G3; verify on the real keyboard). Each zone has its own preset and octave transpose. Default: Wobble Bass on the left, Funk Lead on the right.
 - **Automated:** zone routing unit tests.
 - **Manual:** left-hand bass plus right-hand lead at the same time, with no stuck notes.
+- **Changed 2026-11-24 (agreed with the user, see the decisions log):** an on/off split like the YPT-380's, with a main sound (the whole keyboard, or the split point up) and a left sound; the split point is set from a menu or by pressing a key.
+
+_Built 2026-11-24 and pushed for the manual check on the deployed page. Code: `src/audio/zones.ts` (pure: layout, zones, the router that sends each note-off where its note-on went), the engine routing through it (`src/audio/tone/engine.ts`, one instrument per zone), the store (`src/state/audio.ts`: layout, press-a-key split, which swallows that key), the Sound panel (Keyboard: Split on/off, split point, "Set by pressing a key"; Left sound and Main sound, each with preset, octave and knobs). Automated: zone routing unit tests (boundary key, split moved and octave changed while keys are held, a key on twice, out-of-range pitches, zone and full release) and controller tests; e2e in both browsers plays both hands, moves the split and an octave while holding, changes one zone's preset, sets the split by a key press and turns the split off, with nothing left held._
+
+**Manual checks (dev server first, then the deployed page after the push; Firefox and Chrome; Local Control off). Note names use C4 = middle C (MIDI 60); the YPT-380's own labels may differ:**
+1. Click to start sound. The Sound panel shows Split keyboard on, split point G3, Wobble Bass as the left sound and Funk Lead as the main sound.
+2. Play a bass line with the left hand (the keys below G3, the G just under middle C) and a lead line with the right hand, at the same time. Each hand plays its own sound, the lead still glides between overlapping notes, and nothing distorts with both hands playing (two sounds together weren't measured in P0-T5).
+3. With one hand, hold two keys either side of the split (for example F3 and A3); with the other, move the split point in the menu, then change the main sound's octave. Release: nothing keeps sounding. Do the same while changing the left sound's preset.
+4. Click "Set by pressing a key" and press a key on the YPT-380. That key doesn't sound, the split point moves to it, and it becomes the main sound's lowest key.
+5. Turn Split keyboard off: the main sound plays every key. Try EP Keys across the whole keyboard with both hands.
+6. **Your call (open question):** which split point and octave shifts feel right for left-hand bass and right-hand lead? Try the left sound at −1 octave. I'll make your choice the default.
 
 ### P0-T7: Pedal modes and bend substitutes
 - Pedal mode setting: **Sustain** (normal), **Bend** (pedal down bends the lead up by N semitones over T ms; release returns), **Glide-hold** (pedal down forces glide on).
@@ -137,7 +148,7 @@ _Built and pushed as 9823a0f (CI fix bd32a39: a silent PulseAudio device so Fire
 ---
 
 ## Open questions
-- Preferred default split point and octave layout after trying it on the real keyboard?
+- Preferred default split point and octave layout after trying it on the real keyboard? (P0-T6 ships G3 and no octave shift; manual check 6 asks.)
 - Laptop bend key: Space? Shift? Decide after trying it.
 - Notes sometimes arrive on ch 2 and 3 (P0-T2, cause unknown). If the same pitch ever arrives on two channels at once, the bus sees two note-ons and two note-offs; P0-T3 passes them through unchanged. **Still open:** the P0-T4 song recording had every note on ch 1 (see Findings), so it neither shows the ch 2/3 notes nor rules them out. Record again with the dev inspector if they reappear (its summary counts notes per channel and same-pitch doubles), and decide then whether to ref-count notes across channels.
 - ~~**Limiter and safety clip (P0-T5):** the master chain's DynamicsCompressor delays all sound by 6.0 ms (measured in both browsers), and it also raises the level of everything by about 3.4 dB (its makeup gain: Funk Lead's typical peak is 0.31 with it, 0.21 without). Options: **(a)** keep gain → limiter → safety clip as built; **(b)** drop the limiter (0 ms delay), keep the safety clip, lower EP Keys by about 5 dB and raise the master gain to match the current loudness. Without the limiter, a ten-note EP chord at the recording's hardest velocity reaches the clip (0.98 in Firefox, 0.89 in Chromium). The safety clip itself is an addition to the spec and also needs the user's agreement.~~ **Decided 2026-11-23: (a), keep gain → limiter → safety clip as built.** The user found it feels instant.

@@ -176,15 +176,48 @@ h1 {
   background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
 
-.presets {
-  margin: 16px 0;
+.split,
+.zone {
+  margin: 16px 0 0;
   padding: 0;
   border: 0;
+  min-width: 0;
 }
 
-.presets legend {
+.split legend,
+.zone legend {
   font-weight: 600;
   margin-bottom: 4px;
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.split-point {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.zones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0 24px;
+}
+
+.presets {
+  margin: 4px 0 12px;
+}
+
+.octave {
+  display: block;
+  margin-bottom: 12px;
 }
 
 .preset {

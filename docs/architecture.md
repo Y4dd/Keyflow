@@ -59,7 +59,8 @@ src/
 - **Loading:** `src/state/audio.ts` (no Tone import) owns the status and the store. On the first click or key press it dynamically imports `src/audio/tone/engine.ts`; importing Tone creates the one AudioContext, so none exists before a gesture. It doesn't wait for `resume()`, which may never settle without user activation; every click or key press retries it until the context runs. Notes pressed while starting and still held when sound first runs play then.
 - **Hot path:** input bus → `audio.handle` → `engine.handle` → instrument, synchronously, at `Tone.immediate()`. Every per-note param write passes that time explicitly (Tone's `param.value =` and `rampTo()` without a time use `Tone.now()`).
 - **Instruments** are instances built from preset data (`src/audio/presets/`): pure voice logic (`src/audio/voices.ts`) decides, Tone graphs (`src/audio/tone/voices.ts`) sound. Connecting a signal to a Tone param overrides the param's value, so knobs drive the modulator (filter-envelope base, LFO min and max), not the param.
-- **Master:** gain → limiter (DynamicsCompressor, about 6 ms of delay) → safety clip (WaveShaper, linear to 0.9, no delay) → destination. Whether to keep the limiter is an open question in the Phase 0 file.
+- **Split keyboard:** a pure router (`src/audio/zones.ts`) picks each note-on's zone and pitch from the engine's own copy of the layout and remembers the route; the note-off follows that route, never the current layout, so layout changes can't strand held notes. One instrument instance per zone (both can use the same preset), built on layout changes, never on a note.
+- **Master:** gain → limiter (DynamicsCompressor, about 6 ms of delay) → safety clip (WaveShaper, linear to 0.9, no delay) → destination. Kept as built (decisions log, 2026-11-23).
 - **Latency readout:** `src/audio/latency.ts` reads the native context through standardized-audio-context's private `_nativeAudioContext` field, feature-checked; see the decisions log.
 
 ## Timing model
@@ -98,7 +99,10 @@ type InputEvent =
 
 type PedalMode = "sustain" | "bend" | "glideHold";
 
-interface Zone { lowNote: number; highNote: number; presetId: string; transpose: number /* semitones */ }
+// Split keyboard (src/audio/zones.ts). The layout is stored; zones are derived from it.
+interface KeyboardLayout { split: boolean; splitNote: number /* main sound's lowest key */; main: ZoneSound; left: ZoneSound }
+interface ZoneSound { presetId: PresetId; octave: number }
+interface Zone { id: "main" | "left"; lowNote: number; highNote: number; presetId: PresetId; transpose: number /* semitones */ }
 
 interface HarmonyAt {       // what's sounding at a moment in a groove or song
   keyTonic: number;         // pitch class, e.g. 0 for C
