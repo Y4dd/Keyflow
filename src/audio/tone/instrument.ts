@@ -4,6 +4,7 @@
 
 import * as Tone from 'tone'
 import { dbToGain, midiToHz, velocityToGain } from '../curves.ts'
+import { createSustainLatch } from '../expression.ts'
 import type { KnobValues, Preset } from '../presets/types.ts'
 import {
   createMonoNoteStack,
@@ -19,6 +20,12 @@ export interface Instrument {
   noteOn(note: number, velocity: number, time: number): void
   noteOff(note: number, time: number): void
   releaseAll(time: number): void
+  /** Sustain pedal: while down, note-offs wait for it to lift. */
+  setSustain(down: boolean, time: number): void
+  /** Glide-hold: mono instruments glide into detached notes too. */
+  setGlideHold(on: boolean): void
+  /** Bends every sounding and later note to `semitones`, sliding over `ramp` seconds. */
+  bend(semitones: number, time: number, ramp: number): void
   setKnob(id: string, value: number): void
   /** Pitches currently held, for tests and dev tools. */
   heldCount(): number
@@ -45,6 +52,9 @@ export function createInstrument(
 function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): Instrument {
   voice.output.connect(output)
   const stack = createMonoNoteStack()
+  const latch = createSustainLatch()
+  let glideHold = false
+  let playedBefore = false
 
   function act(action: MonoAction | null, velocity: number, time: number) {
     if (action === null) return
@@ -52,7 +62,9 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
       voice.release(time)
       return
     }
-    voice.setPitch(midiToHz(action.note), time, glideTimeFor(action, voice.glide()))
+    const glide = glideTimeFor(action, voice.glide(), glideHold, playedBefore)
+    playedBefore = true
+    voice.setPitch(midiToHz(action.note), time, glide)
     // Legato moves keep the envelopes (and level) of the note they continue.
     if (action.kind === 'attack')
       voice.attack(time, velocityToGain(velocity, preset.velocityRangeDb))
@@ -61,8 +73,24 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
   return {
     preset,
     noteOn: (note, velocity, time) => act(stack.noteOn(note), velocity, time),
-    noteOff: (note, time) => act(stack.noteOff(note), 0, time),
-    releaseAll: (time) => act(stack.releaseAll(), 0, time),
+    noteOff(note, time) {
+      if (latch.noteOff(note)) act(stack.noteOff(note), 0, time)
+    },
+    releaseAll(time) {
+      latch.clear()
+      act(stack.releaseAll(), 0, time)
+    },
+    setSustain(down, time) {
+      // Oldest press first, so the sounding note lifts last: lifting it first would move the
+      // pitch back to an older sustained note before the release.
+      const order = stack.held()
+      const notes = latch.hold(down).sort((a, b) => order.indexOf(a) - order.indexOf(b))
+      for (const note of notes) act(stack.noteOff(note), 0, time)
+    },
+    setGlideHold(on) {
+      glideHold = on
+    },
+    bend: voice.bend,
     setKnob: voice.setKnob,
     heldCount: () => stack.held().length,
     dispose() {
@@ -79,11 +107,19 @@ function polyInstrument(
 ): Instrument {
   const allocator = createPolyAllocator(preset.voices)
   const voices = Array.from({ length: preset.voices }, () => createFmVoice(preset, knobs, output))
+  const latch = createSustainLatch()
+  const stop = (note: number, time: number) => {
+    const voice = allocator.noteOff(note)
+    if (voice !== null) voices[voice].stop(time)
+  }
 
   return {
     preset,
     noteOn(note, velocity, time) {
-      const { voice } = allocator.noteOn(note)
+      const on = allocator.noteOn(note)
+      const { voice } = on
+      // A stolen note is gone; a note-off still withheld for it would stop its next press.
+      if (on.kind === 'steal') latch.forget(on.stolenNote)
       voices[voice].start(
         midiToHz(note),
         velocity,
@@ -92,11 +128,18 @@ function polyInstrument(
       )
     },
     noteOff(note, time) {
-      const voice = allocator.noteOff(note)
-      if (voice !== null) voices[voice].stop(time)
+      if (latch.noteOff(note)) stop(note, time)
     },
     releaseAll(time) {
+      latch.clear()
       for (const voice of allocator.releaseAll()) voices[voice].stop(time)
+    },
+    setSustain(down, time) {
+      for (const note of latch.hold(down)) stop(note, time)
+    },
+    setGlideHold() {}, // no glide on a poly instrument
+    bend(semitones, time, ramp) {
+      for (const voice of voices) voice.bend(semitones, time, ramp)
     },
     setKnob(id, value) {
       for (const voice of voices) voice.setKnob(id, value)

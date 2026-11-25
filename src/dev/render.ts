@@ -7,7 +7,7 @@ import { defaultKnobs, getPreset } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
 import { createInstrument } from '../audio/tone/instrument.ts'
 import { createMaster } from '../audio/tone/master.ts'
-import { onsetTime, windowStats, type WindowStats } from './signal.ts'
+import { onsetTime, pitchHz, windowStats, type WindowStats } from './signal.ts'
 
 export interface RenderNote {
   note: number
@@ -21,11 +21,15 @@ export interface RenderSpec {
   preset: PresetId
   knobs?: KnobValues
   notes: RenderNote[]
+  /** Bends, as the engine sends them: semitones from center, sliding over `ramp` s. */
+  bends?: { at: number; semitones: number; ramp: number }[]
   duration: number
   /** Through the full master chain (default), the master without its limiter, or straight. */
   master?: boolean | 'noLimiter'
   /** [from, to] in seconds; one WindowStats each. */
   windows?: [number, number][]
+  /** Set to estimate each window's pitch (pitchHz in ./signal.ts), searching this range. */
+  pitchRange?: [minHz: number, maxHz: number]
 }
 
 export interface RenderResult {
@@ -34,6 +38,8 @@ export interface RenderResult {
   /** First sample above -60 dBFS, s. */
   onset: number | null
   windows: WindowStats[]
+  /** Hz per window, when pitchRange is set. */
+  pitches: (number | null)[]
 }
 
 export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
@@ -59,16 +65,23 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
         if (on) instrument.noteOn(n.note, n.velocity, time)
         else instrument.noteOff(n.note, time)
       }
+      for (const b of [...(spec.bends ?? [])].sort((x, y) => x.at - y.at)) {
+        instrument.bend(b.semitones, b.at, b.ramp)
+      }
     },
     spec.duration,
     1,
   )
   const samples = buffer.getChannelData(0)
   const rate = buffer.sampleRate
+  const range = spec.pitchRange
   return {
     sampleRate: rate,
     peak: windowStats(samples, rate, 0, spec.duration).peak,
     onset: onsetTime(samples, rate, 0.001),
     windows: (spec.windows ?? []).map(([from, to]) => windowStats(samples, rate, from, to)),
+    pitches: range
+      ? (spec.windows ?? []).map(([from, to]) => pitchHz(samples, rate, from, to, ...range))
+      : [],
   }
 }

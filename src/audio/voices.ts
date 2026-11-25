@@ -175,8 +175,15 @@ export function createMonoNoteStack(): MonoNoteStack {
 
 /**
  * Legato-only glide: the pitch slides only when moving between held keys. A note played
- * after all keys are up starts on its own pitch.
+ * after all keys are up starts on its own pitch, unless glide-hold (the pedal's Glide-hold
+ * mode) forces glide on: then it slides from the last pitch played, if there was one.
  */
-export function glideTimeFor(action: MonoAction, glideTime: number): number {
-  return action.kind === 'legato' ? Math.max(0, glideTime) : 0
+export function glideTimeFor(
+  action: MonoAction,
+  glideTime: number,
+  glideHold = false,
+  playedBefore = true,
+): number {
+  const glides = action.kind === 'legato' || (action.kind === 'attack' && glideHold && playedBefore)
+  return glides ? Math.max(0, glideTime) : 0
 }

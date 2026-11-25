@@ -14,6 +14,8 @@ export interface MonoVoice {
   setPitch(hz: number, time: number, glide: number): void
   attack(time: number, gain: number): void
   release(time: number): void
+  /** Bends to `semitones` from the played pitch, sliding over `ramp` seconds. */
+  bend(semitones: number, time: number, ramp: number): void
   setKnob(id: string, value: number): void
   dispose(): void
 }
@@ -21,18 +23,37 @@ export interface MonoVoice {
 export interface PolyVoice {
   start(hz: number, velocity: number, gain: number, time: number): void
   stop(time: number): void
+  bend(semitones: number, time: number, ramp: number): void
   setKnob(id: string, value: number): void
   dispose(): void
 }
 
+/**
+ * The played pitch (`set`, with glide) times the bend ratio (`bend`). Separate params, so a
+ * legato move doesn't cancel a bend in progress and a bend doesn't cancel a glide. Connect
+ * the oscillators to `out`.
+ */
 function pitchSignal() {
   const freq = new Tone.Signal({ value: 220, units: 'frequency' })
+  const out = new Tone.Multiply(1)
+  freq.connect(out)
   return {
-    freq,
+    out,
     set(hz: number, time: number, glide: number) {
       freq.cancelAndHoldAtTime(time)
       if (glide > 0) freq.exponentialRampToValueAtTime(hz, time + glide)
       else freq.setValueAtTime(hz, time)
+    },
+    // An exponential ramp of the ratio moves the pitch evenly in semitones.
+    bend(semitones: number, time: number, ramp: number) {
+      const ratio = 2 ** (semitones / 12)
+      out.factor.cancelAndHoldAtTime(time)
+      if (ramp > 0) out.factor.exponentialRampToValueAtTime(ratio, time + ramp)
+      else out.factor.setValueAtTime(ratio, time)
+    },
+    dispose() {
+      freq.dispose()
+      out.dispose()
     },
   }
 }
@@ -43,8 +64,8 @@ export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
   // The oscillators run continuously; the envelopes gate them. No restart, so no phase clicks.
   const saw = new Tone.Oscillator({ type: 'sawtooth' })
   const square = new Tone.Oscillator({ type: 'square', detune: p.square.detuneCents })
-  pitch.freq.connect(saw.frequency)
-  pitch.freq.connect(square.frequency)
+  pitch.out.connect(saw.frequency)
+  pitch.out.connect(square.frequency)
   const sawLevel = new Tone.Gain(p.saw.level)
   const squareLevel = new Tone.Gain(p.square.level)
   const filter = new Tone.Filter({ type: 'lowpass', rolloff: -24, Q: p.filter.q })
@@ -69,6 +90,7 @@ export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
     output: amp,
     glide: () => glide,
     setPitch: pitch.set,
+    bend: pitch.bend,
     attack(time, gain) {
       filterEnv.triggerAttack(time)
       amp.triggerAttack(time, gain)
@@ -82,7 +104,8 @@ export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
       else if (id === 'glide') glide = value
     },
     dispose() {
-      for (const node of [pitch.freq, saw, square, sawLevel, squareLevel, filter, filterEnv, amp]) {
+      pitch.dispose()
+      for (const node of [saw, square, sawLevel, squareLevel, filter, filterEnv, amp]) {
         node.dispose()
       }
     },
@@ -98,11 +121,11 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
   const pitch = pitchSignal()
   const sawA = new Tone.Oscillator({ type: 'sawtooth', detune: -p.saws.detuneCents })
   const sawB = new Tone.Oscillator({ type: 'sawtooth', detune: p.saws.detuneCents })
-  pitch.freq.connect(sawA.frequency)
-  pitch.freq.connect(sawB.frequency)
+  pitch.out.connect(sawA.frequency)
+  pitch.out.connect(sawB.frequency)
   const octaveDown = new Tone.Multiply(0.5)
   const sub = new Tone.Oscillator({ type: 'sine' })
-  pitch.freq.connect(octaveDown)
+  pitch.out.connect(octaveDown)
   octaveDown.connect(sub.frequency)
 
   const sawLevel = new Tone.Gain(p.saws.level)
@@ -146,6 +169,7 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
     output,
     glide: () => p.glide,
     setPitch: pitch.set,
+    bend: pitch.bend,
     attack: (time, gain) => env.triggerAttack(time, gain),
     release: (time) => env.triggerRelease(time),
     setKnob(id, value) {
@@ -156,8 +180,8 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
       else if (id === 'drive') drive.distortion = value
     },
     dispose() {
+      pitch.dispose()
       for (const node of [
-        pitch.freq,
         sawA,
         sawB,
         octaveDown,
@@ -203,15 +227,27 @@ export function createFmVoice(
   const level = new Tone.Gain(0)
   synth.chain(level, destination)
   let brightness = knobs.brightness
+  let lastStart = -Infinity
 
   return {
-    start(hz, velocity, gain, time) {
+    start(hz, velocity, gain, at) {
+      // Tone throws when a sounding oscillator restarts at its last start time. Firefox's clock
+      // can read the same time for several events (P0-T7 e2e), so a steal or a key pressed twice
+      // in one tick would throw on the hot path; start a millisecond later instead.
+      const time = Math.max(at, lastStart + 0.001)
+      lastStart = time
       synth.modulationIndex.setValueAtTime(fmIndex(velocity, brightness) / FM_INTERNAL_GAIN, time)
       level.gain.cancelAndHoldAtTime(time)
       level.gain.linearRampToValueAtTime(gain / FM_INTERNAL_GAIN, time + 0.003)
       synth.triggerAttack(hz, time, 1)
     },
     stop: (time) => void synth.triggerRelease(time),
+    // FMSynth's detune moves the carrier and the modulator together.
+    bend(semitones, time, ramp) {
+      synth.detune.cancelAndHoldAtTime(time)
+      if (ramp > 0) synth.detune.linearRampToValueAtTime(semitones * 100, time + ramp)
+      else synth.detune.setValueAtTime(semitones * 100, time)
+    },
     setKnob(id, value) {
       if (id === 'brightness') brightness = value
     },

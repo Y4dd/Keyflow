@@ -7,6 +7,7 @@
 // that sets the split point).
 
 import { create } from 'zustand'
+import { DEFAULT_EXPRESSION, type ExpressionSettings } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import { defaultKnobs, getPreset, PRESETS } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
@@ -29,6 +30,8 @@ export interface AudioState {
   /** Waiting for a key press to set the split point. */
   learningSplit: boolean
   knobs: Record<PresetId, KnobValues>
+  /** Pedal mode and bend settings. */
+  expression: ExpressionSettings
   /** A note arrived while audio was off: tell the user to click. */
   notesWaiting: boolean
   latency: LatencyReadout | null
@@ -49,6 +52,7 @@ export const useAudioStore = create<AudioState>(() => ({
     PresetId,
     KnobValues
   >,
+  expression: DEFAULT_EXPRESSION,
   notesWaiting: false,
   latency: null,
   latencyHint: null,
@@ -113,8 +117,8 @@ export const audio = {
     set({ status: 'starting', error: null })
     loading = import('../audio/tone/engine.ts')
       .then(({ createEngine }) => {
-        const { layout, knobs } = get()
-        engine = createEngine({ layout, knobs, onStateChange: onContextState })
+        const { layout, knobs, expression } = get()
+        engine = createEngine({ layout, knobs, expression, onStateChange: onContextState })
         loading = null
         onContextState(engine.state())
       })
@@ -176,6 +180,12 @@ export const audio = {
     const { knobs } = get()
     set({ knobs: { ...knobs, [presetId]: { ...knobs[presetId], [id]: value } } })
     engine?.setKnob(presetId, id, value)
+  },
+
+  setExpression(patch: Partial<ExpressionSettings>) {
+    const expression = { ...get().expression, ...patch }
+    set({ expression })
+    engine?.setExpression(expression)
   },
 
   refreshLatency,

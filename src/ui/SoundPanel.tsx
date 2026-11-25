@@ -1,10 +1,14 @@
 import { knobToPosition, positionToKnob } from '../audio/curves.ts'
-import type { ChangeEvent } from 'react'
+import { useSyncExternalStore, type ChangeEvent } from 'react'
 import { Note } from 'tonal'
+import { MAX_BEND_TIME_MS, type PedalMode } from '../audio/expression.ts'
 import { getPreset, PRESETS } from '../audio/presets/index.ts'
 import type { KnobSpec, PresetId } from '../audio/presets/types.ts'
 import { MAX_OCTAVE, MIN_OCTAVE, type ZoneId } from '../audio/zones.ts'
+import { BEND_KEYS } from '../input/computer/bend.ts'
 import { audio, useAudioStore } from '../state/audio.ts'
+import { laptopBend } from '../state/input.ts'
+import { midi, useMidiStore } from '../state/midi.ts'
 
 const SLIDER_STEPS = 1000
 
@@ -240,6 +244,102 @@ function ZoneControls({ zone, title, keys }: { zone: ZoneId; title: string; keys
   )
 }
 
+const PEDAL_MODES: { mode: PedalMode; label: string; text: string }[] = [
+  { mode: 'sustain', label: 'Sustain', text: 'holds the notes you lift until the pedal comes up.' },
+  { mode: 'bend', label: 'Bend', text: 'bends the main sound up while the pedal is down.' },
+  {
+    mode: 'glideHold',
+    label: 'Glide-hold',
+    text: "the main sound glides into every note while the pedal is down, at its glide time (Funk Lead's Glide time knob, a fixed glide on Wobble Bass, none on EP Keys).",
+  },
+]
+
+function PedalControls() {
+  const { pedalMode, bendSemitones, bendTimeMs } = useAudioStore((s) => s.expression)
+  const invert = useMidiStore((s) => s.invertPedal)
+  const bendKey = useSyncExternalStore(laptopBend.subscribe, laptopBend.getKey)
+
+  return (
+    <fieldset className="pedal">
+      <legend>Pedal and bend</legend>
+      <div className="presets" role="radiogroup" aria-label="Pedal">
+        {PEDAL_MODES.map(({ mode, label, text }) => (
+          <label key={mode} className="preset">
+            <input
+              type="radio"
+              name="pedal-mode"
+              value={mode}
+              checked={mode === pedalMode}
+              onChange={() => audio.setExpression({ pedalMode: mode })}
+            />
+            <span>
+              <strong>{label}</strong> <span className="muted">{text}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={invert}
+          onChange={(e) => midi.setInvertPedal(e.target.checked)}
+        />
+        Invert pedal <span className="muted">(if the Play panel shows it down when it's up)</span>
+      </label>
+      <div className="split-point">
+        <label>
+          Bend amount{' '}
+          <select
+            value={bendSemitones}
+            onChange={(e) => {
+              audio.setExpression({ bendSemitones: e.target.value === '1' ? 1 : 2 })
+              blur(e)
+            }}
+          >
+            <option value={1}>1 semitone</option>
+            <option value={2}>2 semitones</option>
+          </select>
+        </label>
+        <label>
+          Bend key{' '}
+          <select
+            value={bendKey ?? ''}
+            onChange={(e) => {
+              laptopBend.setKey(e.target.value || null, performance.now())
+              blur(e)
+            }}
+          >
+            {BEND_KEYS.map((k) => (
+              <option key={k.code} value={k.code}>
+                {k.label}
+              </option>
+            ))}
+            <option value="">Off</option>
+          </select>
+        </label>
+      </div>
+      <div className="knobs">
+        <label className="knob">
+          <span>Bend time</span>
+          <input
+            type="range"
+            min={0}
+            max={MAX_BEND_TIME_MS}
+            step={10}
+            value={bendTimeMs}
+            onChange={(e) => audio.setExpression({ bendTimeMs: Number(e.target.value) })}
+          />
+          <output>{bendTimeMs} ms</output>
+        </label>
+      </div>
+      <p className="muted">
+        Bends move the main sound. Hold the bend key, or scroll over the on-screen keys for a bend
+        that springs back when you stop.
+      </p>
+    </fieldset>
+  )
+}
+
 export function SoundPanel() {
   const status = useAudioStore((s) => s.status)
   const split = useAudioStore((s) => s.layout.split)
@@ -252,6 +352,7 @@ export function SoundPanel() {
         <StatusLine />
       </div>
       <SplitControls />
+      <PedalControls />
       <div className="zones">
         {split && <ZoneControls zone="left" title="Left sound" keys={`below ${name(splitNote)}`} />}
         <ZoneControls

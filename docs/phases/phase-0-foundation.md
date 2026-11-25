@@ -125,13 +125,23 @@ _Built and pushed as 195f466. Manual checks 1–5 passed on the deployed page (u
 5. Turn Split keyboard off: the main sound plays every key. Try EP Keys across the whole keyboard with both hands.
 6. **Your call (open question):** which split point and octave shifts feel right for left-hand bass and right-hand lead? Try the left sound at −1 octave. I'll make your choice the default. **User, 2026-11-25: not yet able to judge; defaults kept (G3, no octave shift).**
 
-### P0-T7: Pedal modes and bend substitutes
+### P0-T7: Pedal modes and bend substitutes [built 2026-11-25, manual check pending]
 - Pedal mode setting: **Sustain** (normal), **Bend** (pedal down bends the lead up by N semitones over T ms; release returns), **Glide-hold** (pedal down forces glide on).
 - Bend amount: 1 or 2 semitones. A later option (Phase 1): bend to the next scale tone.
 - Laptop bend: hold a configurable key to bend up while held, or use the mouse wheel or touchpad scroll as a continuous bend that springs back to center.
 - "Invert pedal" setting for polarity.
 - **Automated:** unit tests that map pedal and bend events to pitch targets per mode.
 - **Manual:** bending a held lead note with the pedal sounds smooth and expressive.
+
+_Built 2026-11-25. Code: `src/audio/expression.ts` (pure: pedal modes and bend sources to targets, the bend speed, the sustain latch that withholds note-offs while the pedal is down); `glideTimeFor` in `src/audio/voices.ts` takes glide-hold; the instruments (`src/audio/tone/instrument.ts`) sustain, glide-hold and bend, the mono voices through a multiplier after the played pitch, EP Keys through FMSynth's detune (`src/audio/tone/voices.ts`); the engine applies the targets (`src/audio/tone/engine.ts`); `src/input/computer/bend.ts` (bend key and wheel bend, unit-tested with a fake clock); invert pedal in `src/input/midi/connection.ts`; the Sound panel's "Pedal and bend" controls. Choices are in the decisions log (2026-11-25, P0-T7). Automated: unit tests for every mode's targets, bend sums and clamping, mode changes with the pedal down, the bend speed, the latch (a re-pressed sustained note), forced glide, the laptop bend and invert pedal on replug; e2e in both browsers for sustain on both zones, Bend and Glide-hold from the controls, the bend key (Space bends after a click but stays a checkbox's own key after Tab), the wheel bend springing back without scrolling the page, and offline renders in which a held Funk Lead and EP Keys note measures within 10 cents of +2 semitones while bent and back after._
+
+**Manual checks (the deployed page after the push; Chrome, then Firefox for step 6; Local Control off; click Start audio; defaults: split on, Wobble Bass left, Funk Lead main):**
+1. **Must-pass. Sustain** (the default). Play a left-hand bass note and a right-hand lead note, press the pedal, then lift both keys. Pass: both keep sounding until you lift the pedal, then both stop. Fail: a note stops while the pedal is down, or keeps sounding after it's up. If the Play panel shows the pedal **up** while you hold it, tick **Invert pedal** and say so.
+2. **Must-pass. Bend.** Choose Pedal: **Bend**. Hold a lead note and press the pedal, then lift it, a few times, also while playing a bass note. Pass: the lead slides smoothly up two semitones and back; the bass doesn't bend. Fail: a click, a jump or steps instead of a slide, the pitch staying bent, or the bass bending.
+3. **Taste. Bend feel.** Still in Bend, try **Bend time** between 50 and 200 ms and **Bend amount** 1 and 2 semitones. Which feels most expressive? It becomes the default (now 100 ms, 2 semitones).
+4. **Must-pass. Glide-hold.** Choose **Glide-hold**. Play detached lead notes (lift each key before the next) with the pedal down, then with it up. Pass: with the pedal down, each note slides from the one before; up, each starts on its own pitch. Fail: no slide with the pedal down, or a slide with it up.
+5. **Taste. Laptop bend.** Hold a lead note on the YPT-380 and hold **Space**: the pitch bends up while Space is held. Then scroll (mouse wheel or touchpad) over the on-screen keys: the pitch follows and springs back when you stop. Which bend key do you prefer (Space or \\), and are the scroll direction and speed right?
+6. **Must-pass. Firefox.** Repeat steps 1 and 2 in Firefox. Pass and fail as there.
 
 ### P0-T8: Latency calibration
 - Tap test: a click plays for 8–16 beats and the user taps any key on the beat. Store the median offset (ms) as the calibration offset. Show its spread; if it's too noisy, ask to retry.
@@ -149,7 +159,7 @@ _Built and pushed as 195f466. Manual checks 1–5 passed on the deployed page (u
 
 ## Open questions
 - Preferred default split point and octave layout after trying it on the real keyboard? (P0-T6 ships G3 and no octave shift. The user can't judge this yet as a player; revisit once they can play bass and lead together, at the latest in Phase 1.)
-- Laptop bend key: Space? Shift? Decide after trying it.
+- Laptop bend key: Space? Shift? Decide after trying it. (P0-T7 ships Space, with \ or off in a menu; P0-T7 manual check 5 asks.)
 - Notes sometimes arrive on ch 2 and 3 (P0-T2, cause unknown). If the same pitch ever arrives on two channels at once, the bus sees two note-ons and two note-offs; P0-T3 passes them through unchanged. **Still open:** the P0-T4 song recording had every note on ch 1 (see Findings), so it neither shows the ch 2/3 notes nor rules them out. Record again with the dev inspector if they reappear (its summary counts notes per channel and same-pitch doubles), and decide then whether to ref-count notes across channels.
 - ~~**Limiter and safety clip (P0-T5):** the master chain's DynamicsCompressor delays all sound by 6.0 ms (measured in both browsers), and it also raises the level of everything by about 3.4 dB (its makeup gain: Funk Lead's typical peak is 0.31 with it, 0.21 without). Options: **(a)** keep gain → limiter → safety clip as built; **(b)** drop the limiter (0 ms delay), keep the safety clip, lower EP Keys by about 5 dB and raise the master gain to match the current loudness. Without the limiter, a ten-note EP chord at the recording's hardest velocity reaches the clip (0.98 in Firefox, 0.89 in Chromium). The safety clip itself is an addition to the spec and also needs the user's agreement.~~ **Decided 2026-11-23: (a), keep gain → limiter → safety clip as built.** The user found it feels instant.
 - ~~Does Firefox latency on this laptop feel close enough to Chrome's?~~ Yes: both feel instant (P0-T2). Firefox delivers MIDI about 25 ms later, so calibrate per browser.

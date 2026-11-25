@@ -50,6 +50,8 @@ export interface MidiSnapshot {
   inputs: MidiInputInfo[]
   /** Null = listen to every input. */
   selectedId: string | null
+  /** Reversed pedal polarity, for every input. */
+  invertPedal: boolean
   /**
    * Inputs are attached but nothing (not even clock) has arrived for NO_INPUT_HINT_MS, or the
    * port failed to open. On Windows another app may be holding the device.
@@ -65,6 +67,7 @@ export interface MidiConnection {
   /** Requests access. Call from a user gesture (the Connect button). */
   request(): Promise<void>
   select(id: string | null): void
+  setInvertPedal(invert: boolean): void
   getSnapshot(): MidiSnapshot
   /**
    * Hears every raw message from the listened inputs (clock included) before parsing. For the
@@ -93,6 +96,7 @@ export function createMidiConnection(
     status: initialOnboardingState,
     inputs: [],
     selectedId: null,
+    invertPedal: false,
     noInputYet: false,
     error: null,
   }
@@ -128,7 +132,7 @@ export function createMidiConnection(
   }
 
   function attach(port: MidiInputPort) {
-    const parser = createMidiParser()
+    const parser = createMidiParser({ invertPedal: snap.invertPedal })
     attached.set(port.id, { port, parser })
     // Hot path: MIDI callback -> parser -> bus, nothing else.
     port.onmidimessage = (e) => {
@@ -235,6 +239,14 @@ export function createMidiConnection(
         if (id !== null && entry.port.id !== id) {
           for (const event of entry.parser.releaseAll(now)) emit(event)
         }
+      }
+    },
+    setInvertPedal(invert) {
+      update({ invertPedal: invert })
+      const now = env.now()
+      for (const entry of attached.values()) {
+        const event = entry.parser.setInvertPedal(invert, now)
+        if (event !== null) emit(event)
       }
     },
     getSnapshot: () => snap,

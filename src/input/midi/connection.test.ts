@@ -190,6 +190,22 @@ describe('createMidiConnection: messages and hot-plug', () => {
     expect(t.conn.getSnapshot()).toMatchObject({ status: 'noDevices', inputs: [] })
   })
 
+  it('invert pedal: flips the held pedal at once, and applies to inputs plugged in later', async () => {
+    const t = await connected()
+    expect(t.conn.getSnapshot().invertPedal).toBe(false)
+    t.port.send([0xb0, 64, 127], 1)
+    t.events.length = 0
+    t.conn.setInvertPedal(true)
+    expect(t.conn.getSnapshot().invertPedal).toBe(true)
+    expect(t.events).toEqual([{ kind: 'pedal', down: false, time: 1000, source: 'midi' }])
+    t.access.unplug('a')
+    const fresh = new FakePort('a')
+    t.access.plug(fresh)
+    t.events.length = 0
+    fresh.send([0xb0, 64, 0], 2)
+    expect(t.events).toEqual([{ kind: 'pedal', down: true, time: 2, source: 'midi' }])
+  })
+
   it('replug as the same port object: recovers', async () => {
     const t = await connected()
     t.access.unplug('a')

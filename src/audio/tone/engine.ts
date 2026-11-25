@@ -6,9 +6,18 @@
 // Hot path: the input bus calls handle() synchronously; notes start at Tone.immediate(). The
 // zone router (src/audio/zones.ts) picks the zone and pitch from the engine's own copy of the
 // layout, never the store.
+//
+// The pedal and bends (src/audio/expression.ts): sustain holds both sounds; bends and
+// glide-hold move only the main sound, the hand playing the lead (decisions log, P0-T7).
 
 import * as Tone from 'tone'
 import type { InputEvent } from '../../input/types.ts'
+import {
+  bendRampSeconds,
+  createExpression,
+  type ExpressionSettings,
+  type ExpressionTargets,
+} from '../expression.ts'
 import { readLatency, type LatencyReadout } from '../latency.ts'
 import { getPreset } from '../presets/index.ts'
 import type { KnobValues, PresetId } from '../presets/types.ts'
@@ -21,6 +30,7 @@ export type ContextState = 'running' | 'suspended' | 'closed'
 export interface EngineOptions {
   layout: KeyboardLayout
   knobs: Record<PresetId, KnobValues>
+  expression: ExpressionSettings
   onStateChange(state: ContextState): void
 }
 
@@ -30,6 +40,9 @@ export interface Engine {
   resume(): Promise<void>
   setLayout(layout: KeyboardLayout): void
   setKnob(presetId: PresetId, id: string, value: number): void
+  setExpression(settings: ExpressionSettings): void
+  /** Dev tools: what the pedal and bends are doing now. */
+  expression(): ExpressionTargets
   releaseAll(): void
   latency(): LatencyReadout
   latencyHint(): string
@@ -68,6 +81,32 @@ export function createEngine(options: EngineOptions): Engine {
   }
   const router = createZoneRouter()
   let state = toState(context.state)
+  const expression = createExpression(options.expression)
+  let applied = expression.targets()
+
+  /** Sends what changed to the instruments. */
+  function apply(next: ExpressionTargets) {
+    const now = Tone.immediate()
+    if (next.sustain !== applied.sustain) {
+      for (const zone of ZONE_IDS) current[zone].setSustain(next.sustain, now)
+    }
+    if (next.glideHold !== applied.glideHold) current.main.setGlideHold(next.glideHold)
+    if (next.bend !== applied.bend) {
+      // shortcut: measured from the last target, not where a cut-short ramp got to, so a quick
+      // tap returns over the full distance's time; upgrade if short taps feel sluggish.
+      const ramp = bendRampSeconds(applied.bend, next.bend, expression.settings())
+      current.main.bend(next.bend, now, ramp)
+    }
+    applied = next
+  }
+
+  /** An instrument becoming a zone's sound takes up the pedal and bend state as it is. */
+  function adopt(zone: ZoneId, instrument: Instrument) {
+    const now = Tone.immediate()
+    instrument.setSustain(applied.sustain, now)
+    instrument.setGlideHold(zone === 'main' && applied.glideHold)
+    instrument.bend(zone === 'main' ? applied.bend : 0, now, 0)
+  }
 
   const resume = () => Tone.start().catch(() => {}) // retried on the next gesture
 
@@ -107,7 +146,12 @@ export function createEngine(options: EngineOptions): Engine {
           if (route) current[route.zone].noteOff(route.note, Tone.immediate())
           break
         }
-        // Pedal and bend modes arrive in P0-T7.
+        case 'pedal':
+          apply(expression.pedal(event.down))
+          break
+        case 'bend':
+          apply(expression.bend(event.source, event.semitones))
+          break
       }
     },
     state: () => state,
@@ -119,6 +163,7 @@ export function createEngine(options: EngineOptions): Engine {
         current[zone].releaseAll(Tone.immediate())
         router.releaseZone(zone)
         current[zone] = instrumentFor(zone, id)
+        adopt(zone, current[zone])
       }
       // A new split point or octave applies to the next note-on; held notes keep their routes.
       layout = next
@@ -128,6 +173,8 @@ export function createEngine(options: EngineOptions): Engine {
       for (const instrument of instruments.values())
         if (instrument.preset.id === presetId) instrument.setKnob(id, value)
     },
+    setExpression: (settings) => apply(expression.setSettings(settings)),
+    expression: () => applied,
     releaseAll,
     latency: () => readLatency(context.rawContext),
     latencyHint: () => String(context.latencyHint),

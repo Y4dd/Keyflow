@@ -6,6 +6,7 @@ import { fixtureToSimEvents, parseFixture } from '../input/sim/fixture.ts'
 import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
 import { audio } from '../state/audio.ts'
+import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
 import type { RenderResult, RenderSpec } from './render.ts'
@@ -37,6 +38,8 @@ export interface KeyflowDevApi {
     /** The audio context's clock, s, or null before audio starts. */
     currentTime(): number | null
     latency(): LatencyReadout | null
+    /** What the pedal and bends are doing now (src/audio/expression.ts); null before audio. */
+    expression(): ExpressionTargets | null
   }
   /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
   render(spec: RenderSpec): Promise<RenderResult>
@@ -67,6 +70,7 @@ export function installDevTools() {
       },
       currentTime: () => audio.engine()?.currentTime() ?? null,
       latency: () => audio.engine()?.latency() ?? null,
+      expression: () => audio.engine()?.expression() ?? null,
     },
     // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),

@@ -1,8 +1,9 @@
 import { useEffect, useRef, type PointerEvent } from 'react'
 import { Note } from 'tonal'
 import { inputBus } from '../input/bus.ts'
+import { attachWheelBend } from '../input/computer/bend.ts'
 import { KEY_OFFSETS } from '../input/computer/keyboard.ts'
-import { pointerPiano } from '../state/input.ts'
+import { laptopBend, pointerPiano } from '../state/input.ts'
 
 // A minimal DOM piano, C3 to C6. The 61-key canvas keyboard with velocity and zones is P0-T9.
 const LOW = 48
@@ -74,8 +75,10 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
       dirty.add(event.note)
       if (frame === 0) frame = requestAnimationFrame(render)
     })
+    const detachWheel = attachWheelBend(laptopBend, container) // scroll over the keys to bend
     return () => {
       unsubscribe()
+      detachWheel()
       cancelAnimationFrame(frame)
       pointerPiano.releaseAll(performance.now())
     }

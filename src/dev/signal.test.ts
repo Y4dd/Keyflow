@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { onsetTime, windowStats } from './signal.ts'
+import { onsetTime, pitchHz, windowStats } from './signal.ts'
 
 const RATE = 1000
 const sine = (hz: number, amp: number, seconds: number) =>
@@ -43,5 +43,25 @@ describe('onsetTime', () => {
     x[250] = -0.01
     expect(onsetTime(x, RATE, 0.001)).toBe(0.25)
     expect(onsetTime(new Float32Array(10), RATE, 0.001)).toBeNull()
+  })
+})
+
+describe('pitchHz', () => {
+  const rate = 48000
+  const tone = (hz: number, shape: (phase: number) => number) =>
+    Float32Array.from({ length: rate / 2 }, (_, i) => shape(((hz * i) / rate) % 1))
+
+  it('finds the fundamental of a sine and a sawtooth within a few cents', () => {
+    for (const hz of [220, 246.94]) {
+      for (const shape of [(p: number) => Math.sin(2 * Math.PI * p), (p: number) => 2 * p - 1]) {
+        const found = pitchHz(tone(hz, shape), rate, 0.1, 0.3, 180, 300)
+        expect(Math.abs(1200 * Math.log2(found! / hz))).toBeLessThan(5)
+      }
+    }
+  })
+
+  it('returns null for silence or a window too short to search', () => {
+    expect(pitchHz(new Float32Array(rate), rate, 0, 0.5, 180, 300)).toBeNull()
+    expect(pitchHz(tone(220, Math.sin), rate, 0, 0.001, 180, 300)).toBeNull()
   })
 })

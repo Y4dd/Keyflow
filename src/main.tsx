@@ -5,7 +5,7 @@ import './index.css'
 import { inputBus } from './input/bus.ts'
 import { attachComputerKeyboard } from './input/computer/keyboard.ts'
 import { attachAudioUnlock, audio } from './state/audio.ts'
-import { computerKeyboard } from './state/input.ts'
+import { computerKeyboard, laptopBend } from './state/input.ts'
 import { midi } from './state/midi.ts'
 
 // Outside React so StrictMode's double effects can't start them twice.
@@ -13,7 +13,7 @@ import { midi } from './state/midi.ts'
 inputBus.subscribe(audio.handle)
 attachAudioUnlock(window)
 void midi.start()
-attachComputerKeyboard(computerKeyboard, window)
+attachComputerKeyboard(computerKeyboard, window, laptopBend)
 
 // window.__keyflow (sim injection) for Playwright and the dev server; absent in production.
 if (__KEYFLOW_DEV_TOOLS__) void import('./dev/devtools.ts').then((m) => m.installDevTools())

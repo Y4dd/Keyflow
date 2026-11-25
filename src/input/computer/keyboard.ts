@@ -2,6 +2,7 @@
 // is pure (fed key codes and times) so it's unit-tested; attach() wires it to the DOM.
 
 import type { InputEvent } from '../types.ts'
+import type { LaptopBend } from './bend.ts'
 
 /** Fixed: a computer key has no velocity. */
 export const COMPUTER_VELOCITY = 0.8
@@ -144,25 +145,63 @@ export function isTextEntry(target: EventTarget | null): boolean {
 }
 
 /** Listens on the window. Returns a detach function. */
-export function attachComputerKeyboard(keyboard: ComputerKeyboard, target: Window): () => void {
+export function attachComputerKeyboard(
+  keyboard: ComputerKeyboard,
+  target: Window,
+  bend?: LaptopBend,
+): () => void {
+  // How the focused control got its focus. Reached with Tab, it keeps its own keys, Space
+  // included, so keyboard users can still toggle a checkbox; focused by a click, the bend key
+  // bends instead of pressing it. (:focus-visible can't tell them apart: in e2e, Chromium and
+  // Firefox both matched it on a clicked control once a key was pressed.)
+  let pointing = false // the last input was a pointer, not a key
+  let focusedByPointer = false
+  const onPointerDown = () => {
+    pointing = true
+  }
+  const onFocusIn = () => {
+    focusedByPointer = pointing
+  }
+  const ownsKeys = (el: EventTarget | null) =>
+    el !== target.document.body && el !== target.document && !focusedByPointer
+
   const onKeyDown = (e: KeyboardEvent) => {
+    pointing = false // before Tab moves focus
     // Leave shortcuts (Ctrl+S, ...) and typing in form fields alone.
     if (e.ctrlKey || e.metaKey || e.altKey || isTextEntry(e.target)) return
+    // Only Space means something to a control; another bend key bends even on a Tab-focused one.
+    const controlKey = e.code === 'Space' && ownsKeys(e.target)
+    if (bend && !controlKey && bend.keyDown(e.code, e.timeStamp)) {
+      e.preventDefault() // Space would scroll the page or press the clicked button
+      return
+    }
     if (keyboard.keyDown(e.code, e.timeStamp)) e.preventDefault()
   }
   const onKeyUp = (e: KeyboardEvent) => {
     // No modifier check: a key pressed before Ctrl went down must still be released.
+    if (bend?.keyUp(e.code, e.timeStamp)) {
+      e.preventDefault() // a button or checkbox activates on Space's key-up
+      return
+    }
     if (keyboard.keyUp(e.code, e.timeStamp)) e.preventDefault()
   }
-  const releaseAll = () => keyboard.releaseAll(performance.now())
+  const releaseAll = () => {
+    const now = performance.now()
+    keyboard.releaseAll(now)
+    bend?.releaseAll(now)
+  }
   const onVisibility = () => {
     if (target.document.visibilityState === 'hidden') releaseAll()
   }
+  target.addEventListener('pointerdown', onPointerDown, true)
+  target.addEventListener('focusin', onFocusIn, true)
   target.addEventListener('keydown', onKeyDown)
   target.addEventListener('keyup', onKeyUp)
   target.addEventListener('blur', releaseAll)
   target.document.addEventListener('visibilitychange', onVisibility)
   return () => {
+    target.removeEventListener('pointerdown', onPointerDown, true)
+    target.removeEventListener('focusin', onFocusIn, true)
     target.removeEventListener('keydown', onKeyDown)
     target.removeEventListener('keyup', onKeyUp)
     target.removeEventListener('blur', releaseAll)

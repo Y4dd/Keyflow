@@ -176,6 +176,14 @@ describe('glideTimeFor (legato-only glide)', () => {
     expect(glideTimeFor({ kind: 'legato', note: 64 }, -1)).toBe(0)
   })
 
+  it('glide-hold also glides into a detached note, but not into the first one', () => {
+    expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.06, true)).toBe(0.06)
+    expect(glideTimeFor({ kind: 'legato', note: 64 }, 0.06, true)).toBe(0.06)
+    expect(glideTimeFor({ kind: 'release' }, 0.06, true)).toBe(0)
+    // Nothing played yet: there is no pitch to glide from.
+    expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.06, true, false)).toBe(0)
+  })
+
   it('a played phrase: glide on the overlapping notes, none after a gap', () => {
     const s = createMonoNoteStack()
     const glides = [

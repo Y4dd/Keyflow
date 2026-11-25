@@ -49,3 +49,46 @@ export function onsetTime(samples: ArrayLike<number>, sampleRate: number, thresh
   }
   return null
 }
+
+/**
+ * The fundamental frequency over [from, to] s by autocorrelation, searching minHz to maxHz.
+ * Keep the range under an octave, so a multiple of the period can't win. Null for silence or
+ * a window shorter than the longest period searched.
+ */
+export function pitchHz(
+  samples: ArrayLike<number>,
+  sampleRate: number,
+  from: number,
+  to: number,
+  minHz: number,
+  maxHz: number,
+): number | null {
+  const start = Math.max(0, Math.floor(from * sampleRate))
+  const end = Math.min(samples.length, Math.floor(to * sampleRate))
+  const minLag = Math.floor(sampleRate / maxHz)
+  const maxLag = Math.ceil(sampleRate / minHz)
+  const n = end - start - maxLag - 1
+  if (n <= 0) return null
+  // The same number of products at every lag, so no lag is favoured.
+  const corr = (lag: number) => {
+    let sum = 0
+    for (let i = start; i < start + n; i++) sum += samples[i] * samples[i + lag]
+    return sum
+  }
+  let bestLag = -1
+  let best = 0
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    const c = corr(lag)
+    if (c > best) {
+      best = c
+      bestLag = lag
+    }
+  }
+  if (bestLag === -1) return null
+  // Parabolic interpolation between neighbouring lags, for better than whole-sample precision.
+  const a = corr(bestLag - 1)
+  const c = corr(bestLag + 1)
+  const denom = a - 2 * best + c
+  const shift = denom < 0 ? (a - c) / (2 * denom) : 0
+  return sampleRate / (bestLag + shift)
+}

@@ -9,6 +9,8 @@ const fake = vi.hoisted(() => ({
   layouts: [] as unknown[],
   created: null as unknown,
   knobs: [] as unknown[],
+  expression: null as unknown,
+  expressions: [] as unknown[],
   fail: false,
   resumes: 0,
 }))
@@ -16,11 +18,13 @@ const fake = vi.hoisted(() => ({
 vi.mock('../audio/tone/engine.ts', () => ({
   createEngine: (o: {
     layout: unknown
+    expression: unknown
     onStateChange: (s: 'running' | 'suspended' | 'closed') => void
   }) => {
     if (fake.fail) throw new Error('no audio device')
     fake.onStateChange = o.onStateChange
     fake.created = o.layout
+    fake.expression = o.expression
     return {
       // Like the real engine: note-ons are dropped while the context isn't running.
       handle: (e: InputEvent) => {
@@ -32,6 +36,7 @@ vi.mock('../audio/tone/engine.ts', () => ({
       },
       setLayout: (layout: unknown) => fake.layouts.push(layout),
       setKnob: (...args: unknown[]) => fake.knobs.push(args),
+      setExpression: (e: unknown) => fake.expressions.push(e),
       releaseAll: () => {},
       latency: () => ({
         baseLatencyMs: 10,
@@ -69,6 +74,8 @@ beforeEach(() => {
   fake.layouts = []
   fake.created = null
   fake.knobs = []
+  fake.expression = null
+  fake.expressions = []
   fake.fail = false
   fake.resumes = 0
 })
@@ -174,6 +181,20 @@ describe('audio controller', () => {
     })
     expect(fake.knobs).toEqual([['wobble-bass', 'drive', 0.9]])
     expect(() => audio.setZonePreset('main', 'nope' as 'ep-keys')).toThrow(/Unknown preset/)
+  })
+
+  it('keeps pedal and bend settings chosen before and after the engine exists', async () => {
+    const { audio, useAudioStore } = await load()
+    expect(useAudioStore.getState().expression.pedalMode).toBe('sustain')
+    audio.setExpression({ pedalMode: 'bend' })
+    await audio.start()
+    expect(fake.expression).toMatchObject({ pedalMode: 'bend', bendSemitones: 2 })
+    audio.setExpression({ bendSemitones: 1 })
+    expect(fake.expressions).toEqual([{ ...useAudioStore.getState().expression }])
+    expect(useAudioStore.getState().expression).toMatchObject({
+      pedalMode: 'bend',
+      bendSemitones: 1,
+    })
   })
 
   it('clamps octaves and split points', async () => {
