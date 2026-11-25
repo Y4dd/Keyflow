@@ -30,6 +30,7 @@ interface RenderResult {
 interface DevApi {
   inject(events: unknown[]): Promise<void>
   stop(): void
+  pianoKey(note: number): { x: number; y: number; lit: boolean } | null
   audio: {
     heldCount(): number
     heldByZone(): { main: number; left: number }
@@ -202,11 +203,10 @@ test('a start that came without user activation recovers on the next click', asy
 
 test('the on-screen key that starts audio also sounds', async ({ page }) => {
   await open(page)
-  const key = page.getByRole('group', { name: 'On-screen piano' }).locator('[data-note="62"]')
-  await key.scrollIntoViewIfNeeded()
-  const box = await key.boundingBox()
-  if (!box) throw new Error('D4 key not rendered')
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.85)
+  await page.getByRole('group', { name: 'On-screen piano' }).scrollIntoViewIfNeeded()
+  const d4 = await page.evaluate(() => (window as DevWindow).__keyflow!.pianoKey(62))
+  if (!d4) throw new Error('D4 key not drawn')
+  await page.mouse.move(d4.x, d4.y)
   await page.mouse.down()
   await expect(status(page)).toHaveAttribute('data-status', 'running')
   await expect.poll(() => held(page)).toBe(1)

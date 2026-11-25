@@ -26,7 +26,7 @@ function formatKnob(value: number, spec: KnobSpec): string {
 const ms = (v: number) => `${Math.round(v)} ms`
 
 function StatusLine() {
-  const { status, error, notesWaiting, latency } = useAudioStore()
+  const { status, error, notesWaiting, latency, startedBefore } = useAudioStore()
   const start = () => void audio.start()
   switch (status) {
     case 'unsupported':
@@ -44,9 +44,11 @@ function StatusLine() {
             </p>
           )}
           <p role="status">
-            {status === 'off'
-              ? 'Browsers start sound only after a click or key press on the page.'
-              : 'Starting audio...'}
+            {status === 'starting'
+              ? 'Starting audio...'
+              : startedBefore
+                ? 'Your sound settings are back. Click anywhere or press a key to turn sound on.'
+                : 'Browsers start sound only after a click or key press on the page.'}
           </p>
           <button type="button" onClick={start}>
             Start audio

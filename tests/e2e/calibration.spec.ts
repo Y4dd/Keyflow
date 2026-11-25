@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test'
 interface DevApi {
   inject(events: unknown[]): Promise<void>
   calibrationClicks(): { perf: number[]; context: number[] } | null
+  flushSettings(): Promise<void>
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
@@ -60,6 +61,11 @@ test('taps a known offset from the clicks and gets it back as the calibration', 
   await expect(out).toContainText(/\+4[01] ms/)
   await expect(out).toContainText('10 of 12 beats')
   await expect(timing(page).getByRole('button', { name: 'Calibrate' })).toBeEnabled()
+
+  // Saved with the settings (P0-T9): a reload keeps the offset.
+  await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
+  await page.reload()
+  await expect(timing(page).getByTestId('calibration-saved')).toContainText(/\+4[01] ms/)
 })
 
 test('stopping a run leaves no result and allows a new one', async ({ page }) => {

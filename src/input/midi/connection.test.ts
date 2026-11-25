@@ -263,6 +263,27 @@ describe('createMidiConnection: messages and hot-plug', () => {
     expect(t.events.at(-1)).toMatchObject({ kind: 'noteOn', note: 74 })
   })
 
+  it('a chosen input that comes back is listened to alone again', async () => {
+    const t = await connected()
+    t.access.plug(new FakePort('b', 'Other', ''))
+    t.conn.select('a')
+    t.access.unplug('a')
+    expect(t.conn.getSnapshot()).toMatchObject({ selectedId: null, preferredId: 'a' })
+    t.access.plug(t.port)
+    expect(t.conn.getSnapshot()).toMatchObject({ selectedId: 'a', preferredId: 'a' })
+  })
+
+  it('choosing an input that is not connected keeps all inputs until it appears', async () => {
+    const t = await connected()
+    t.conn.select('later') // e.g. the saved choice, applied before its device is plugged in
+    expect(t.conn.getSnapshot()).toMatchObject({ selectedId: null, preferredId: 'later' })
+    t.port.send([0x90, 75, 100])
+    expect(t.events.at(-1)).toMatchObject({ kind: 'noteOn', note: 75 })
+    t.access.plug(new FakePort('later', 'Later', ''))
+    expect(t.conn.getSnapshot().selectedId).toBe('later')
+    expect(t.events.at(-1)).toMatchObject({ kind: 'noteOff', note: 75 })
+  })
+
   it('dispose: releases everything and detaches', async () => {
     const t = await connected()
     t.port.send([0x90, 60, 100])

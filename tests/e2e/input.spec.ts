@@ -6,6 +6,7 @@ interface DevApi {
   inject(events: unknown[]): Promise<void>
   replay(fixture: unknown): Promise<void>
   stop(): void
+  pianoKey(note: number): { x: number; y: number; lit: boolean } | null
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
@@ -15,11 +16,28 @@ async function open(page: Page) {
   return page.getByRole('group', { name: 'On-screen piano' })
 }
 
-const key = (piano: ReturnType<Page['getByRole']>, note: number) =>
-  piano.locator(`[data-note="${note}"]`)
+// The canvas keyboard has no element per key; the dev API says where a key is and if it's lit.
+const pianoKey = (page: Page, note: number) =>
+  page.evaluate((n) => (window as DevWindow).__keyflow!.pianoKey(n), note)
+const lit = async (page: Page, note: number) => (await pianoKey(page, note))?.lit
+
+async function keyPoint(page: Page, note: number) {
+  await page.getByRole('group', { name: 'On-screen piano' }).scrollIntoViewIfNeeded()
+  const point = await pianoKey(page, note)
+  if (!point) throw new Error(`key ${note} not drawn`)
+  return point
+}
+
+test('the keyboard draws the 61 keys, C2 to C7', async ({ page }) => {
+  await open(page)
+  expect(await pianoKey(page, 36)).not.toBeNull()
+  expect(await pianoKey(page, 96)).not.toBeNull()
+  expect(await pianoKey(page, 35)).toBeNull()
+  expect(await pianoKey(page, 97)).toBeNull()
+})
 
 test('an injected chord lights the on-screen keys and shows as held', async ({ page }) => {
-  const piano = await open(page)
+  await open(page)
   await page.evaluate(() =>
     (window as DevWindow).__keyflow!.inject([
       { kind: 'noteOn', note: 60 },
@@ -28,20 +46,20 @@ test('an injected chord lights the on-screen keys and shows as held', async ({ p
     ]),
   )
   for (const note of [60, 64, 67]) {
-    await expect(key(piano, note)).toHaveAttribute('data-held', 'true')
+    await expect.poll(() => lit(page, note)).toBe(true)
   }
-  await expect(key(piano, 62)).toHaveAttribute('data-held', 'false')
+  await expect.poll(() => lit(page, 62)).toBe(false)
   await expect(page.getByTestId('held-notes')).toHaveText('C4 (60) E4 (64) G4 (67)')
 
   await page.evaluate(() => (window as DevWindow).__keyflow!.stop())
   for (const note of [60, 64, 67]) {
-    await expect(key(piano, note)).toHaveAttribute('data-held', 'false')
+    await expect.poll(() => lit(page, note)).toBe(false)
   }
   await expect(page.getByTestId('held-notes')).toHaveText('none')
 })
 
 test('a timed chord releases on its own', async ({ page }) => {
-  const piano = await open(page)
+  await open(page)
   await page.evaluate(() =>
     (window as DevWindow).__keyflow!.inject([
       { kind: 'noteOn', note: 52 },
@@ -52,7 +70,7 @@ test('a timed chord releases on its own', async ({ page }) => {
       { kind: 'noteOff', note: 59, at: 300 },
     ]),
   )
-  await expect(key(piano, 55)).toHaveAttribute('data-held', 'false')
+  await expect.poll(() => lit(page, 55)).toBe(false)
   await expect(page.getByTestId('held-notes')).toHaveText('none')
 })
 
@@ -67,9 +85,9 @@ test('a fixture replays through the MIDI parser', async ({ page }) => {
 })
 
 test('computer keys play notes, and Z/X shift the octave', async ({ page }) => {
-  const piano = await open(page)
+  await open(page)
   await page.keyboard.down('KeyA')
-  await expect(key(piano, 60)).toHaveAttribute('data-held', 'true')
+  await expect.poll(() => lit(page, 60)).toBe(true)
   await expect(page.getByTestId('held-notes')).toHaveText('C4 (60)')
   await page.keyboard.up('KeyA')
   await expect(page.getByTestId('held-notes')).toHaveText('none')
@@ -83,17 +101,14 @@ test('computer keys play notes, and Z/X shift the octave', async ({ page }) => {
 })
 
 test('pressing an on-screen key plays it until release', async ({ page }) => {
-  const piano = await open(page)
-  await key(piano, 62).scrollIntoViewIfNeeded()
-  const box = await key(piano, 62).boundingBox()
-  if (!box) throw new Error('D4 key not rendered')
-  // Low on the key, below the black keys.
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.85)
+  await open(page)
+  const d4 = await keyPoint(page, 62)
+  await page.mouse.move(d4.x, d4.y)
   await page.mouse.down()
-  await expect(key(piano, 62)).toHaveAttribute('data-held', 'true')
+  await expect.poll(() => lit(page, 62)).toBe(true)
   await expect(page.getByTestId('held-notes')).toHaveText('D4 (62)')
   await page.mouse.up()
-  await expect(key(piano, 62)).toHaveAttribute('data-held', 'false')
+  await expect.poll(() => lit(page, 62)).toBe(false)
   await expect(page.getByTestId('held-notes')).toHaveText('none')
 })
 
@@ -102,17 +117,15 @@ test.describe('touch', () => {
 
   test('tapping an on-screen key plays and releases it', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'Playwright emulates touch only in Chromium')
-    const piano = await open(page)
+    await open(page)
     // The inspector loads lazily; its log reads this once it's listening.
     const log = page.getByTestId('event-log')
     await expect(log).toHaveText('No events yet.')
-    await key(piano, 64).scrollIntoViewIfNeeded()
-    const box = await key(piano, 64).boundingBox()
-    if (!box) throw new Error('E4 key not rendered')
-    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height * 0.85)
+    const e4 = await keyPoint(page, 64)
+    await page.touchscreen.tap(e4.x, e4.y)
     // A tap is too quick to catch the lit key, so check the inspector's event log.
     await expect(log).toContainText(/onscreen\s+noteOn\s+64/)
     await expect(log).toContainText(/onscreen\s+noteOff\s+64/)
-    await expect(key(piano, 64)).toHaveAttribute('data-held', 'false')
+    await expect.poll(() => lit(page, 64)).toBe(false)
   })
 })

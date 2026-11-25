@@ -36,7 +36,12 @@ export interface AudioState {
   notesWaiting: boolean
   latency: LatencyReadout | null
   latencyHint: string | null
+  /** Sound ran on an earlier visit (saved settings), so the page can say a click brings it back. */
+  startedBefore: boolean
 }
+
+/** What saved settings restore (src/state/settings.ts). */
+export type RestoredSound = Pick<AudioState, 'layout' | 'knobs' | 'expression' | 'startedBefore'>
 
 const hasWebAudio = () =>
   typeof window !== 'undefined' &&
@@ -56,6 +61,7 @@ export const useAudioStore = create<AudioState>(() => ({
   notesWaiting: false,
   latency: null,
   latencyHint: null,
+  startedBefore: false,
 }))
 
 let engine: Engine | null = null
@@ -186,6 +192,18 @@ export const audio = {
     const expression = { ...get().expression, ...patch }
     set({ expression })
     engine?.setExpression(expression)
+  },
+
+  /** Applies saved settings, to the engine too if sound already started. */
+  restore(saved: RestoredSound) {
+    set(saved)
+    if (!engine) return
+    engine.setLayout(saved.layout)
+    engine.setExpression(saved.expression)
+    for (const [presetId, values] of Object.entries(saved.knobs)) {
+      for (const [id, value] of Object.entries(values))
+        engine.setKnob(presetId as PresetId, id, value)
+    }
   },
 
   refreshLatency,

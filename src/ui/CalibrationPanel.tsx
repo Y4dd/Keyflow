@@ -7,7 +7,13 @@ const signedMs = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${ms(Math.ab
 
 function Result() {
   const { last, offsetMs } = useCalibrationStore()
-  if (!last) return null
+  if (!last) {
+    return offsetMs == null ? null : (
+      <p className="muted" data-testid="calibration-saved">
+        Using your saved calibration, {signedMs(offsetMs)}.
+      </p>
+    )
+  }
   const counted = `${last.used} of ${last.beats} beats`
   return (
     <div data-testid="calibration-result" data-verdict={last.verdict}>

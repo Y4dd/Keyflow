@@ -7,11 +7,13 @@ import { attachComputerKeyboard } from './input/computer/keyboard.ts'
 import { attachAudioUnlock, audio } from './state/audio.ts'
 import { computerKeyboard, laptopBend } from './state/input.ts'
 import { midi } from './state/midi.ts'
+import { startSettings } from './state/settings.ts'
 
 // Outside React so StrictMode's double effects can't start them twice.
 // The audio controller subscribes first, so notes reach the engine before anything else.
 inputBus.subscribe(audio.handle)
 attachAudioUnlock(window)
+void startSettings()
 void midi.start()
 attachComputerKeyboard(computerKeyboard, window, laptopBend)
 

@@ -13,14 +13,14 @@ export interface CalibrationState {
   /** The latest run's result, usable or not. */
   last: CalibrationResult | null
   /**
-   * The offset in use (ms, positive = taps land after the click): the last usable run's.
-   * shortcut: not saved, so a reload forgets it; P0-T9 persists it with the other settings.
+   * The offset in use (ms, positive = taps land after the click): the last usable run's,
+   * saved with the settings (src/state/settings.ts).
    */
   offsetMs: number | null
   /**
    * The clock mapping's getOutputTimestamp lead (ms) when the offset in use was measured, null
    * if it used the fallback pair. Kept with the offset: the two mappings differ by this, so
-   * grading can tell which one the offset came from. P0-T9 must save it with the offset.
+   * grading can tell which one the offset came from. Saved with the offset.
    */
   outputTimestampLeadMs: number | null
 }

@@ -7,6 +7,9 @@ import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
 import { audio } from '../state/audio.ts'
 import { calibration } from '../state/calibration.ts'
+import { flushSettings } from '../state/settings.ts'
+import { BLACK_KEY, WHITE_KEY, ZONE_STRIP } from '../ui/canvas/keyboard.ts'
+import { keyPoint, keyRects } from '../ui/canvas/keys.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
@@ -46,6 +49,31 @@ export interface KeyflowDevApi {
   render(spec: RenderSpec): Promise<RenderResult>
   /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
   calibrationClicks(): { perf: number[]; context: number[] } | null
+  /** Writes pending settings to IndexedDB now, so a test can reload (P0-T9). */
+  flushSettings(): Promise<void>
+  /**
+   * A key of the canvas keyboard: a point on it in client px (to click), and whether it's drawn
+   * lit (its pixel there isn't the idle key colour). Null if the note isn't on the keyboard.
+   */
+  pianoKey(note: number): { x: number; y: number; lit: boolean } | null
+}
+
+function pianoKey(note: number) {
+  const canvas = document.querySelector<HTMLCanvasElement>('canvas.piano-canvas')
+  const rect = canvas?.getBoundingClientRect()
+  const key = rect && keyRects(rect.width, rect.height, ZONE_STRIP).find((k) => k.note === note)
+  if (!canvas || !rect || !key) return null
+  const p = keyPoint(key)
+  const dpr = canvas.width / rect.width
+  const pixel = canvas
+    .getContext('2d')!
+    .getImageData(Math.floor(p.x * dpr), Math.floor(p.y * dpr), 1, 1).data
+  const idle = key.black ? BLACK_KEY : WHITE_KEY
+  return {
+    x: rect.left + p.x,
+    y: rect.top + p.y,
+    lit: idle.some((c, i) => c !== pixel[i]),
+  }
 }
 
 declare global {
@@ -78,5 +106,7 @@ export function installDevTools() {
     // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),
     calibrationClicks: () => calibration.clicks(),
+    flushSettings,
+    pianoKey,
   }
 }

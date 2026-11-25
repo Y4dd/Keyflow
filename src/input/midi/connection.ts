@@ -48,8 +48,13 @@ export interface MidiSnapshot {
   status: OnboardingState
   /** Connected inputs. */
   inputs: MidiInputInfo[]
-  /** Null = listen to every input. */
+  /** The input listened to alone; null = every input. Only ever a connected one. */
   selectedId: string | null
+  /**
+   * The user's choice of input (null = every input), kept while that input is unplugged so it
+   * is listened to alone again when it comes back. Settings save this one.
+   */
+  preferredId: string | null
   /** Reversed pedal polarity, for every input. */
   invertPedal: boolean
   /**
@@ -96,6 +101,7 @@ export function createMidiConnection(
     status: initialOnboardingState,
     inputs: [],
     selectedId: null,
+    preferredId: null,
     invertPedal: false,
     noInputYet: false,
     error: null,
@@ -155,6 +161,9 @@ export function createMidiConnection(
     for (const event of entry.parser.releaseAll(time)) emit(event)
   }
 
+  // Attached = connected (refresh keeps them in sync).
+  const connectedOrNull = (id: string | null) => (id !== null && attached.has(id) ? id : null)
+
   /** Syncs attached inputs with the connected ones. Returns the connected count. */
   function refresh(): number {
     if (access === null) return 0
@@ -180,15 +189,25 @@ export function createMidiConnection(
       name: p.name || 'Unnamed MIDI input',
       manufacturer: p.manufacturer ?? '',
     }))
+    // Selecting an input that isn't there would silently filter out every remaining one.
+    const selectedId = connectedOrNull(snap.preferredId)
+    if (selectedId !== snap.selectedId) releaseUnlistened(selectedId, now)
     snap = {
       ...snap,
       inputs,
-      // A selected input that went away would silently filter out every remaining one.
-      selectedId:
-        snap.selectedId !== null && connected.has(snap.selectedId) ? snap.selectedId : null,
+      selectedId,
       noInputYet: connected.size === 0 ? false : snap.noInputYet,
     }
     return connected.size
+  }
+
+  /** Releases what's held on inputs that a new selection no longer listens to. */
+  function releaseUnlistened(selectedId: string | null, now: number) {
+    if (selectedId === null) return
+    for (const entry of attached.values()) {
+      if (entry.port.id !== selectedId)
+        for (const event of entry.parser.releaseAll(now)) emit(event)
+    }
   }
 
   async function doRequest(silent: boolean) {
@@ -232,14 +251,9 @@ export function createMidiConnection(
     },
     request: () => request(false),
     select(id) {
-      const now = env.now()
-      update({ selectedId: id })
-      // Release anything held on inputs that are no longer listened to.
-      for (const entry of attached.values()) {
-        if (id !== null && entry.port.id !== id) {
-          for (const event of entry.parser.releaseAll(now)) emit(event)
-        }
-      }
+      const selectedId = connectedOrNull(id)
+      update({ selectedId, preferredId: id })
+      releaseUnlistened(selectedId, env.now())
     },
     setInvertPedal(invert) {
       update({ invertPedal: invert })
