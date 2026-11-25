@@ -109,7 +109,7 @@ _Built and pushed as 9823a0f (CI fix bd32a39: a silent PulseAudio device so Fire
 - **Automated:** unit tests for voice allocation and the legato-glide decision logic.
 - **Manual:** each preset sounds good, nothing clicks or clips, and velocity is audible.
 
-### P0-T6: Split keyboard
+### P0-T6: Split keyboard [built 2026-11-24, manual check pending]
 - Two zones with a movable split point (default: a sensible point such as F3 or G3; verify on the real keyboard). Each zone has its own preset and octave transpose. Default: Wobble Bass on the left, Funk Lead on the right.
 - **Automated:** zone routing unit tests.
 - **Manual:** left-hand bass plus right-hand lead at the same time, with no stuck notes.

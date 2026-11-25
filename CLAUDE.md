@@ -7,7 +7,17 @@ A browser app that teaches an adult to play **synth solos and chords over groove
 2. Read the current phase file in [`docs/phases/`](docs/phases/), and take **one task ID** (e.g. `P0-T3`) at a time.
 3. Read [`docs/architecture.md`](docs/architecture.md) before writing code and [`docs/learning-design.md`](docs/learning-design.md) before touching drills, grading or feedback.
 4. **Phases are open to discussion.** If a task should change, propose it to the user first. Once agreed, update the phase file **and** add a dated line to the decisions log in `PLAN.md`. Don't silently diverge from the plan.
-5. When a task is finished, mark its heading in the phase file (`[done YYYY-MM-DD]`) and update the phase status in `PLAN.md`.
+5. When a task is finished, mark its heading in the phase file (`[done YYYY-MM-DD]`) and update the phase status in `PLAN.md`. A task whose manual check hasn't happened yet is marked `[built YYYY-MM-DD, manual check pending]`, never `[done]`.
+
+## Working autonomously (standing authorization from the user)
+The user wants to be in the loop as little as possible. Work through tasks in order without stopping to ask about routine steps.
+- **Commit and push without asking.** When a task (or a self-contained part of one) passes typecheck, lint, format:check, test and test:e2e, commit it to `main` and push. Don't ask "commit?", "push?" or "should I run the tests?". Then confirm CI yourself (one background `gh run watch`, not a polling loop) and fix any failure before moving on. Pushing to `main` deploys to the public Pages site, and the user has accepted that.
+- **Manual checks are batched, not blocking.** Hand the user only what needs their hands, ears or the real keyboard. Anything the simulated MIDI source or Playwright can cover is never a manual check. Each manual check is a short, concrete script of what to play and what to listen for. Add it to **Manual checks waiting** in `PLAN.md`, mark the task `[built …, manual check pending]`, and carry on to the next task.
+- **Stop for the user only when:**
+  1. a task should change what it delivers (rule 4 above, unchanged);
+  2. an action is destructive: force-push, rewriting history, deleting user data, or a Dexie change without a migration;
+  3. the next task depends on the result of a manual check that is still waiting, or a phase is finished (all its tasks built). Then present the whole queue at once.
+- Small implementation choices are yours: decide, add a decisions-log line if it matters later, and mention it in the end-of-task summary rather than asking.
 
 ## Commands (Node 26)
 ```sh

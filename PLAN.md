@@ -51,7 +51,7 @@ Learning principles behind all of this: [`docs/learning-design.md`](docs/learnin
 
 Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteria, open questions and done-when. AI sessions should take **one task ID at a time**, by default in the order listed.
 
-**Task status** is tracked in each phase file by adding a marker after the task heading, e.g. `### P0-T3: Input bus and MIDI layer [done 2026-12-01]` or `[in progress]`. Headings with no marker are not started. This table tracks phase-level status.
+**Task status** is tracked in each phase file by adding a marker after the task heading, e.g. `### P0-T3: Input bus and MIDI layer [done 2026-12-01]` or `[in progress]`, or `[built 2026-12-01, manual check pending]` when only the user's manual check is left. Headings with no marker are not started. This table tracks phase-level status.
 
 | # | Phase | Status | File |
 |---|---|---|---|
@@ -64,6 +64,14 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 | 6 | Sound lab and leads library | Not started | [phase-6-sound-lab-leads.md](docs/phases/phase-6-sound-lab-leads.md) |
 
 Status values: `Not started`, `In progress (task X)`, `Done`, `Revised (see log)`.
+
+---
+
+## Manual checks waiting
+
+Checks only the user can do (hands, ears, the real YPT-380). Work carries on past them; do them in a batch when convenient. Each entry links to its script in the phase file. When one passes, remove it here and mark the task `[done …]`.
+
+- **P0-T6 split keyboard:** manual checks 1–6 under P0-T6 in [phase-0-foundation.md](docs/phases/phase-0-foundation.md), dev server and deployed page, Firefox and Chrome. Check 6 is your choice of default split point and octave shifts.
 
 ---
 
@@ -96,6 +104,7 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-23: Master chain is gain → limiter → safety clip. The limiter (a DynamicsCompressor) is the spec; the safety clip is an addition, **agreed by the user**, who chose to keep the chain as built (option (a) in the Phase 0 open question): playing through it feels instant despite the limiter's 6 ms. The compressor isn't a ceiling: a ten-note full-velocity EP chord peaked at 1.16 through it. The clip is a WaveShaper, exactly linear up to 0.9 and below full scale beyond, with no delay; e2e renders check that playing as hard as the YPT-380 recording stays in its linear part. Measured: the compressor delays all sound by 6.0 ms in both browsers (see Findings).
 - 2026-11-23: Voice logic is Keyflow's own, not Tone's PolySynth or MonoSynth, so it can be unit-tested and the legato-only glide controlled per note. Poly: 10 voices; a pitch replays on the voice still ringing it; when all are busy the oldest held note is stolen. Mono: last-note priority; lifting the sounding key returns legato (with glide) to the newest key still held. Both ref-count a pitch pressed by two sources. The Wobble Bass sub rejoins after the compressor, so neither distortion nor compression touches it; the saws' amp gate sits before their compressor, because the compressor's 6 ms delay made a gate after it open on the previous note's pitch. Pedal and bend events reach the engine but do nothing until P0-T7. Radios, checkboxes and sliders no longer stop the computer keys from playing (only text fields do).
 - 2026-11-24: **Split keyboard works like the YPT-380's own split (plan change, agreed by the user).** The P0-T6 spec had two fixed zones; the user chose an on/off split instead, so one sound can still cover the whole keyboard (two-handed EP Keys comping). A **main** sound plays the whole keyboard, or the keys from the split point up when Split is on; a **left** sound plays the keys below it. Each has its own preset and octave shift (−2 to +2). Defaults: Split on at G3 (MIDI 55; C4 = middle C = 60, the app's naming), Wobble Bass left, Funk Lead main, no octave shift. The split point is set from a menu or, also agreed, by pressing a key (that key becomes the main sound's lowest and doesn't sound). A note-off follows the route its note-on took, never the current layout, so moving the split or an octave while keys are held can't strand a note. Each zone has its own instrument instance, even when both use the same preset; knob values stay per preset and reach every instance of it.
+- 2026-11-25: **Autonomous workflow (the user's request).** Claude commits and pushes to `main` without asking once typecheck, lint, format:check, test and test:e2e pass, then confirms CI itself. Manual checks go into a "Manual checks waiting" queue here and don't block the next task. Claude stops only for changes to what a task delivers, destructive actions, or a manual check the next task depends on, and otherwise at the end of each phase. New task marker: `[built …, manual check pending]`. Rules are in `CLAUDE.md`.
 
 ---
 
