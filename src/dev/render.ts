@@ -30,6 +30,11 @@ export interface RenderSpec {
   windows?: [number, number][]
   /** Set to estimate each window's pitch (pitchHz in ./signal.ts), searching this range. */
   pitchRange?: [minHz: number, maxHz: number]
+  /**
+   * Seconds into the render at which the notes are sent. Notes timed before it arrive late, as
+   * live input can in Chromium, whose clock moves on during a task: Tone clamps their times.
+   */
+  sendAt?: number
 }
 
 export interface RenderResult {
@@ -46,7 +51,7 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
   const preset = getPreset(spec.preset)
   const knobs = { ...defaultKnobs(preset), ...spec.knobs }
   const buffer = await Tone.Offline(
-    () => {
+    (context) => {
       const master =
         spec.master === false ? null : createMaster({ limiter: spec.master !== 'noLimiter' })
       const instrument = createInstrument(
@@ -61,13 +66,17 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
         { time: n.off, on: false, n },
       ])
       events.sort((a, b) => a.time - b.time || Number(a.on) - Number(b.on))
-      for (const { time, on, n } of events) {
-        if (on) instrument.noteOn(n.note, n.velocity, time)
-        else instrument.noteOff(n.note, time)
+      const send = () => {
+        for (const { time, on, n } of events) {
+          if (on) instrument.noteOn(n.note, n.velocity, time)
+          else instrument.noteOff(n.note, time)
+        }
+        for (const b of [...(spec.bends ?? [])].sort((x, y) => x.at - y.at)) {
+          instrument.bend(b.semitones, b.at, b.ramp)
+        }
       }
-      for (const b of [...(spec.bends ?? [])].sort((x, y) => x.at - y.at)) {
-        instrument.bend(b.semitones, b.at, b.ramp)
-      }
+      if (spec.sendAt === undefined) send()
+      else context.setTimeout(send, spec.sendAt)
     },
     spec.duration,
     1,

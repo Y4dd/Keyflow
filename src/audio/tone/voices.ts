@@ -235,11 +235,14 @@ export function createFmVoice(
       // can read the same time for several events (P0-T7 e2e), so a steal or a key pressed twice
       // in one tick would throw on the hot path; start a millisecond later instead.
       const time = Math.max(at, lastStart + 0.001)
-      lastStart = time
       synth.modulationIndex.setValueAtTime(fmIndex(velocity, brightness) / FM_INTERNAL_GAIN, time)
       level.gain.cancelAndHoldAtTime(time)
       level.gain.linearRampToValueAtTime(gain / FM_INTERNAL_GAIN, time + 0.003)
       synth.triggerAttack(hz, time, 1)
+      // Tone moves a start time that is already past up to the clock, and Chromium's clock moves
+      // on during a task (Phase 0 Findings), so the oscillators may have started later than
+      // `time`. The clock read after the call is never earlier than that.
+      lastStart = Math.max(time, synth.immediate())
     },
     stop: (time) => void synth.triggerRelease(time),
     // FMSynth's detune moves the carrier and the modulator together.

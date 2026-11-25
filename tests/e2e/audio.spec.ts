@@ -14,6 +14,7 @@ interface RenderSpec {
   duration: number
   master?: boolean
   windows?: [number, number][]
+  sendAt?: number
 }
 interface WindowStats {
   peak: number
@@ -328,4 +329,20 @@ test('the master chain adds almost no delay', async ({ page }) => {
   const delayMs = (limited - direct) * 1000
   info('master chain delay (ms)', delayMs)
   expect(delayMs).toBeLessThan(10)
+})
+
+test('ep-keys: a pitch struck twice after the clock passed its time plays, without a Tone error', async ({
+  page,
+}) => {
+  await open(page)
+  // Both presses ask for 0.01 s but arrive at 0.05 s, so Tone clamps both starts to the clock:
+  // live input meets this when the clock ticks between reading the time and starting the note.
+  const r = await render(page, {
+    preset: 'ep-keys',
+    notes: [60, 60].map((note) => ({ note, velocity: 0.8, on: 0.01, off: 0.4 })),
+    sendAt: 0.05,
+    duration: 0.5,
+    windows: [[0.1, 0.3]],
+  })
+  expect(r.windows[0].rmsDb).toBeGreaterThan(-40)
 })
