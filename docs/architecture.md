@@ -74,8 +74,8 @@ There are three clocks. Keep them straight.
 | Audio time (s) | `AudioContext.currentTime` (= `Tone.immediate()`) | Scheduling sound. Note that `Tone.now()` = currentTime **+ look-ahead**. |
 | Musical time | Tone Transport position (bars:beats:sixteenths) and ticks | Grooves, grading against the beat |
 
-- Map performance time to audio time with `AudioContext.getOutputTimestamp()`, which gives the pair `{contextTime, performanceTime}`.
-- **Grading** converts each input event's timestamp into musical time, then applies the user's stored **calibration offset** (from the Phase 0 tap test) before comparing with the expected beat.
+- Map audio time to performance time with `contextToPerfMs(readClock(...), t)` (`src/audio/latency.ts`, P0-T8; the engine's `clock()`). It pairs the clocks with `AudioContext.getOutputTimestamp()` (`{contextTime, performanceTime}`) when that reads sane, else with `currentTime` and `performance.now()` read together. Calibration and grading must both use it, or the offset means something different in each.
+- **Grading** converts each input event's timestamp into musical time, then applies the user's stored **calibration offset** (from the Phase 0 tap test) before comparing with the expected beat. The offset (P0-T8, `src/audio/calibration.ts`) is the median of tap `time` minus the click mapped to performance time; positive means the user lands late, so subtract it from an input's time before comparing.
 - **Verify in Phase 0:** that `getOutputTimestamp()` and `outputLatency` are available and sane in both Firefox and Chrome on the user's laptop. Record the findings in the Phase 0 file.
 
 ## Pitch representation

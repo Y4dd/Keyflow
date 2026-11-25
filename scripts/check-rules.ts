@@ -28,6 +28,7 @@ export const PURE_PATHS = [
   'src/audio/zones.ts',
   'src/audio/curves.ts',
   'src/audio/expression.ts',
+  'src/audio/calibration.ts',
   'src/audio/presets/',
 ]
 /** `practice/` may call storage (architecture.md); keep those calls in this folder. */

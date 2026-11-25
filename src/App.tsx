@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { CalibrationPanel } from './ui/CalibrationPanel.tsx'
 import { MidiPanel } from './ui/MidiPanel.tsx'
 import { PlayPanel } from './ui/PlayPanel.tsx'
 import { SoundPanel } from './ui/SoundPanel.tsx'
@@ -16,6 +17,7 @@ export function App() {
       <MidiPanel />
       <SoundPanel />
       <PlayPanel />
+      <CalibrationPanel />
       {Inspector && (
         <Suspense fallback={null}>
           <Inspector />

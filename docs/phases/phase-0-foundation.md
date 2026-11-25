@@ -143,11 +143,20 @@ _Built 2026-11-25. Code: `src/audio/expression.ts` (pure: pedal modes and bend s
 5. **Taste. Laptop bend.** Hold a lead note on the YPT-380 and hold **Space**: the pitch bends up while Space is held. Then scroll (mouse wheel or touchpad) over the on-screen keys: the pitch follows and springs back when you stop. Which bend key do you prefer (Space or \\), and are the scroll direction and speed right?
 6. **Must-pass. Firefox.** Repeat steps 1 and 2 in Firefox. Pass and fail as there.
 
-### P0-T8: Latency calibration
+### P0-T8: Latency calibration [built 2026-11-25, manual check pending]
 - Tap test: a click plays for 8–16 beats and the user taps any key on the beat. Store the median offset (ms) as the calibration offset. Show its spread; if it's too noisy, ask to retry.
 - Show a latency readout (`outputLatency` where available) and setup tips: wired headphones into the laptop, turn the keyboard's **Local Control off** so its built-in sound doesn't double the app's, close other music apps.
 - **Automated:** unit test for offset computation with outlier rejection.
 - **Manual:** calibrate in both browsers and record the values in Findings.
+
+_Built 2026-11-25. Code: `src/audio/calibration.ts` (pure: each tap to its nearest click, one per beat, count-in skipped, median/MAD outlier rejection with a 40 ms floor, the median offset, the spread as a standard deviation, and a verdict); `readClock` and `contextToPerfMs` in `src/audio/latency.ts` (the one audio-clock to performance-time mapping, from `getOutputTimestamp()` when it reads sane, else `currentTime` with `performance.now()`); the engine's `clock()` and `playClicks()` (`src/audio/tone/engine.ts`: clicks scheduled up front on the audio clock, through the master); `src/state/calibration.ts` (the run: taps are the input events' own timestamps, collected off the input bus; a run stops if sound stops; the offset is kept in memory only until P0-T9 saves settings); `src/ui/CalibrationPanel.tsx` (the Timing panel: tips, latency readout, Calibrate and Stop, the result with one suggestion). The test: 16 clicks at 100 BPM, the first of each four higher; the first four are a count-in; at least 8 of the 12 beats must count and the spread must be at most ±30 ms. Choices are in the decisions log (2026-11-25, P0-T8). Automated: unit tests for the offset computation (median, negative offsets, outliers, the floor, double taps, the nearest beat, too few taps, too noisy) and the clock mapping (sane timestamp, every fallback); e2e in both browsers taps 40 ms late through the sim with an outlier, a missed beat and a count-in tap, and reads back +40 ms from 10 of 12 beats, with the clicks 600 ms apart on the audio clock and in the near future; stopping a run leaves no result._
+
+**Manual checks (the deployed page after the push; Chrome, then Firefox for step 4; Local Control off; wired headphones; click Start audio, then find the Timing panel):**
+1. **Must-pass. The clicks.** Click **Calibrate** and just listen. Pass: 16 evenly spaced clicks, the first of every four higher, then a result line ("Only 0 of 12 beats had a tap" is right here). Fail: no sound, a missing or late click, a crackle, or a stutter.
+2. **Must-pass. Calibrate in Chrome.** Click **Calibrate**, let four clicks go by, then tap any key on the YPT-380 on every click. Pass: "Calibrated: your taps land … ms from the click" appears. Fail: "too uneven" or "only … beats" on three tries in a row while you tapped steadily. Write down the offset, the spread and the **Output latency** line (with its output timestamp, if shown).
+3. **Must-pass. Repeat it.** Do step 2 twice more. Pass: the three offsets are within about 15 ms of each other. Fail: they differ by more.
+4. **Must-pass. Firefox.** Steps 2 and 3 in Firefox. Same pass and fail; write the values down too (they may differ from Chrome's: Firefox delivered MIDI about 25 ms later in P0-T2, which is why calibration is per browser).
+5. **Taste. The test itself.** Were 100 BPM and 16 clicks comfortable? Say faster, slower, longer or shorter if not. It becomes the default.
 
 ### P0-T9: Canvas keyboard and settings
 - 61-key canvas keyboard showing held keys, with velocity as intensity, the zones and the split point.

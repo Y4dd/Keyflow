@@ -6,6 +6,7 @@ import { fixtureToSimEvents, parseFixture } from '../input/sim/fixture.ts'
 import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
 import { audio } from '../state/audio.ts'
+import { calibration } from '../state/calibration.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
@@ -43,6 +44,8 @@ export interface KeyflowDevApi {
   }
   /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
   render(spec: RenderSpec): Promise<RenderResult>
+  /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
+  calibrationClicks(): { perf: number[]; context: number[] } | null
 }
 
 declare global {
@@ -74,5 +77,6 @@ export function installDevTools() {
     },
     // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),
+    calibrationClicks: () => calibration.clicks(),
   }
 }

@@ -18,7 +18,7 @@ import {
   type ExpressionSettings,
   type ExpressionTargets,
 } from '../expression.ts'
-import { readLatency, type LatencyReadout } from '../latency.ts'
+import { readClock, readLatency, type ClockPair, type LatencyReadout } from '../latency.ts'
 import { getPreset } from '../presets/index.ts'
 import type { KnobValues, PresetId } from '../presets/types.ts'
 import { createZoneRouter, ZONE_IDS, type KeyboardLayout, type ZoneId } from '../zones.ts'
@@ -46,6 +46,13 @@ export interface Engine {
   releaseAll(): void
   latency(): LatencyReadout
   latencyHint(): string
+  /** The audio clock against performance time (src/audio/latency.ts, readClock). */
+  clock(): ClockPair
+  /**
+   * Schedules metronome clicks at audio-clock times (s), the first of every `accentEvery`
+   * higher. Returns a function that stops and removes them.
+   */
+  playClicks(times: readonly number[], accentEvery: number): () => void
   /** Dev tools: pitches a zone's instruments hold (including presets switched away from). */
   heldCount(zone: ZoneId): number
   currentTime(): number
@@ -178,6 +185,17 @@ export function createEngine(options: EngineOptions): Engine {
     releaseAll,
     latency: () => readLatency(context.rawContext),
     latencyHint: () => String(context.latencyHint),
+    clock: () => readClock(context.rawContext, performance.now(), Tone.immediate()),
+    playClicks(times, accentEvery) {
+      // Through the master like every sound, so the offset includes its 6 ms.
+      const click = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 },
+        volume: -10,
+      }).connect(master.input)
+      times.forEach((t, i) => click.triggerAttackRelease(i % accentEvery ? 880 : 1760, 0.03, t))
+      return () => click.dispose()
+    },
     heldCount(zone) {
       let n = 0
       for (const [key, instrument] of instruments)

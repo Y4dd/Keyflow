@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { nativeContextOf, readLatency } from './latency.ts'
+import { contextToPerfMs, nativeContextOf, readClock, readLatency } from './latency.ts'
 
 const native = {
   currentTime: 1.5,
@@ -52,5 +52,28 @@ describe('nativeContextOf', () => {
     expect(nativeContextOf({ _nativeAudioContext: native })).toBe(native)
     expect(nativeContextOf({ _nativeAudioContext: { currentTime: 0 } })).toBeNull()
     expect(nativeContextOf(undefined)).toBeNull()
+  })
+})
+
+describe('readClock', () => {
+  const at = (ts: unknown) => ({
+    _nativeAudioContext: { currentTime: 0, destination: {}, getOutputTimestamp: () => ts },
+  })
+
+  it('pairs the clocks from getOutputTimestamp and reports its lead', () => {
+    // currentTime 2.0 s at perf 5000 ms; the timestamp says 1.99 s leaves at 5030 ms.
+    const clock = readClock(at({ contextTime: 1.99, performanceTime: 5030 }), 5000, 2.0)
+    expect(clock.contextTime).toBe(1.99)
+    expect(clock.outputTimestampLeadMs).toBeCloseTo(40)
+    expect(contextToPerfMs(clock, 2.5)).toBeCloseTo(5540)
+  })
+
+  it('falls back to currentTime and performance.now() when the timestamp is missing or off', () => {
+    const fallback = { contextTime: 2, performanceTime: 5000, outputTimestampLeadMs: null }
+    expect(readClock({}, 5000, 2)).toEqual(fallback)
+    expect(readClock(at({ contextTime: 0, performanceTime: 0 }), 5000, 2)).toEqual(fallback)
+    expect(readClock(at({ contextTime: 1.9 }), 5000, 2)).toEqual(fallback)
+    expect(readClock(at({ contextTime: 2, performanceTime: 9000 }), 5000, 2)).toEqual(fallback)
+    expect(contextToPerfMs(fallback, 2.6)).toBeCloseTo(5600)
   })
 })
