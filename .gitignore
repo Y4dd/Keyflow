@@ -28,3 +28,6 @@ blob-report
 *.sln
 *.sw?
 dist-e2e
+
+# Claude Code settings for this machine only (e.g. ECC hook flags)
+.claude/settings.local.json

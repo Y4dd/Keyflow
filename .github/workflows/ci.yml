@@ -29,6 +29,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+      - run: npm run check:rules
       - run: npx playwright install --with-deps chromium firefox
       # The runner has no sound device. Chromium falls back to a silent output on its own;
       # Firefox's AudioContext never starts without one, so give it a silent PulseAudio sink.

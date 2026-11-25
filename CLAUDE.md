@@ -11,13 +11,33 @@ A browser app that teaches an adult to play **synth solos and chords over groove
 
 ## Working autonomously (standing authorization from the user)
 The user wants to be in the loop as little as possible. Work through tasks in order without stopping to ask about routine steps.
-- **Commit and push without asking.** When a task (or a self-contained part of one) passes typecheck, lint, format:check, test and test:e2e, commit it to `main` and push. Don't ask "commit?", "push?" or "should I run the tests?". Then confirm CI yourself (one background `gh run watch`, not a polling loop) and fix any failure before moving on. Pushing to `main` deploys to the public Pages site, and the user has accepted that.
-- **Manual checks are batched, not blocking.** Hand the user only what needs their hands, ears or the real keyboard. Anything the simulated MIDI source or Playwright can cover is never a manual check. Each manual check is a short, concrete script of what to play and what to listen for. Add it to **Manual checks waiting** in `PLAN.md`, mark the task `[built …, manual check pending]`, and carry on to the next task.
+- **Commit and push without asking.** When a task (or a self-contained part of one) passes typecheck, lint, format:check, test, check:rules and test:e2e, and the review below is done, commit it to `main` and push. Don't ask "commit?", "push?" or "should I run the tests?". Then confirm CI yourself (one background `gh run watch`, not a polling loop) and fix any failure before moving on. Pushing to `main` deploys to the public Pages site, and the user has accepted that.
+- **Review before committing.** Run `ecc:typescript-reviewer` on the task's diff, plus `ecc:react-reviewer` when `.tsx` files changed, as read-only subagents in parallel. Each brief gives the task ID, the diff (`git diff` against the last commit before the task) and tells the agent to read `CLAUDE.md`'s hard rules first. Fix the findings you confirm in the code, re-run the checks, and list dismissed findings with a one-line reason in the task report. Agents never play audio or open a browser.
+- **Manual checks are batched, not blocking.** Add each one to **Manual checks waiting** in `PLAN.md`, mark the task `[built …, manual check pending]`, and carry on. How to write them is under "Manual checks" below.
 - **Stop for the user only when:**
   1. a task should change what it delivers (rule 4 above, unchanged);
   2. an action is destructive: force-push, rewriting history, deleting user data, or a Dexie change without a migration;
-  3. the next task depends on the result of a manual check that is still waiting, or a phase is finished (all its tasks built). Then present the whole queue at once.
+  3. the next task appears in a waiting check's **blocks** list, three must-pass checks are waiting, or a phase is finished (all its tasks built). Then present the whole queue as one run (see below).
 - Small implementation choices are yours: decide, add a decisions-log line if it matters later, and mention it in the end-of-task summary rather than asking.
+
+## Sessions: the Main Agent and one session per task
+The user's **Main Agent** session coordinates; each task runs in its own fresh session that the Main Agent starts, so no task inherits another's context.
+- **Main Agent** writes no code. To run a task: check the stop rules above against `PLAN.md`, then start one session (`start_session`, fresh context, `use_worktree: false`, since it commits straight to `main` in this checkout) titled with the task ID, whose brief is the task ID and "follow the task-session loop in CLAUDE.md". Run **one task session at a time**: they share the checkout and `main`. When its report arrives, verify it (the commit is on `origin/main`, CI passed, the phase marker and queue are updated), then start the next task. Tell the user only what the stop rules say to; otherwise report progress in a line.
+- **Task session loop:**
+  1. Read this file, `PLAN.md`, the phase file and the docs named in "Before any work". If the task is in a waiting check's **blocks** list, stop and report that.
+  2. Mark the heading `[in progress]`, build it with tests (pure logic test-first), and run every check.
+  3. Review (above), fix, re-check.
+  4. Update the phase marker, the status table, the queue and the decisions log; commit and push; confirm CI and fix it if it fails.
+  5. Finish with a report whose first line is `<task ID>: done`, `<task ID>: built, manual check queued` or `<task ID>: blocked: <reason>`, then the commit hash, CI result, decisions made, review findings dismissed, and any `rules-allow` added.
+- A task session only writes `PLAN.md` and the phase files for its own task. If the Main Agent ever runs two sessions at once, they must be read-only or in separate worktrees, and only the Main Agent edits `PLAN.md`.
+
+## Manual checks
+Batching means later tasks get built on checks you haven't done yet. These rules keep that safe.
+- **Only hands, ears or the real keyboard.** Anything the simulated MIDI source, an offline render or Playwright can check is automated, never a manual check.
+- **Each check script** has at most six steps, one setup line (browser, page, Local Control off), and for every step says what a pass sounds or looks like *and* what a failure looks like. Steps are labelled **must-pass** (works or doesn't: stuck notes, clicks, wrong sound, lag) or **taste** (a preference that becomes a default). Taste never blocks anything.
+- **Queue entries** in `PLAN.md` give the task, the must-pass and taste step numbers, **blocks** (task IDs whose work depends on a must-pass result, or "none"), the browsers needed (both only when audio or MIDI timing changed), and minutes.
+- **One run:** when work stops, the Main Agent gives the user one combined script for every waiting check, ordered so setup happens once.
+- **Results are shorthand.** `P0-T6 pass`, `P0-T6 3 fail: F3 kept sounding`, `P0-T6 taste: split F3, left −1`. A pass marks the task `[done …]` and removes the entry. A failure becomes the next task: first reproduce it as an automated test (the simulated source, or a fixture recorded with the dev inspector), then fix it, so the same failure never needs checking by hand again. A taste answer becomes the default and gets a decisions-log line.
 
 ## Commands (Node 26)
 ```sh
@@ -28,8 +48,9 @@ npm run lint         # oxlint (not ESLint)
 npm run format       # Prettier write   (format:check in CI)
 npm test             # Vitest unit tests: src/**/*.test.ts(x)
 npm run test:e2e     # Playwright, Chromium + Firefox, tests/e2e/
+npm run check:rules  # the hard rules a script can check (scripts/check-rules.ts)
 ```
-Run typecheck, lint, format:check and test before calling a task done. CI (`.github/workflows/ci.yml`) runs all of them, then deploys `main` to GitHub Pages (`VITE_BASE` is set to the repo sub-path there).
+Run typecheck, lint, format:check, test and check:rules before calling a task done. A line can opt out of one rule only with `// rules-allow: <rule>: <reason>`; use it rarely and mention each one in the task report. CI (`.github/workflows/ci.yml`) runs all of them, then deploys `main` to GitHub Pages (`VITE_BASE` is set to the repo sub-path there).
 
 ## Stack (rationale in `docs/architecture.md`)
 TypeScript 7 (strict) · Vite 8 · React 19 · Zustand · Tone.js over Web Audio · tonal · ts-fsrs · Dexie (IndexedDB) · Canvas 2D · Vitest · Playwright · oxlint · Prettier · GitHub Pages. Versions are exact-pinned. Check licenses before adding a dependency.

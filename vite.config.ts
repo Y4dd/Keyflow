@@ -15,7 +15,7 @@ export default defineConfig(({ command }) => ({
     ),
   },
   test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     environment: 'node',
   },
 }))
