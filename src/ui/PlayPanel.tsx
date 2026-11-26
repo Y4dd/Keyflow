@@ -1,6 +1,7 @@
 import { Fragment, useSyncExternalStore } from 'react'
 import { Note } from 'tonal'
 import { computerKeyboard } from '../state/input.ts'
+import { useViewStore, view } from '../state/view.ts'
 import { LiveInput } from './LiveInput.tsx'
 import { OnscreenPiano } from './OnscreenPiano.tsx'
 import { SplitControls } from './SoundPanel.tsx'
@@ -16,6 +17,7 @@ const keys = (letters: string) =>
 export function PlayPanel() {
   // Changes only on Z/X, never per note.
   const base = useSyncExternalStore(computerKeyboard.subscribe, computerKeyboard.getBaseNote)
+  const letters = useViewStore((s) => s.keyLetters)
   return (
     <section className="card play" aria-labelledby="play-tab">
       <h2 className="tab" id="play-tab">
@@ -36,6 +38,14 @@ export function PlayPanel() {
         </span>
         .
       </p>
+      <label className="check keys-letters">
+        <input
+          type="checkbox"
+          checked={letters}
+          onChange={(e) => view.setKeyLetters(e.target.checked)}
+        />
+        Show the computer-key letters on the keys
+      </label>
     </section>
   )
 }

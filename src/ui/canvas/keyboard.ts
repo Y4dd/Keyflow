@@ -1,44 +1,53 @@
 // Draws the 61-key keyboard: held keys lit by velocity in the colour of the sound playing them, a
 // strip naming each zone's sound in its colour, a line at the split point, and jam mode's
-// highlighting (P1-T4): a large dot in the zone's sound colour on chord tones, a small kraft dot on
-// scale tones, other keys dimmed toward the well (never red), and note names at training wheels 3.
-// Colours are the theme's (docs/design/theme.md). Called from an animation frame, never per note.
+// highlighting in the chosen look (keys.ts: idleFill and marksOf): chord tones marked strongly,
+// scale tones softly, other keys dimmed toward the well (never red), and note names at training
+// wheels 3. Colours are the theme's (docs/design/theme.md). Called from an animation frame, never
+// per note.
 
 import { Note } from 'tonal'
 import { getPreset } from '../../audio/presets/index.ts'
 import type { PresetId } from '../../audio/presets/types.ts'
 import { zoneOf, type KeyboardLayout, type ZoneSound } from '../../audio/zones.ts'
 import type { HarmonyAt } from '../../music/harmony.ts'
-import { tierOf, type Tier, type Wheels } from '../../music/highlight.ts'
-import { dotOf, heldFill, HIGH_NOTE, LOW_NOTE, mix, nameY, type KeyRect, type Rgb } from './keys.ts'
+import { tierOf, type Wheels } from '../../music/highlight.ts'
+import {
+  BLACK_KEY,
+  heldFill,
+  HIGH_NOTE,
+  idleFill,
+  LOW_NOTE,
+  KRAFT as KRAFT_RGB,
+  lum,
+  marksOf,
+  nameWidth,
+  nameY,
+  WHITE_KEY,
+  type KeyRect,
+  type Look,
+  type Rgb,
+} from './keys.ts'
 
 /** Height of the zone strip above the keys, CSS px. */
 export const ZONE_STRIP = 20
 
-export const WHITE_KEY: Rgb = [239, 230, 214]
-export const BLACK_KEY: Rgb = [42, 32, 26]
 /** Each sound's colour (--funk, --wobble, --keys and the rest in src/index.css). */
-const SOUND_COLORS: Record<PresetId, Rgb> = {
+export const SOUND_COLORS: Record<PresetId, Rgb> = {
   'funk-lead': [255, 123, 46],
   'wobble-bass': [255, 127, 174],
   'ep-keys': [124, 196, 242],
   'round-bass': [162, 139, 255],
   'warm-tines': [63, 207, 192],
 }
-const WELL: Rgb = [18, 13, 11] // --well
-const KRAFT = '#c8a271'
+const LINE = '#8a7462'
 const BIN = '#1c1512'
 const BONE = '#f1e8da'
 const LETTER = '#6b5a4c'
 const OUTLINE = 'rgba(28, 21, 18, 0.5)'
+const LABEL_FONT = '600 12px system-ui, sans-serif'
 
 const css = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`
-
-/** An unheld key's fill: notes outside the chord and scale are dimmed toward the well. */
-export const idleFill = (black: boolean, tier: Tier | null): Rgb => {
-  const base = black ? BLACK_KEY : WHITE_KEY
-  return tier === 'other' ? mix(base, WELL, black ? 0.5 : 0.45) : base
-}
+const KRAFT = css(KRAFT_RGB)
 
 export interface KeyboardView {
   width: number
@@ -47,10 +56,10 @@ export interface KeyboardView {
   /** Held note → velocity (0..1). */
   held: ReadonlyMap<number, number>
   layout: KeyboardLayout
-  /** Computer-key letters by note. */
+  /** Computer-key letters by note; empty when they're hidden. */
   letters: ReadonlyMap<number, string>
-  /** What to highlight: the shown harmony, the level, and note names by pitch class. */
-  jam: { harmony: HarmonyAt; wheels: Wheels; names: readonly string[] }
+  /** What to highlight: the shown harmony, the level, note names by pitch class, and the look. */
+  jam: { harmony: HarmonyAt; wheels: Wheels; names: readonly string[]; look: Look }
 }
 
 function zoneLabel({ presetId, octave }: ZoneSound) {
@@ -68,6 +77,13 @@ function splitX(view: KeyboardView): number {
   if (splitNote > HIGH_NOTE) return view.width
   const k = view.keys.find((key) => key.note === splitNote)
   return k ? (k.black ? k.x + k.w / 2 : k.x) : 0
+}
+
+/** A mark's colour: tape and tags dark on white keys and light on black ones, frames in the sound's colour. */
+function markColor(look: Look, black: boolean, chord: boolean, sound: Rgb): string {
+  if (look === 'frames' && chord) return css(sound)
+  if (chord) return black ? (look === 'tags' ? KRAFT : BONE) : BIN
+  return black ? KRAFT : LINE
 }
 
 export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) {
@@ -90,45 +106,48 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
   if (layout.split) zone(0, x, layout.left)
   zone(x, width, layout.main)
 
-  ctx.font = '600 12px system-ui, sans-serif'
   // Letters and octave names only where they fit; on a phone-width keyboard they smear.
   const labels = (keys.find((k) => !k.black)?.w ?? 0) >= 14
+  const named = jam.wheels === 3
+  ctx.font = LABEL_FONT // set again only after a note name
   for (const k of keys) {
     const velocity = held.get(k.note)
-    const base = k.black ? BLACK_KEY : WHITE_KEY
     const sound = SOUND_COLORS[layout[zoneOf(layout, k.note)].presetId]
     const tier = tierOf(k.note, jam.harmony, jam.wheels)
     const lit = velocity !== undefined
-    ctx.fillStyle = css(lit ? heldFill(base, sound, velocity) : idleFill(k.black, tier))
+    const fill = lit
+      ? heldFill(k.black ? BLACK_KEY : WHITE_KEY, sound, velocity)
+      : idleFill(k.black, tier, jam.look, jam.wheels)
+    ctx.fillStyle = css(fill)
     ctx.fillRect(k.x, k.y, k.w, k.h)
     if (!k.black) {
       ctx.strokeStyle = OUTLINE
       ctx.strokeRect(k.x + 0.5, k.y + 0.5, k.w - 1, k.h - 1)
     }
-    const marked = tier === 'chord' || tier === 'scale'
-    // A held key's fill covers its dot. The bin ring keeps light dots visible on white keys.
+    const chord = tier === 'chord'
+    const marked = chord || tier === 'scale'
+    // A held key's fill covers its marks.
     if (marked && !lit) {
-      const dot = dotOf(k, tier === 'chord')
-      ctx.beginPath()
-      ctx.arc(dot.x, dot.y, dot.r, 0, 2 * Math.PI)
-      ctx.fillStyle = tier === 'chord' ? css(sound) : KRAFT
-      ctx.fill()
-      ctx.lineWidth = 1.5
-      ctx.strokeStyle = BIN
-      ctx.stroke()
-      ctx.lineWidth = 1
+      ctx.fillStyle = markColor(jam.look, k.black, chord, sound)
+      for (const r of marksOf(k, jam.look, chord, named)) {
+        ctx.beginPath()
+        if (jam.look === 'tags') ctx.roundRect(r.x, r.y, r.w, r.h, r.h / 2)
+        else ctx.rect(r.x, r.y, r.w, r.h)
+        ctx.fill()
+      }
     }
-    // Dark text on light fills: white keys (dimmed ones too, which the brown letters fade on),
-    // and black keys played harder.
-    const dark = k.black ? lit && velocity >= 0.4 : lit || tier === 'other'
-    ctx.fillStyle = dark ? BIN : k.black ? BONE : LETTER
     if (!labels) continue
-    if (marked && jam.wheels === 3) {
-      ctx.save()
-      ctx.fillStyle = k.black && !dark ? BONE : BIN
-      ctx.fillText(jam.names[k.note % 12]!, k.x + k.w / 2, nameY(k), k.w - 2)
-      ctx.restore()
+    const light = lum(fill) >= 120 // dark text on light fills
+    if (marked && named) {
+      // Chord tones' names bold. Inside a tag, the name takes the tag's opposite colour.
+      const inTag = jam.look === 'tags' && chord && !lit
+      ctx.font = `${chord ? 700 : 500} 12px system-ui, sans-serif`
+      ctx.fillStyle = inTag ? (k.black ? BIN : KRAFT) : light ? BIN : BONE
+      ctx.fillText(jam.names[k.note % 12]!, k.x + k.w / 2, nameY(k, jam.look), nameWidth(k))
+      ctx.font = LABEL_FONT
     }
+    // The brown letter on idle ivory; bin on other light fills (dimmed and lit keys).
+    ctx.fillStyle = !light ? BONE : !lit && lum(fill) > 200 ? LETTER : BIN
     const letter = letters.get(k.note)
     if (letter) ctx.fillText(letter, k.x + k.w / 2, k.y + k.h - (k.black ? 4 : 18))
     if (!k.black && k.note % 12 === 0)

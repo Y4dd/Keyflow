@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { dotOf, heldFill, HIGH_NOTE, keyPoint, keyRects, LOW_NOTE, nameY, noteAt } from './keys.ts'
+import { SOUND_COLORS } from './keyboard.ts'
+import {
+  heldFill,
+  HIGH_NOTE,
+  idleFill,
+  keyPoint,
+  keyRects,
+  LOOKS,
+  LOW_NOTE,
+  lum,
+  marksOf,
+  nameWidth,
+  nameY,
+  noteAt,
+  BLACK_KEY,
+  WHITE_KEY,
+  type KeyRect,
+  type Look,
+  type Rect,
+  type Rgb,
+} from './keys.ts'
 
 const keys = keyRects(720, 140, 16)
 const rect = (note: number) => keys.find((k) => k.note === note)!
@@ -42,32 +62,106 @@ describe('heldFill', () => {
   })
 })
 
-describe('dotOf and nameY', () => {
+describe('marksOf and nameY', () => {
   // The keyboard's real height (180 px with a 20 px strip), from a phone to a wide screen.
   const sizes = [400, 720, 1100, 1400].map((w) => keyRects(w, 180, 20))
+  const inside = (r: Rect, x: number, y: number) =>
+    x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h
+  const overlap = (a: Rect, b: Rect) =>
+    a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+  // A note name at 12 px: up to nameWidth wide, 10 px above its baseline and 2 below.
+  const nameBox = (k: KeyRect, look: Look): Rect => {
+    const w = nameWidth(k)
+    return { x: k.x + (k.w - w) / 2, y: nameY(k, look) - 10, w, h: 12 }
+  }
+  // The computer-key letter and, on white keys, the C-octave name below it.
+  const letterBox = (k: KeyRect): Rect =>
+    k.black
+      ? { x: k.x + k.w / 2 - 3, y: k.y + k.h - 13, w: 6, h: 9 }
+      : { x: k.x + k.w / 2 - 4, y: k.y + k.h - 27, w: 8, h: 22 }
+  const all = (k: KeyRect, look: Look) =>
+    [true, false].flatMap((chord) =>
+      [true, false].flatMap((named) => marksOf(k, look, chord, named)),
+    )
+  // Labels (letters, names) are drawn only when a white key is at least 14 px wide.
+  const labelled = (ks: KeyRect[]) => ks.find((k) => !k.black)!.w >= 14
 
   it("never cover a key's point, so the pixel check reads the key's own fill", () => {
     for (const ks of sizes)
-      for (const k of ks) {
-        const p = keyPoint(k)
-        const dot = dotOf(k, true)
-        expect(Math.hypot(p.x - dot.x, p.y - dot.y)).toBeGreaterThan(dot.r + 1)
-        // A two-letter name at 12 px: about 16 px wide, 10 px above its baseline.
-        const inName = Math.abs(p.x - dot.x) < 8 && p.y > nameY(k) - 11 && p.y < nameY(k) + 1
-        expect(inName).toBe(false)
-      }
+      for (const k of ks)
+        for (const look of LOOKS) {
+          const p = keyPoint(k)
+          for (const r of all(k, look)) expect(inside(r, p.x, p.y)).toBe(false)
+          if (labelled(ks)) expect(inside(nameBox(k, look), p.x, p.y)).toBe(false)
+        }
   })
 
-  it('stay inside the key, clear of the key letters at the bottom and of each other', () => {
+  it('stay inside the key, clear of the letters; names clear of every mark but the tags', () => {
     for (const ks of sizes)
-      for (const k of ks) {
-        const dot = dotOf(k, true)
-        expect(dot.x - dot.r).toBeGreaterThan(k.x)
-        expect(dot.x + dot.r).toBeLessThan(k.x + k.w)
-        // Letters' tops: 27 px above the bottom on white keys, 13 on black ones.
-        expect(dot.y + dot.r).toBeLessThan(k.y + k.h - (k.black ? 13 : 27))
-        expect(nameY(k)).toBeLessThan(dot.y - dot.r)
-        expect(dotOf(k, false).r).toBeLessThan(dot.r)
-      }
+      for (const k of ks)
+        for (const look of LOOKS) {
+          for (const r of all(k, look)) {
+            expect(r.x).toBeGreaterThanOrEqual(k.x)
+            expect(r.x + r.w).toBeLessThanOrEqual(k.x + k.w)
+            expect(r.y).toBeGreaterThanOrEqual(k.y)
+            expect(r.y + r.h).toBeLessThanOrEqual(k.y + k.h)
+            if (labelled(ks)) expect(overlap(r, letterBox(k))).toBe(false)
+          }
+          if (!labelled(ks)) continue
+          expect(overlap(nameBox(k, look), letterBox(k))).toBe(false)
+          // Tags hold their name; on narrow black keys a frame's side may touch it.
+          if (look !== 'tags' && !(look === 'frames' && k.black))
+            for (const r of all(k, look)) expect(overlap(r, nameBox(k, look))).toBe(false)
+        }
+  })
+
+  it('mark chord tones more strongly than scale tones', () => {
+    const area = (rs: Rect[]) => rs.reduce((a, r) => a + r.w * r.h, 0)
+    for (const k of sizes[2]!) {
+      expect(marksOf(k, 'spotlight', true, true)).toEqual([])
+      for (const look of ['tape', 'frames', 'tags'] as const)
+        expect(area(marksOf(k, look, true, false))).toBeGreaterThan(
+          area(marksOf(k, look, false, false)),
+        )
+    }
+  })
+})
+
+describe('idleFill', () => {
+  it('dims other notes without turning redder, and leaves keys alone with wheels off', () => {
+    for (const look of LOOKS) {
+      expect(idleFill(false, null, look, 0)).toEqual(WHITE_KEY)
+      const dim = idleFill(false, 'other', look, 2)
+      expect(lum(dim)).toBeLessThan(lum(WHITE_KEY))
+      expect(dim[0] - dim[2]).toBeLessThanOrEqual(WHITE_KEY[0] - WHITE_KEY[2])
+    }
+  })
+
+  it('in the spotlight, keys step down from chord tones to scale tones to the rest', () => {
+    for (const black of [false, true]) {
+      const [chord, scale, other] = (['chord', 'scale', 'other'] as const).map((t) =>
+        lum(idleFill(black, t, 'spotlight', 2)),
+      )
+      expect(chord).toBeGreaterThan(scale!)
+      expect(scale).toBeGreaterThan(other!)
+      // At Chord tones only, the unmarked keys still sit below the chord tones.
+      expect(lum(idleFill(black, null, 'spotlight', 1))).toBeLessThan(chord!)
+    }
+  })
+})
+
+describe('held keys and highlighting', () => {
+  it('a held key never looks like an unheld highlighted one, however softly it is played', () => {
+    const far = (a: Rgb, b: Rgb) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+    for (const black of [false, true])
+      for (const sound of Object.values(SOUND_COLORS))
+        // shortcut: from velocity 0.25 (about 32 of 127); the softest held whites sit near ivory
+        // since P0's heldFill floor. Raise that floor if pianissimo notes read unlit.
+        for (const velocity of [0.25, 0.5, 0.75, 1])
+          for (const look of LOOKS)
+            for (const tier of ['chord', 'scale', 'other', null] as const) {
+              const heldColour = heldFill(black ? BLACK_KEY : WHITE_KEY, sound, velocity)
+              expect(far(heldColour, idleFill(black, tier, look, 2))).toBeGreaterThan(40)
+            }
   })
 })

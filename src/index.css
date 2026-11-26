@@ -576,6 +576,10 @@ input[type='range'] {
   overflow-wrap: anywhere;
 }
 
+.keys-letters {
+  margin-top: 12px;
+}
+
 .keys-help {
   margin-top: 16px;
   max-width: 80ch;

@@ -5,6 +5,8 @@ import type { ScaleId } from '../music/harmony.ts'
 import type { Wheels } from '../music/highlight.ts'
 import { keyName } from '../music/spelling.ts'
 import { groove, grooveOf, scalesOf, tempoRange, useGrooveStore } from '../state/groove.ts'
+import { useViewStore, view } from '../state/view.ts'
+import type { Look } from './canvas/keys.ts'
 
 const SCALE_NAMES: Record<ScaleId, string> = {
   'minor pentatonic': 'Minor pentatonic',
@@ -19,15 +21,23 @@ const WHEELS: { level: Wheels; label: string; text: string }[] = [
   {
     level: 3,
     label: 'Names',
-    text: 'Big dots on the chord tones, small dots on the rest of the scale, names on both, and the other keys dimmed.',
+    text: 'Chord tones marked strongly, the rest of the scale softly, names on both, and the other keys dimmed.',
   },
   {
     level: 2,
-    label: 'Dots',
-    text: 'Big dots on the chord tones, small dots on the rest of the scale, and the other keys dimmed.',
+    label: 'No names',
+    text: 'Chord tones marked strongly, the rest of the scale softly, and the other keys dimmed.',
   },
-  { level: 1, label: 'Chord tones', text: 'Big dots on the chord tones only.' },
+  { level: 1, label: 'Chord tones', text: 'Only the chord tones marked.' },
   { level: 0, label: 'Off', text: 'No help on the keys: play by ear.' },
+]
+
+// shortcut: the looks are on trial (P1-T4b); the pick stays and this picker goes.
+const LOOK_CHIPS: { look: Look; label: string; text: string }[] = [
+  { look: 'spotlight', label: 'Spotlight', text: 'Brightness only: no marks on the keys.' },
+  { look: 'tape', label: 'Tape', text: 'A bar across each key, under the black keys.' },
+  { look: 'frames', label: 'Frames', text: "An outline inside each key, in the sound's colour." },
+  { look: 'tags', label: 'Tags', text: 'A dark tag holding the name on chord tones.' },
 ]
 
 // A focused menu takes the computer keys (type-ahead), so let go after a choice.
@@ -52,6 +62,8 @@ export function GroovePanel() {
   const g = grooveOf(grooveId)
   const [min, max] = tempoRange(g)
   const wheel = WHEELS.find((w) => w.level === wheels)!
+  const look = useViewStore((s) => s.look)
+  const lookChip = LOOK_CHIPS.find((l) => l.look === look)!
 
   return (
     <section className="card groove" aria-labelledby="groove-tab" data-testid="groove">
@@ -164,8 +176,27 @@ export function GroovePanel() {
             ))}
           </div>
         </div>
+        <div className="field">
+          <span id="look-label">Look (on trial: pick one)</span>
+          <div className="chips" role="radiogroup" aria-labelledby="look-label">
+            {LOOK_CHIPS.map((l) => (
+              <label key={l.look} className="chip">
+                <input
+                  type="radio"
+                  name="look"
+                  value={l.look}
+                  checked={l.look === look}
+                  onChange={() => view.setLook(l.look)}
+                />
+                {l.label}
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
-      <p className="blurb">{wheel.text}</p>
+      <p className="blurb">
+        {wheel.text} {wheels > 0 && lookChip.text}
+      </p>
       <p className="muted small transport-note">
         {running
           ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`

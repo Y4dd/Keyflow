@@ -86,8 +86,10 @@ _Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velve
 
 _Manual check results (2026-11-26, deployed page, Chrome, YPT-380): step 1 passes and the user likes the training wheels. Taste step 2: the dots are unpleasant to look at and can confuse, so P1-T4b tries several visuals until the user likes one. Steps 3 and 4 unanswered: defaults kept (half a beat early, Names)._
 
-### P1-T4b: Highlighting visuals the user likes, and hiding the key letters
+### P1-T4b: Highlighting visuals the user likes, and hiding the key letters [in progress]
 Added 2026-11-26 (P1-T0 and P1-T4 manual checks): the user likes the training wheels, but the dots are unpleasant to look at and can confuse.
+
+_Audition (2026-11-26): four looks shipped switchable (Spotlight, Tape, Frames, Tags; decisions log), and the letters checkbox. Waiting for the user's pick._
 - With the `impeccable` skill, design **3 or 4 clearly different highlighting visuals** for the three tiers (chord tones, scale tones, other notes dimmed, never red) and the note names, within the Crate Dig theme. Ship them switchable on the deployed page so the user can compare them while playing; iterate until the user likes one. The chosen one becomes the only one, and the others are removed.
 - Add an option to **hide the computer-key letters** on the canvas keyboard, saved with the other settings.
 - Everything P1-T4 tests (tiers, preview timing, levels) keeps passing; lit held keys stay distinct from highlighting.

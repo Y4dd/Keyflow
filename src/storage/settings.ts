@@ -29,6 +29,8 @@ export interface Settings {
   deviceId: string | null
   /** The last usable tap test (P0-T8); the lead is null when it used the fallback clock pair. */
   calibration: { offsetMs: number; outputTimestampLeadMs: number | null } | null
+  /** The computer-key letters on the canvas keys (P1-T4b). */
+  keyLetters: boolean
   /** Sound was started on an earlier visit, so the page can say a click brings it back. */
   audioStarted: boolean
 }
@@ -46,6 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bendKey: DEFAULT_BEND_KEY,
   deviceId: null,
   calibration: null,
+  keyLetters: true,
   audioStarted: false,
 }
 
@@ -171,6 +174,7 @@ export function parseSettings(raw: unknown): Settings {
         : d.bendKey,
     deviceId: typeof v.deviceId === 'string' ? v.deviceId : d.deviceId,
     calibration: calibration(v.calibration),
+    keyLetters: bool(v.keyLetters, d.keyLetters),
     audioStarted: bool(v.audioStarted, d.audioStarted),
   }
 }

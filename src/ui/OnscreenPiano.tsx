@@ -7,6 +7,7 @@ import { noteNames } from '../music/spelling.ts'
 import { useAudioStore } from '../state/audio.ts'
 import { shownGroove, shownTick, useGrooveStore } from '../state/groove.ts'
 import { laptopBend, pointerPiano } from '../state/input.ts'
+import { useViewStore } from '../state/view.ts'
 import { drawKeyboard, ZONE_STRIP } from './canvas/keyboard.ts'
 import { keyRects, noteAt, type KeyRect } from './canvas/keys.ts'
 
@@ -43,7 +44,10 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
     const draw = () => {
       frame = 0
       const base = baseRef.current
-      const letters = new Map(KEY_LABELS.map(([code, label]) => [base + KEY_OFFSETS[code], label]))
+      const { keyLetters, look } = useViewStore.getState()
+      const letters = new Map(
+        keyLetters ? KEY_LABELS.map(([code, label]) => [base + KEY_OFFSETS[code], label]) : [],
+      )
       const { layout } = useAudioStore.getState()
       const { scale, wheels, tonic } = useGrooveStore.getState()
       const g = shownGroove()
@@ -54,7 +58,7 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
         names = noteNames(key, scale)
         namesFor = `${tonic} ${key.mode} ${scale}`
       }
-      const jam = { harmony: harmonyAt(g, tick, scale), wheels, names }
+      const jam = { harmony: harmonyAt(g, tick, scale), wheels, names, look }
       drawKeyboard(ctx, { ...size, keys: keysRef.current, held, layout, letters, jam })
     }
     const redraw = () => {
@@ -101,11 +105,13 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
       redraw()
       if (s.playing && watch === 0) watch = requestAnimationFrame(follow)
     })
+    const unsubscribeView = useViewStore.subscribe(redraw)
     const detachWheel = attachWheelBend(laptopBend, container) // scroll over the keys to bend
     return () => {
       unsubscribe()
       unsubscribeLayout()
       unsubscribeGroove()
+      unsubscribeView()
       observer.disconnect()
       detachWheel()
       cancelAnimationFrame(frame)

@@ -15,6 +15,7 @@ import { audio, useAudioStore } from './audio.ts'
 import { useCalibrationStore } from './calibration.ts'
 import { laptopBend } from './input.ts'
 import { midi, useMidiStore } from './midi.ts'
+import { useViewStore, view } from './view.ts'
 
 // Sliders change knobs many times a second; one write per pause.
 const SAVE_DELAY_MS = 300
@@ -34,6 +35,7 @@ function collect(): Settings {
       c.offsetMs === null
         ? null
         : { offsetMs: c.offsetMs, outputTimestampLeadMs: c.outputTimestampLeadMs },
+    keyLetters: useViewStore.getState().keyLetters,
     audioStarted: a.startedBefore || a.status === 'running',
   }
 }
@@ -49,6 +51,7 @@ function apply(s: Settings) {
   midi.select(s.deviceId) // listened to alone once that input is connected
   laptopBend.setKey(s.bendKey, performance.now())
   if (s.calibration) useCalibrationStore.setState(s.calibration)
+  view.setKeyLetters(s.keyLetters)
 }
 
 let timer = 0
@@ -105,6 +108,7 @@ export function startSettings(): Promise<boolean> {
       useAudioStore.subscribe(schedule)
       useMidiStore.subscribe(schedule)
       useCalibrationStore.subscribe(schedule)
+      useViewStore.subscribe(schedule)
       laptopBend.subscribe(schedule)
       schedule() // saves those changes
       // shortcut: a write started on pagehide isn't guaranteed to finish; the 300 ms debounce

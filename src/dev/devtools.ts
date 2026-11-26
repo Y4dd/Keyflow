@@ -10,8 +10,9 @@ import { calibration } from '../state/calibration.ts'
 import { shownHarmony, useGrooveStore } from '../state/groove.ts'
 import { flushSettings } from '../state/settings.ts'
 import { tierOf, type Tier } from '../music/highlight.ts'
-import { idleFill, ZONE_STRIP } from '../ui/canvas/keyboard.ts'
-import { keyPoint, keyRects } from '../ui/canvas/keys.ts'
+import { ZONE_STRIP } from '../ui/canvas/keyboard.ts'
+import { idleFill, keyPoint, keyRects } from '../ui/canvas/keys.ts'
+import { useViewStore } from '../state/view.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
@@ -80,8 +81,9 @@ function pianoKey(note: number) {
   const pixel = canvas
     .getContext('2d')!
     .getImageData(Math.floor(p.x * dpr), Math.floor(p.y * dpr), 1, 1).data
-  const tier = tierOf(note, shownHarmony(), useGrooveStore.getState().wheels)
-  const idle = idleFill(key.black, tier)
+  const { wheels } = useGrooveStore.getState()
+  const tier = tierOf(note, shownHarmony(), wheels)
+  const idle = idleFill(key.black, tier, useViewStore.getState().look, wheels)
   return {
     x: rect.left + p.x,
     y: rect.top + p.y,
