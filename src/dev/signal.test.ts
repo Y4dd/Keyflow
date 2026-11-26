@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { onsetTime, pitchHz, windowStats } from './signal.ts'
+import { dropouts, onsetTime, pitchHz, windowStats } from './signal.ts'
 
 const RATE = 1000
 const sine = (hz: number, amp: number, seconds: number) =>
@@ -63,5 +63,17 @@ describe('pitchHz', () => {
   it('returns null for silence or a window too short to search', () => {
     expect(pitchHz(new Float32Array(rate), rate, 0, 0.5, 180, 300)).toBeNull()
     expect(pitchHz(tone(220, Math.sin), rate, 0, 0.001, 180, 300)).toBeNull()
+  })
+})
+
+describe('dropouts', () => {
+  const run = (...parts: [number, number][]) =>
+    Float32Array.from(parts.flatMap(([value, n]) => Array<number>(n).fill(value)))
+  it('counts short gaps of exact silence between sounds', () => {
+    expect(dropouts(run([0.5, 10], [0, 6], [0.5, 10], [0, 6], [0.5, 1]), RATE)).toBe(2)
+  })
+  it('ignores silence before the first sound and after the last, and rests', () => {
+    expect(dropouts(run([0, 6], [0.5, 10], [0, 6]), RATE)).toBe(0)
+    expect(dropouts(run([0.5, 10], [0, 114], [0.5, 10]), RATE)).toBe(0)
   })
 })

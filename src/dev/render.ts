@@ -12,7 +12,7 @@ import { createInstrument } from '../audio/tone/instrument.ts'
 import { BEATS_PER_BAR } from '../grooves/groove.ts'
 import { GROOVES } from '../grooves/library.ts'
 import { createMaster } from '../audio/tone/master.ts'
-import { onsetTime, pitchHz, windowStats, type WindowStats } from './signal.ts'
+import { dropouts, onsetTime, pitchHz, windowStats, type WindowStats } from './signal.ts'
 
 export interface RenderNote {
   note: number
@@ -146,26 +146,4 @@ export async function renderGroove(
     (_, i) => windowStats(samples, rate, i * bar, (i + 1) * bar).peak,
   )
   return { peak: Math.max(...bars), bars, dropouts: dropouts(samples, rate) }
-}
-
-/**
- * Gaps of exact silence between sounds lasting 1 to 20 ms: a dropout, heard as a click. A rest in
- * the music is longer (the soul groove's is about 110 ms).
- */
-export function dropouts(samples: Float32Array, rate: number): number {
-  const [min, max] = [0.001 * rate, 0.02 * rate]
-  let count = 0
-  let silentFrom = -1
-  let sounded = false
-  for (let i = 0; i < samples.length; i++) {
-    if (samples[i] === 0) {
-      if (silentFrom < 0) silentFrom = i
-    } else {
-      const gap = i - silentFrom
-      if (sounded && silentFrom >= 0 && gap >= min && gap < max) count++
-      silentFrom = -1
-      sounded = true
-    }
-  }
-  return count
 }

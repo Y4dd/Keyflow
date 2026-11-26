@@ -92,3 +92,25 @@ export function pitchHz(
   const shift = denom < 0 ? (a - c) / (2 * denom) : 0
   return sampleRate / (bestLag + shift)
 }
+
+/**
+ * Gaps of exact silence between sounds lasting 1 to 20 ms: a dropout, heard as a click. A rest in
+ * the music is longer (the soul groove's is about 110 ms).
+ */
+export function dropouts(samples: Float32Array, rate: number): number {
+  const [min, max] = [0.001 * rate, 0.02 * rate]
+  let count = 0
+  let silentFrom = -1
+  let sounded = false
+  for (let i = 0; i < samples.length; i++) {
+    if (samples[i] === 0) {
+      if (silentFrom < 0) silentFrom = i
+    } else {
+      const gap = i - silentFrom
+      if (sounded && silentFrom >= 0 && gap >= min && gap < max) count++
+      silentFrom = -1
+      sounded = true
+    }
+  }
+  return count
+}

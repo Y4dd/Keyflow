@@ -24,9 +24,9 @@ export interface Master {
 export function createMaster({ limiter: withLimiter = true } = {}): Master {
   const input = new Tone.Gain(dbToGain(MASTER_GAIN_DB))
   const limiter = withLimiter ? new Tone.Compressor(LIMITER) : new Tone.Gain(1)
-  // A fixed input channel count: left to follow its inputs as voices start and stop, Firefox's
-  // compressor cut 6 ms of silence into every groove dozens of times a bar, heard as ticks in
-  // time (renders in tests/e2e/groove.spec.ts).
+  // A fixed input channel count: left to follow its inputs as voices start and stop (the drums'
+  // noise is stereo, the rest mono), Firefox's compressor cut 6 ms of silence into every groove
+  // dozens of times a bar, heard as ticks in time (renders in tests/e2e/groove.spec.ts).
   limiter.channelCountMode = 'explicit'
   limiter.channelCount = 2
   // Odd length, so 0 maps exactly to 0. Inputs beyond ±1 take the curve's end values.
