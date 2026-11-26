@@ -8,7 +8,7 @@
 import { create } from 'zustand'
 import { harmonyAt, previewTick, transpose, type Groove } from '../grooves/groove.ts'
 import type { Wheels } from '../music/highlight.ts'
-import type { HarmonyAt, ScaleId } from '../music/harmony.ts'
+import { scalePcs, type HarmonyAt, type ScaleId } from '../music/harmony.ts'
 import { GROOVES } from '../grooves/library.ts'
 import type { GrooveSettings } from '../audio/tone/groove.ts'
 import { audio, useAudioStore } from './audio.ts'
@@ -136,8 +136,16 @@ export const groove = {
 }
 
 // The engine stops the groove itself when the audio context stops running. When sound starts,
-// the transport takes the shown tempo, for a synced wobble.
+// the transport takes the shown tempo, for a synced wobble, and the engine the solo scale, for
+// "to next scale tone" bends, which it takes again whenever the scale or key changes.
+const soloScale = () => scalePcs(get().scale, get().tonic)
 useAudioStore.subscribe((s, prev) => {
   if (s.status !== 'running' && get().playing) set({ playing: false })
-  if (s.status === 'running' && prev.status !== 'running') audio.engine()?.setTempo(get().bpm)
+  if (s.status === 'running' && prev.status !== 'running') {
+    audio.engine()?.setTempo(get().bpm)
+    audio.engine()?.setSoloScale(soloScale())
+  }
+})
+useGrooveStore.subscribe((s, prev) => {
+  if (s.scale !== prev.scale || s.tonic !== prev.tonic) audio.engine()?.setSoloScale(soloScale())
 })

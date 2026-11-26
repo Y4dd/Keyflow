@@ -63,6 +63,8 @@ describe('parseSettings', () => {
   it('round-trips every setting through JSON (what IndexedDB stores)', () => {
     expect(parseSettings(JSON.parse(JSON.stringify(CHANGED)))).toEqual(CHANGED)
     expect(parseSettings(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)))).toEqual(DEFAULT_SETTINGS)
+    const scale = { ...CHANGED, expression: { ...CHANGED.expression, bendSemitones: 'scale' } }
+    expect(parseSettings(JSON.parse(JSON.stringify(scale)))).toEqual(scale)
   })
 
   it('nothing stored, or not an object: defaults', () => {

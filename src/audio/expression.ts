@@ -3,7 +3,9 @@
 //
 // One pedal, so its function is a mode (decisions log, 2026-11-23): Sustain holds notes, Bend
 // bends up by the bend amount, Glide-hold forces glide on. Bends from every source add up and
-// never pass the bend amount either way.
+// never pass the bend amount either way. At "to next scale tone" (P1-T5) bends count in scale
+// steps, not semitones: 1 is the next solo-scale tone up, -1 the one below, and the instrument
+// turns that into semitones for each note it sounds (src/music/bend.ts).
 
 import type { InputSource } from '../input/types.ts'
 
@@ -11,8 +13,11 @@ export type PedalMode = 'sustain' | 'bend' | 'glideHold'
 
 export interface ExpressionSettings {
   pedalMode: PedalMode
-  /** How far the pedal and the bend key bend up, and the furthest any bend goes either way. */
-  bendSemitones: 1 | 2
+  /**
+   * How far the pedal and the bend key bend up, and the furthest any bend goes either way:
+   * semitones, or one step of the solo scale.
+   */
+  bendSemitones: 1 | 2 | 'scale'
   /** How long a full bend takes, ms; smaller moves take proportionally less. */
   bendTimeMs: number
 }
@@ -25,10 +30,14 @@ export const DEFAULT_EXPRESSION: ExpressionSettings = {
 
 export const MAX_BEND_TIME_MS = 400
 
+/** The full bend in the units bends count in: semitones, or 1 scale step. */
+export const bendRange = (s: ExpressionSettings): number =>
+  s.bendSemitones === 'scale' ? 1 : s.bendSemitones
+
 export interface ExpressionTargets {
   sustain: boolean
   glideHold: boolean
-  /** Semitones from center. */
+  /** From center: semitones, or scale steps at "to next scale tone". */
   bend: number
 }
 
@@ -48,7 +57,8 @@ export function createExpression(initial: ExpressionSettings): Expression {
   const bends: Record<InputSource, number> = { midi: 0, computer: 0, onscreen: 0, sim: 0 }
 
   function targets(): ExpressionTargets {
-    const { pedalMode: mode, bendSemitones: range } = settings
+    const mode = settings.pedalMode
+    const range = bendRange(settings)
     const down = (m: PedalMode) => pedalDown && mode === m
     const sum = bends.midi + bends.computer + bends.onscreen + bends.sim
     const bend = Math.min(range, Math.max(-range, sum + (down('bend') ? range : 0)))
@@ -75,7 +85,7 @@ export function createExpression(initial: ExpressionSettings): Expression {
 
 /** Seconds a bend move takes: a full bend takes the bend time, smaller moves less. */
 export function bendRampSeconds(from: number, to: number, settings: ExpressionSettings): number {
-  return ((Math.abs(to - from) / settings.bendSemitones) * settings.bendTimeMs) / 1000
+  return ((Math.abs(to - from) / bendRange(settings)) * settings.bendTimeMs) / 1000
 }
 
 export interface SustainLatch {

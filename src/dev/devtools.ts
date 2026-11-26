@@ -47,6 +47,8 @@ export interface KeyflowDevApi {
     latency(): LatencyReadout | null
     /** What the pedal and bends are doing now (src/audio/expression.ts); null before audio. */
     expression(): ExpressionTargets | null
+    /** Pitch classes the main sound's bends count steps of; null in semitones or before audio. */
+    bendScale(): readonly number[] | null
   }
   groove: {
     /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
@@ -118,6 +120,7 @@ export function installDevTools() {
       currentTime: () => audio.engine()?.currentTime() ?? null,
       latency: () => audio.engine()?.latency() ?? null,
       expression: () => audio.engine()?.expression() ?? null,
+      bendScale: () => audio.engine()?.bendScale() ?? null,
     },
     groove: {
       ticks: () => audio.engine()?.groove().ticks() ?? null,

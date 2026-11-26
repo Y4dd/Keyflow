@@ -62,6 +62,12 @@ describe('pedal and bend targets per mode', () => {
     x.bend('computer', 2)
     expect(x.setSettings(settings({ bendSemitones: 1 })).bend).toBe(1)
   })
+
+  it('to next scale tone: bends count in scale steps, one at most either way', () => {
+    const x = createExpression(settings({ pedalMode: 'bend', bendSemitones: 'scale' }))
+    expect(x.pedal(true).bend).toBe(1)
+    expect(x.bend('computer', -5).bend).toBe(-1)
+  })
 })
 
 describe('bendRampSeconds', () => {
@@ -72,6 +78,7 @@ describe('bendRampSeconds', () => {
     expect(bendRampSeconds(0.5, 1, s)).toBeCloseTo(0.025)
     expect(bendRampSeconds(1, 1, s)).toBe(0)
     expect(bendRampSeconds(0, 2, settings({ bendTimeMs: 0 }))).toBe(0)
+    expect(bendRampSeconds(0, 1, settings({ bendSemitones: 'scale' }))).toBeCloseTo(0.1)
   })
 })
 

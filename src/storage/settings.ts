@@ -134,7 +134,9 @@ function expression(v: unknown): ExpressionSettings {
         ? v.pedalMode
         : d.pedalMode,
     bendSemitones:
-      v.bendSemitones === 1 || v.bendSemitones === 2 ? v.bendSemitones : d.bendSemitones,
+      v.bendSemitones === 1 || v.bendSemitones === 2 || v.bendSemitones === 'scale'
+        ? v.bendSemitones
+        : d.bendSemitones,
     bendTimeMs: num(v.bendTimeMs)
       ? Math.min(MAX_BEND_TIME_MS, Math.max(0, v.bendTimeMs))
       : d.bendTimeMs,

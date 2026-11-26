@@ -358,12 +358,14 @@ function PedalControls() {
           <select
             value={bendSemitones}
             onChange={(e) => {
-              audio.setExpression({ bendSemitones: e.target.value === '1' ? 1 : 2 })
+              const v = e.target.value
+              audio.setExpression({ bendSemitones: v === 'scale' ? 'scale' : v === '1' ? 1 : 2 })
               blur(e)
             }}
           >
             <option value={1}>1 semitone</option>
             <option value={2}>2 semitones</option>
+            <option value="scale">To next scale tone</option>
           </select>
         </label>
         <label className="field">
@@ -401,6 +403,8 @@ function PedalControls() {
       <p className="muted small" style={{ marginTop: 16 }}>
         Bends move the main sound. Hold the bend key, or scroll over the on-screen keys for a bend
         that springs back when you stop.
+        {bendSemitones === 'scale' &&
+          ' To next scale tone bends each note to the next note of the Groove card’s scale, 1 to 3 semitones up (scrolling down goes to the one below).'}
       </p>
     </fieldset>
   )

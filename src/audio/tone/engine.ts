@@ -8,7 +8,8 @@
 // layout, never the store.
 //
 // The pedal and bends (src/audio/expression.ts): sustain holds both sounds; bends and
-// glide-hold move only the main sound, the hand playing the lead (decisions log, P0-T7).
+// glide-hold move only the main sound, the hand playing the lead (decisions log, P0-T7). At
+// "to next scale tone" the main sound bends in steps of the solo scale, the engine's own copy.
 
 import * as Tone from 'tone'
 import type { InputEvent } from '../../input/types.ts'
@@ -45,6 +46,10 @@ export interface Engine {
   setExpression(settings: ExpressionSettings): void
   /** Dev tools: what the pedal and bends are doing now. */
   expression(): ExpressionTargets
+  /** The solo scale's pitch classes, which "to next scale tone" bends count steps of. */
+  setSoloScale(scale: readonly number[]): void
+  /** Dev tools: the pitch classes the main sound's bends count steps of, or null in semitones. */
+  bendScale(): readonly number[] | null
   releaseAll(): void
   latency(): LatencyReadout
   latencyHint(): string
@@ -99,6 +104,10 @@ export function createEngine(options: EngineOptions): Engine {
   let state = toState(context.state)
   const expression = createExpression(options.expression)
   let applied = expression.targets()
+  // shortcut: chromatic (1-semitone steps) until the groove store sends the solo scale, which it
+  // does as sound starts; take it in EngineOptions if a bend can come before that.
+  let soloScale: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+  const bendScale = () => (expression.settings().bendSemitones === 'scale' ? soloScale : null)
 
   /** Sends what changed to the instruments. */
   function apply(next: ExpressionTargets) {
@@ -121,7 +130,11 @@ export function createEngine(options: EngineOptions): Engine {
     const now = Tone.immediate()
     instrument.setSustain(applied.sustain, now)
     instrument.setGlideHold(zone === 'main' && applied.glideHold)
-    instrument.bend(zone === 'main' ? applied.bend : 0, now, 0)
+    instrument.setBendScale(
+      zone === 'main' ? bendScale() : null,
+      zone === 'main' ? applied.bend : 0,
+      now,
+    )
   }
 
   // The groove's own instruments, apart from the zones: the pedal and bends never reach them.
@@ -215,8 +228,23 @@ export function createEngine(options: EngineOptions): Engine {
       for (const instrument of instruments.values())
         if (instrument.preset.id === presetId) instrument.setKnob(id, value)
     },
-    setExpression: (settings) => apply(expression.setSettings(settings)),
+    setExpression(settings) {
+      const before = bendScale()
+      const next = expression.setSettings(settings)
+      if (bendScale() !== before) {
+        // The bend held changes units (semitones or scale steps): jump, as a ramp between
+        // the two means nothing.
+        current.main.setBendScale(bendScale(), next.bend, Tone.immediate())
+        applied = { ...applied, bend: next.bend }
+      }
+      apply(next)
+    },
     expression: () => applied,
+    setSoloScale(scale) {
+      soloScale = scale
+      current.main.setBendScale(bendScale(), applied.bend, Tone.immediate())
+    },
+    bendScale,
     releaseAll,
     latency: () => readLatency(context.rawContext),
     latencyHint: () => String(context.latencyHint),

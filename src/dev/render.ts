@@ -28,6 +28,8 @@ export interface RenderSpec {
   notes: RenderNote[]
   /** Bends, as the engine sends them: semitones from center, sliding over `ramp` s. */
   bends?: { at: number; semitones: number; ramp: number }[]
+  /** Pitch classes the bends count steps of ("to next scale tone"); semitones when unset. */
+  bendScale?: number[]
   duration: number
   /** Transport tempo, for tempo-synced LFOs (the Wobble sync knob). Tone's default is 120. */
   bpm?: number
@@ -69,23 +71,25 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
         knobs,
         master ? master.input : Tone.getDestination(),
       )
-      // In time order, as live input arrives: the voice logic decides from the order of calls.
-      // At equal times, note-offs go first.
-      const events = spec.notes.flatMap((n) => [
-        { time: n.on, on: true, n },
-        { time: n.off, on: false, n },
-      ])
-      events.sort((a, b) => a.time - b.time || Number(a.on) - Number(b.on))
+      // In time order, as live input arrives: the voice logic decides from the order of calls,
+      // and a scale bend from the note sounding. At equal times: note-offs, bends, note-ons.
+      const events = [
+        ...spec.notes.flatMap((n) => [
+          { time: n.on, rank: 2, send: () => instrument.noteOn(n.note, n.velocity, n.on) },
+          { time: n.off, rank: 0, send: () => instrument.noteOff(n.note, n.off) },
+        ]),
+        ...(spec.bends ?? []).map((b) => ({
+          time: b.at,
+          rank: 1,
+          send: () => instrument.bend(b.semitones, b.at, b.ramp),
+        })),
+      ]
+      events.sort((x, y) => x.time - y.time || x.rank - y.rank)
       const send = () => {
-        for (const { time, on, n } of events) {
-          if (on) instrument.noteOn(n.note, n.velocity, time)
-          else instrument.noteOff(n.note, time)
-        }
-        for (const b of [...(spec.bends ?? [])].sort((x, y) => x.at - y.at)) {
-          instrument.bend(b.semitones, b.at, b.ramp)
-        }
+        for (const e of events) e.send()
       }
       if (spec.lfoRestartAt !== undefined) instrument.restartLfo(spec.lfoRestartAt)
+      if (spec.bendScale) instrument.setBendScale(spec.bendScale, 0, 0)
       if (spec.sendAt === undefined) send()
       else context.setTimeout(send, spec.sendAt)
     },

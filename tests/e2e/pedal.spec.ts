@@ -14,7 +14,11 @@ interface RenderResult {
 interface DevApi {
   inject(events: SimEvent[]): Promise<void>
   stop(): void
-  audio: { heldByZone(): { main: number; left: number }; expression(): Targets | null }
+  audio: {
+    heldByZone(): { main: number; left: number }
+    expression(): Targets | null
+    bendScale(): number[] | null
+  }
   render(spec: unknown): Promise<RenderResult>
 }
 type DevWindow = Window & { __keyflow?: DevApi }
@@ -33,6 +37,8 @@ const heldByZone = (page: Page) =>
 const targets = (page: Page) =>
   page.evaluate(() => (window as DevWindow).__keyflow!.audio.expression())
 const pedal = (page: Page) => page.getByRole('radiogroup', { name: 'Pedal' })
+const bendScale = (page: Page) =>
+  page.evaluate(() => (window as DevWindow).__keyflow!.audio.bendScale())
 
 test('sustain holds both sounds until the pedal lifts', async ({ page }) => {
   await start(page)
@@ -177,3 +183,102 @@ for (const preset of ['funk-lead', 'ep-keys'] as const) {
     expect(Math.abs(cents(after, 220))).toBeLessThan(10)
   })
 }
+
+test('to next scale tone: the main sound bends in steps of the shown solo scale', async ({
+  page,
+}) => {
+  await start(page)
+  await pedal(page).getByLabel(/Bend/).check()
+  const amount = page.getByLabel('Bend amount')
+  await amount.selectOption({ label: 'To next scale tone' })
+  // The vamp opens in D minor over D minor pentatonic: D F G A C.
+  expect(await bendScale(page)).toEqual([2, 5, 7, 9, 0])
+  await inject(page, [
+    { kind: 'noteOn', note: 72 },
+    { kind: 'pedal', down: true },
+  ])
+  expect((await targets(page))?.bend).toBe(1) // one step
+  await page.getByTestId('groove').getByLabel('Key').selectOption({ label: 'F minor' })
+  expect(await bendScale(page)).toEqual([5, 8, 10, 0, 3])
+  await amount.selectOption('2')
+  expect(await bendScale(page)).toBeNull()
+  expect((await targets(page))?.bend).toBe(2)
+  await inject(page, [
+    { kind: 'pedal', down: false },
+    { kind: 'noteOff', note: 72 },
+  ])
+})
+
+// Rendered offline over D minor pentatonic (D F G A C), each bend a full step up.
+const cents = (hz: number | null, ref: number) => 1200 * Math.log2((hz ?? 0) / ref)
+const hz = (note: number) => 440 * 2 ** ((note - 69) / 12)
+const D_MINOR_PENT = [2, 5, 7, 9, 0]
+
+test('funk-lead: a scale bend lands on the next scale tone, and follows a legato move', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  // D4 bent a step (to F, 3 semitones), F4 slurred in under the bend (to G, 2 semitones), then
+  // lifted, back to the D still held (to F again).
+  const r = await page.evaluate((spec) => (window as DevWindow).__keyflow!.render(spec), {
+    preset: 'funk-lead',
+    notes: [
+      { note: 62, velocity: 0.8, on: 0.05, off: 1.5 },
+      { note: 65, velocity: 0.8, on: 0.5, off: 0.95 },
+    ],
+    bends: [{ at: 0.1, semitones: 1, ramp: 0 }],
+    bendScale: D_MINOR_PENT,
+    duration: 1.6,
+    windows: [
+      [0.25, 0.45],
+      [0.7, 0.9],
+      [1.15, 1.4],
+    ],
+    pitchRange: [300, 450],
+  })
+  const [first, second, back] = r.pitches
+  expect(Math.abs(cents(first, hz(65)))).toBeLessThan(10)
+  expect(Math.abs(cents(second, hz(67)))).toBeLessThan(10)
+  expect(Math.abs(cents(back, hz(65)))).toBeLessThan(10)
+})
+
+test('ep-keys: a note played under a scale bend starts at its own next scale tone', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  // A4 played under a held step bend sounds C5 (3 semitones up).
+  const r = await page.evaluate((spec) => (window as DevWindow).__keyflow!.render(spec), {
+    preset: 'ep-keys',
+    notes: [{ note: 69, velocity: 0.8, on: 0.2, off: 1.0 }],
+    bends: [{ at: 0.1, semitones: 1, ramp: 0 }],
+    bendScale: D_MINOR_PENT,
+    duration: 1.1,
+    windows: [[0.4, 0.8]],
+    pitchRange: [400, 600],
+  })
+  expect(Math.abs(cents(r.pitches[0] ?? null, hz(72)))).toBeLessThan(10)
+})
+
+test('ep-keys: a held note bent a step lands on its next scale tone', async ({ page }) => {
+  await page.goto('/')
+  await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  // F4 held, then bent a step: to G (2 semitones). (A chord's two pitches can't be told apart
+  // by the pitch estimate, so each voice's own step is only checked one note at a time.)
+  const r = await page.evaluate((spec) => (window as DevWindow).__keyflow!.render(spec), {
+    preset: 'ep-keys',
+    notes: [{ note: 65, velocity: 0.8, on: 0.05, off: 1.2 }],
+    bends: [{ at: 0.3, semitones: 1, ramp: 0 }],
+    bendScale: D_MINOR_PENT,
+    duration: 1.3,
+    windows: [
+      [0.1, 0.28],
+      [0.5, 0.9],
+    ],
+    pitchRange: [300, 450],
+  })
+  const [before, bent] = r.pitches
+  expect(Math.abs(cents(before ?? null, hz(65)))).toBeLessThan(10)
+  expect(Math.abs(cents(bent ?? null, hz(67)))).toBeLessThan(10)
+})

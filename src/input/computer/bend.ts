@@ -14,7 +14,10 @@ export const BEND_KEYS = [
 ] as const
 
 export const DEFAULT_BEND_KEY = 'Space'
-/** Scrolling this far bends one semitone (a mouse wheel notch is often about 100 px). */
+/**
+ * Scrolling this far bends one semitone, or one scale step at "to next scale tone" (a mouse
+ * wheel notch is often about 100 px).
+ */
 export const WHEEL_PX_PER_SEMITONE = 100
 /** The wheel bend springs back once scrolling has stopped for this long. */
 export const SPRING_BACK_MS = 150
@@ -36,7 +39,7 @@ export interface LaptopBend {
 export function createLaptopBend(
   emit: (event: InputEvent) => void,
   clock: SimClock,
-  /** The bend amount, semitones. */
+  /** The bend amount: semitones, or 1 (a scale step) at "to next scale tone". */
   range: () => number,
 ): LaptopBend {
   let key: string | null = DEFAULT_BEND_KEY

@@ -5,6 +5,7 @@
 import * as Tone from 'tone'
 import { dbToGain, midiToHz, velocityToGain } from '../curves.ts'
 import { createSustainLatch } from '../expression.ts'
+import { scaleBend } from '../../music/bend.ts'
 import type { KnobValues, Preset } from '../presets/types.ts'
 import {
   createMonoNoteStack,
@@ -24,8 +25,16 @@ export interface Instrument {
   setSustain(down: boolean, time: number): void
   /** Glide-hold: mono instruments glide into detached notes too. */
   setGlideHold(on: boolean): void
-  /** Bends every sounding and later note to `semitones`, sliding over `ramp` seconds. */
-  bend(semitones: number, time: number, ramp: number): void
+  /**
+   * Bends every sounding and later note to `amount`, sliding over `ramp` seconds: semitones,
+   * or with a bend scale, steps of it (each note to its own next scale tone, src/music/bend.ts).
+   */
+  bend(amount: number, time: number, ramp: number): void
+  /**
+   * Pitch classes bends count steps of (null: semitones) with the bend held in those units, set
+   * at once: an amount in the old units would mean another pitch. Nothing changes if neither did.
+   */
+  setBendScale(scale: readonly number[] | null, amount: number, time: number): void
   setKnob(id: string, value: number): void
   /** Lines a tempo-synced LFO up with a groove starting at `time` (Wobble Bass only). */
   restartLfo(time: number): void
@@ -96,6 +105,8 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
   const latch = createSustainLatch()
   let glideHold = false
   let playedBefore = false
+  const bent = createBent()
+  let sounding: number | null = null
 
   function act(action: MonoAction | null, velocity: number, time: number) {
     if (action === null) return
@@ -106,6 +117,10 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
     const glide = glideTimeFor(action, voice.glide(), glideHold, playedBefore)
     playedBefore = true
     voice.setPitch(midiToHz(action.note), time, glide)
+    sounding = action.note
+    // A scale step differs per note, so the bend moves with the pitch, still finishing a move.
+    if (bent.scale)
+      voice.bend(bent.semitones(action.note), time, Math.max(glide, bent.rampEnd - time))
     // Legato moves keep the envelopes (and level) of the note they continue.
     if (action.kind === 'attack')
       voice.attack(time, velocityToGain(velocity, preset.velocityRangeDb))
@@ -131,7 +146,13 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
     setGlideHold(on) {
       glideHold = on
     },
-    bend: voice.bend,
+    bend(amount, time, ramp) {
+      bent.move(amount, time, ramp)
+      voice.bend(bent.semitones(sounding), time, ramp)
+    },
+    setBendScale(scale, amount, time) {
+      if (bent.set(scale, amount, time)) voice.bend(bent.semitones(sounding), time, 0)
+    },
     setKnob: voice.setKnob,
     restartLfo: (time) => voice.restartLfo?.(time),
     heldCount: () => stack.held().length,
@@ -150,6 +171,9 @@ function polyInstrument(
   const allocator = createPolyAllocator(preset.voices)
   const voices = Array.from({ length: preset.voices }, () => createFmVoice(preset, knobs, output))
   const latch = createSustainLatch()
+  const bent = createBent()
+  /** The note each voice last started, for its own scale step. */
+  const notes: (number | null)[] = voices.map(() => null)
   const stop = (note: number, time: number) => {
     const voice = allocator.noteOff(note)
     if (voice !== null) voices[voice].stop(time)
@@ -162,6 +186,9 @@ function polyInstrument(
       const { voice } = on
       // A stolen note is gone; a note-off still withheld for it would stop its next press.
       if (on.kind === 'steal') latch.forget(on.stolenNote)
+      notes[voice] = note
+      if (bent.scale)
+        voices[voice].bend(bent.semitones(note), time, Math.max(0, bent.rampEnd - time))
       voices[voice].start(
         midiToHz(note),
         velocity,
@@ -181,8 +208,13 @@ function polyInstrument(
     },
     setGlideHold() {}, // no glide on a poly instrument
     restartLfo() {},
-    bend(semitones, time, ramp) {
-      for (const voice of voices) voice.bend(semitones, time, ramp)
+    bend(amount, time, ramp) {
+      bent.move(amount, time, ramp)
+      voices.forEach((voice, i) => voice.bend(bent.semitones(notes[i] ?? null), time, ramp))
+    },
+    setBendScale(scale, amount, time) {
+      if (!bent.set(scale, amount, time)) return
+      voices.forEach((voice, i) => voice.bend(bent.semitones(notes[i] ?? null), time, 0))
     },
     setKnob(id, value) {
       for (const voice of voices) voice.setKnob(id, value)
@@ -191,6 +223,32 @@ function polyInstrument(
     dispose() {
       for (const voice of voices) voice.dispose()
       output.dispose()
+    },
+  }
+}
+
+/** The bend an instrument holds, and its semitones for one note. */
+function createBent() {
+  return {
+    amount: 0,
+    scale: null as readonly number[] | null,
+    /** When the last bend move ends: a note re-targeted mid-move finishes with it. */
+    rampEnd: 0,
+    move(amount: number, time: number, ramp: number) {
+      this.amount = amount
+      this.rampEnd = time + ramp
+    },
+    /** True if the scale or amount changed. */
+    set(scale: readonly number[] | null, amount: number, time: number): boolean {
+      if (scale === this.scale && amount === this.amount) return false
+      this.scale = scale
+      this.move(amount, time, 0)
+      return true
+    },
+    semitones(note: number | null): number {
+      // shortcut: before any note, a scale bend has no step to count, so 0 until one plays.
+      if (!this.scale) return this.amount
+      return note === null ? 0 : scaleBend(note, this.amount, this.scale)
     },
   }
 }
