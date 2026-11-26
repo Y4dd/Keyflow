@@ -10,3 +10,5 @@ docs
 tests/fixtures
 # Impeccable working files (comps, decision pages, review captures)
 .impeccable
+# Session worktrees live here; they're other checkouts, not this one's files.
+.claude
