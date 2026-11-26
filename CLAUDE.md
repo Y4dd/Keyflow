@@ -14,7 +14,8 @@ The user wants to be in the loop as little as possible. Work through tasks in or
 - **Commit and push without asking.** When a task (or a self-contained part of one) passes typecheck, lint, format:check, test, check:rules and test:e2e, and the review below is done, commit it to `main` and push. Don't ask "commit?", "push?" or "should I run the tests?". Then confirm CI yourself with one background `gh run watch <id> --exit-status`, not a polling loop. Get the id with `gh run list --commit "$(git rev-parse HEAD)" --json databaseId -q '.[0].databaseId'`: `--commit` needs the full SHA, and the run can take a few seconds to appear and fix any failure before moving on. Pushing to `main` deploys to the public Pages site, and the user has accepted that.
 - **Coding style is Ponytail `full`** (the plugin's default level): the smallest complete change, and a `shortcut: <limit>, <when to upgrade>` comment on every known limit.
 - **Review before committing.** Spawn one read-only `general-purpose` subagent that runs the `ponytail:ponytail-review` skill on the task's diff (`git diff` against the last commit before the task). A fresh agent doesn't share the builder's blind spots. Its brief gives the task ID and tells it to read `CLAUDE.md`'s hard rules first. Fix the findings you confirm in the code, re-run the checks, and list dismissed findings with a one-line reason in the task report. Agents never play audio or open a browser.
-- **Manual checks are batched, not blocking.** Add each one to **Manual checks waiting** in `PLAN.md`, mark the task `[built …, manual check pending]`, and carry on. How to write them is under "Manual checks" below.
+- **Design with the `impeccable` skill.** Whenever a task needs a component or screen designed (new UI, a layout, a look), the builder runs the `impeccable` skill for it. The hard rules still win: no notation, out-of-scale notes dimmed never red, canvas reads state each frame, no per-note React re-renders.
+- **Manual checks are batched, not blocking.** Write the script to `docs/manual-tests/<task ID>.md`, add a row linking it to **Manual checks waiting** in `PLAN.md`, mark the task `[built …, manual check pending]`, and carry on. How to write them is under "Manual checks" below.
 - **Stop for the user only when:**
   1. a task should change what it delivers (rule 4 above, unchanged);
   2. an action is destructive: force-push, rewriting history, deleting user data, or a Dexie change without a migration;
@@ -30,17 +31,18 @@ The user's **Main Agent** session coordinates; each task runs in its own fresh s
   1. Read this file, `PLAN.md`, the phase file and the docs named in "Before any work". If the task is in a waiting check's **blocks** list, stop and report that.
   2. Mark the heading `[in progress]`, build it with tests (pure logic test-first), and run every check.
   3. Review (above), fix, re-check.
-  4. Update the phase marker, the status table, the queue and the decisions log; commit and push; confirm CI and fix it if it fails.
+  4. Update the phase marker, the status table, the queue (and its `docs/manual-tests/` file) and the decisions log; commit and push; confirm CI and fix it if it fails.
   5. Finish with a report whose first line is `<task ID>: done`, `<task ID>: built, manual check queued` or `<task ID>: blocked: <reason>`, then the commit hash, CI result, decisions made, review findings dismissed, and any `rules-allow` added.
-- A task session only writes `PLAN.md` and the phase files for its own task. If the Main Agent ever runs two sessions at once, they must be read-only or in separate worktrees, and only the Main Agent edits `PLAN.md`.
+- A task session only writes `PLAN.md`, the phase files and `docs/manual-tests/` for its own task. If the Main Agent ever runs two sessions at once, they must be read-only or in separate worktrees, and only the Main Agent edits `PLAN.md`.
 
 ## Manual checks
 Batching means later tasks get built on checks you haven't done yet. These rules keep that safe.
 - **Only hands, ears or the real keyboard.** Anything the simulated MIDI source, an offline render or Playwright can check is automated, never a manual check.
+- **Scripts live in [`docs/manual-tests/`](docs/manual-tests/README.md)**, one file per waiting task (`P1-T1.md`); the folder holds only waiting checks. A phase file states a task's checks as spec; the runnable script is written there at build time.
 - **Each check script** has at most six steps, one setup line (browser, page, Local Control off), and for every step says what a pass sounds or looks like *and* what a failure looks like. Steps are labelled **must-pass** (works or doesn't: stuck notes, clicks, wrong sound, lag) or **taste** (a preference that becomes a default). Taste never blocks anything.
 - **Queue entries** in `PLAN.md` give the task, the must-pass and taste step numbers, **blocks** (task IDs whose work depends on a must-pass result, or "none"), the browsers needed (both only when audio or MIDI timing changed), and minutes.
-- **One run:** when work stops, the Main Agent gives the user one combined script for every waiting check, ordered so setup happens once.
-- **Results are shorthand.** `P0-T6 pass`, `P0-T6 3 fail: F3 kept sounding`, `P0-T6 taste: split F3, left −1`. A pass marks the task `[done …]` and removes the entry. A failure becomes the next task: first reproduce it as an automated test (the simulated source, or a fixture recorded with the dev inspector), then fix it, so the same failure never needs checking by hand again. A taste answer becomes the default and gets a decisions-log line.
+- **One run:** when work stops, the Main Agent gives the user one run order across the waiting files in `docs/manual-tests/` (linked, not copied), so setup happens once.
+- **Results are shorthand.** `P0-T6 pass`, `P0-T6 3 fail: F3 kept sounding`, `P0-T6 taste: split F3, left −1`. A pass marks the task `[done …]`, records the result in the phase file, deletes its `docs/manual-tests/` file and removes the entry; after a failure the file stays until a re-check passes. A failure becomes the next task: first reproduce it as an automated test (the simulated source, or a fixture recorded with the dev inspector), then fix it, so the same failure never needs checking by hand again. A taste answer becomes the default and gets a decisions-log line.
 
 ## Commands (Node 26)
 ```sh
