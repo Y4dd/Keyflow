@@ -82,7 +82,7 @@ _Manual check results (2026-11-26, Chrome, YPT-380): steps 1 to 3 pass; Warm Tin
 
 ### P1-T3c: A funky groove in place of Boogie [in progress]
 Added 2026-11-26 (P1-T3 manual check): the user finds Boogie horrible and wants something funky in its place. The other three grooves stay as they are.
-- Write 2 or 3 **original funk groove candidates** (e.g. a tight 16th-note clavinet-style comp over a syncopated bass, a slap-feel octave bass with ghost notes, a mid-tempo two-chord funk vamp in a key the other grooves don't use), in the P1-T1 format, using Round Bass and the EP Keys chords. **Don't imitate a specific song** and name none after an artist.
+- Write 2 or 3 **original groove candidates** in **R&B, soul R&B or neo-soul** (revised 2026-11-26: the user turned down a first round of three funk candidates and asked for these genres), in keys the other grooves don't use, in the P1-T1 format, using Round Bass and the EP Keys chords. **Don't imitate a specific song** and name none after an artist.
 - **The user auditions them** on the deployed page and picks one; iterate if none is liked. The pick replaces Boogie in the Groove menu, and the other candidates are removed.
 - **Automated:** the same library checks as P1-T3 (fills its bars, loops evenly, bass in key or on the chord, playable register in all 12 keys) and the render checks (no dropouts, under the safety clip); e2e plays it from the menu.
 - **Manual:** the audition and the pick (taste).

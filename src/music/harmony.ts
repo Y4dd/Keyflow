@@ -80,6 +80,7 @@ export const scalePcs = (id: ScaleId, tonic: number): number[] =>
 const CHORD_SCALE: Record<string, string> = {
   M: 'major',
   maj7: 'major',
+  maj9: 'major',
   '6': 'major',
   '7': 'mixolydian',
   '9': 'mixolydian',

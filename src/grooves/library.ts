@@ -189,165 +189,153 @@ export const BOOGIE: Groove = {
   altScales: ['minor blues'],
 }
 
-// P1-T3c audition: three funk candidates for Boogie's place; the pick stays, the others go.
+// P1-T3c audition: three R&B and neo-soul candidates for Boogie's place; the pick stays, the
+// others go.
 
-/** A minor at 100: a ghost-note snare and a busy 16th bass with octave pops, i7 to IV9. */
-export const GHOST_NOTE_POCKET: Groove = {
-  id: 'ghost-note-pocket',
-  name: 'Ghost-note pocket',
-  tempo: 100,
-  swing: 0.12,
-  key: { tonic: 9, mode: 'minor' },
+/** F minor at 80, neo-soul: heavily swung 16ths, a lazy kick, rootless ninth chords left ringing. */
+export const NEO_SOUL_DRIFT: Groove = {
+  id: 'neo-soul-drift',
+  name: 'Neo-soul drift',
+  tempo: 80,
+  swing: 0.5,
+  key: { tonic: 5, mode: 'minor' },
   bars: 4,
   progression: [
-    { rn: 'i7', beats: 8 },
-    { rn: 'IV9', beats: 8 },
+    { rn: 'i9', beats: 4 },
+    { rn: 'iv9', beats: 4 },
+    { rn: 'bVImaj7', beats: 4 },
+    { rn: 'bVII9', beats: 4 },
   ],
   drums: {
-    kick: [1, 0, 0, 0, 0, 0, 0, 0.7, 0, 0, 1, 0, 0, 0, 0, 0.5],
-    snare: [0, 0, 0, 0, 1, 0, 0, 0.22, 0, 0.18, 0, 0, 1, 0, 0, 0.25],
-    hat: [0.8, 0.3, 0.55, 0.3, 0.8, 0.3, 0.55, 0.3, 0.8, 0.3, 0.55, 0.3, 0.8, 0.3, 0, 0.3],
-    openHat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.45, 0],
+    kick: [1, 0, 0, 0, 0, 0, 0, 0.55, 0, 0, 0.8, 0, 0, 0, 0, 0],
+    snare: [0, 0, 0, 0, 0.85, 0, 0, 0, 0, 0, 0, 0, 0.85, 0, 0, 0.2],
+    rim: [0, 0, 0.2, 0, 0, 0, 0, 0, 0, 0.2, 0, 0, 0, 0, 0, 0],
+    hat: everyBeat([0.5, 0.25, 0.4, 0.2]),
   },
   bass: {
     steps: 16,
     register: 36,
     notes: [
-      { step: 0, length: 2, velocity: 1, degree: 1 },
-      { step: 3, length: 1, velocity: 0.8, degree: 8 },
-      { step: 4, length: 1, velocity: 0.3, degree: 1 },
-      { step: 6, length: 1, velocity: 0.85, degree: 5, octave: -1 },
-      { step: 7, length: 1, velocity: 0.7, degree: 7, octave: -1 },
-      { step: 8, length: 1, velocity: 0.95, degree: 1 },
-      { step: 10, length: 1, velocity: 0.8, degree: 8 },
-      { step: 11, length: 1, velocity: 0.3, degree: 8 },
-      { step: 12, length: 1, velocity: 0.8, degree: 3 },
-      { step: 13, length: 1, velocity: 0.75, degree: 4 },
-      { step: 14, length: 2, velocity: 0.85, degree: 5 },
+      { step: 0, length: 5, velocity: 0.95, degree: 1 },
+      { step: 6, length: 1, velocity: 0.6, degree: 5, octave: -1 },
+      { step: 7, length: 2, velocity: 0.7, degree: 7, octave: -1 },
+      { step: 10, length: 2, velocity: 0.8, degree: 1 },
+      { step: 12, length: 2, velocity: 0.75, degree: 3 },
+      // A step down from the 3rd before the next chord.
+      { step: 14, length: 2, velocity: 0.65, degree: 2 },
     ],
   },
   chords: {
     steps: 16,
+    // 3rd, 7th and 9th on the ninth chords: rootless, the bass has the root.
     voicing: [1, 3, 4],
-    register: 57,
+    register: 53,
     hits: [
-      { step: 2, length: 1, velocity: 0.6 },
-      { step: 5, length: 1, velocity: 0.45 },
-      { step: 9, length: 1, velocity: 0.55 },
-      { step: 14, length: 1, velocity: 0.5 },
+      { step: 2, length: 6, velocity: 0.5 },
+      { step: 10, length: 4, velocity: 0.42 },
+      { step: 15, length: 1, velocity: 0.35 },
     ],
   },
   soloScale: 'minor pentatonic',
   altScales: ['dorian', 'minor blues'],
 }
 
-/** G minor at 112: a two-bar slap-feel bass, low thumb notes and popped octaves with ghost notes. */
-export const SLAP_AND_POP: Groove = {
-  id: 'slap-and-pop',
-  name: 'Slap and pop',
-  tempo: 112,
-  swing: 0.05,
-  key: { tonic: 7, mode: 'minor' },
+/** A♭ major at 96, R&B: a punchy kick with 16th doubles, clap on the backbeat, ii–V–I–vi. */
+export const RNB_BOUNCE: Groove = {
+  id: 'rnb-bounce',
+  name: 'R&B bounce',
+  tempo: 96,
+  swing: 0.3,
+  key: { tonic: 8, mode: 'major' },
   bars: 4,
   progression: [
-    { rn: 'i7', beats: 12 },
-    { rn: 'IV7', beats: 4 },
+    { rn: 'ii9', beats: 4 },
+    { rn: 'V13', beats: 4 },
+    { rn: 'Imaj9', beats: 4 },
+    { rn: 'vi9', beats: 4 },
   ],
   drums: {
-    kick: [1, 0, 0, 0, 0, 0, 0.8, 0, 0, 0, 0.9, 0, 0, 0, 0, 0],
-    snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0.2, 1, 0, 0, 0],
-    rim: [0, 0, 0, 0, 0, 0, 0, 0.3, 0, 0, 0, 0, 0, 0, 0, 0.3],
-    hat: [0.75, 0, 0.5, 0.2, 0.75, 0, 0.5, 0.2, 0.75, 0, 0.5, 0.2, 0.75, 0, 0, 0.2],
-    openHat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0],
-  },
-  bass: {
-    steps: 32,
-    register: 36,
-    notes: [
-      { step: 0, length: 1, velocity: 1, degree: 1 },
-      { step: 2, length: 1, velocity: 0.85, degree: 8 },
-      { step: 3, length: 1, velocity: 0.3, degree: 8 },
-      { step: 5, length: 1, velocity: 0.8, degree: 8 },
-      { step: 6, length: 1, velocity: 0.8, degree: 7 },
-      { step: 8, length: 1, velocity: 0.95, degree: 1 },
-      { step: 10, length: 1, velocity: 0.3, degree: 1 },
-      { step: 11, length: 1, velocity: 0.85, degree: 8 },
-      { step: 13, length: 1, velocity: 0.75, degree: 5 },
-      { step: 14, length: 1, velocity: 0.7, degree: 7, octave: -1 },
-      { step: 16, length: 1, velocity: 1, degree: 1 },
-      { step: 18, length: 1, velocity: 0.85, degree: 8 },
-      { step: 19, length: 1, velocity: 0.3, degree: 8 },
-      { step: 21, length: 1, velocity: 0.8, degree: 8 },
-      { step: 22, length: 1, velocity: 0.75, degree: 5 },
-      { step: 24, length: 1, velocity: 0.9, degree: 3 },
-      { step: 25, length: 1, velocity: 0.7, degree: 4 },
-      { step: 26, length: 1, velocity: 0.8, degree: 5 },
-      { step: 28, length: 1, velocity: 0.85, degree: 8 },
-      { step: 29, length: 1, velocity: 0.3, degree: 8 },
-      { step: 30, length: 2, velocity: 0.8, degree: 7 },
-    ],
-  },
-  chords: {
-    steps: 16,
-    voicing: [1, 2, 3],
-    register: 57,
-    hits: [
-      { step: 4, length: 1, velocity: 0.6 },
-      { step: 7, length: 1, velocity: 0.45 },
-      { step: 12, length: 1, velocity: 0.6 },
-      { step: 15, length: 1, velocity: 0.45 },
-    ],
-  },
-  soloScale: 'minor pentatonic',
-  altScales: ['dorian', 'minor blues'],
-}
-
-/** F at 94, laid back: two dominant chords, a bass walking up the chord, rim ghosts. */
-export const DOMINANT_STRUT: Groove = {
-  id: 'dominant-strut',
-  name: 'Dominant strut',
-  tempo: 94,
-  swing: 0.25,
-  key: { tonic: 5, mode: 'major' },
-  bars: 4,
-  progression: [
-    { rn: 'I7', beats: 8 },
-    { rn: 'IV7', beats: 8 },
-  ],
-  drums: {
-    kick: [1, 0, 0, 0.6, 0, 0, 0, 0, 0, 0, 0.85, 0, 0, 0, 0, 0],
+    kick: [1, 0, 0, 0.7, 0, 0, 0, 0, 0, 0, 1, 0.6, 0, 0, 0, 0],
     snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-    rim: [0, 0, 0, 0, 0, 0, 0.25, 0, 0, 0.2, 0, 0, 0, 0, 0, 0.25],
-    hat: everyBeat([0.6, 0.2, 0.45, 0.25]),
+    clap: [0, 0, 0, 0, 0.6, 0, 0, 0, 0, 0, 0, 0, 0.6, 0, 0, 0],
+    hat: [0.7, 0.3, 0.5, 0.3, 0.7, 0.3, 0.5, 0.6, 0.7, 0.3, 0.5, 0.3, 0.7, 0.3, 0.5, 0.3],
   },
   bass: {
     steps: 16,
     register: 36,
     notes: [
       { step: 0, length: 3, velocity: 1, degree: 1 },
-      { step: 3, length: 1, velocity: 0.7, degree: 3 },
-      { step: 4, length: 2, velocity: 0.85, degree: 5 },
-      { step: 6, length: 1, velocity: 0.35, degree: 5 },
-      { step: 7, length: 1, velocity: 0.75, degree: 6 },
-      { step: 8, length: 2, velocity: 0.9, degree: 7 },
-      { step: 10, length: 1, velocity: 0.85, degree: 8 },
-      { step: 13, length: 1, velocity: 0.75, degree: 7 },
-      { step: 14, length: 2, velocity: 0.8, degree: 5 },
+      { step: 3, length: 1, velocity: 0.7, degree: 1 },
+      { step: 6, length: 1, velocity: 0.75, degree: 3 },
+      { step: 7, length: 2, velocity: 0.8, degree: 5 },
+      { step: 10, length: 1, velocity: 0.9, degree: 1 },
+      { step: 11, length: 1, velocity: 0.6, degree: 1 },
+      { step: 12, length: 2, velocity: 0.75, degree: 7, octave: -1 },
+      { step: 14, length: 2, velocity: 0.7, degree: 5, octave: -1 },
     ],
   },
   chords: {
     steps: 16,
     voicing: [1, 3, 4],
-    register: 57,
+    register: 55,
     hits: [
       { step: 2, length: 2, velocity: 0.55 },
       { step: 6, length: 1, velocity: 0.45 },
-      { step: 10, length: 2, velocity: 0.55 },
-      { step: 15, length: 1, velocity: 0.4 },
+      { step: 8, length: 3, velocity: 0.5 },
+      { step: 14, length: 2, velocity: 0.45 },
     ],
   },
-  soloScale: 'minor pentatonic',
-  altScales: ['minor blues', 'mixolydian'],
+  soloScale: 'major pentatonic',
+  altScales: ['major'],
+}
+
+/** B♭ major at 88, soul R&B with a gospel turn: a deep shuffle, a walking bass, I–II7–ii–V. */
+export const SUNDAY_SHUFFLE: Groove = {
+  id: 'sunday-shuffle',
+  name: 'Sunday shuffle',
+  tempo: 88,
+  swing: 0.6,
+  key: { tonic: 10, mode: 'major' },
+  bars: 4,
+  progression: [
+    { rn: 'Imaj7', beats: 4 },
+    { rn: 'II7', beats: 4 },
+    { rn: 'ii9', beats: 4 },
+    { rn: 'V13', beats: 4 },
+  ],
+  drums: {
+    kick: [1, 0, 0, 0.5, 0, 0, 0, 0, 0.9, 0, 0, 0.5, 0, 0, 0, 0],
+    snare: [0, 0, 0, 0, 1, 0, 0, 0.2, 0, 0, 0, 0, 1, 0, 0, 0.2],
+    hat: [0.55, 0.3, 0.45, 0.3, 0.55, 0.3, 0.45, 0.3, 0.55, 0.3, 0.45, 0.3, 0.55, 0.3, 0, 0.3],
+    openHat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.4, 0],
+  },
+  bass: {
+    steps: 16,
+    register: 36,
+    notes: [
+      { step: 0, length: 2, velocity: 0.95, degree: 1 },
+      { step: 3, length: 1, velocity: 0.6, degree: 5, octave: -1 },
+      { step: 4, length: 2, velocity: 0.8, degree: 1 },
+      { step: 7, length: 1, velocity: 0.6, degree: 2 },
+      { step: 8, length: 2, velocity: 0.85, degree: 3 },
+      { step: 11, length: 1, velocity: 0.7, degree: 5 },
+      { step: 12, length: 2, velocity: 0.75, degree: 6 },
+      { step: 14, length: 2, velocity: 0.7, degree: 5 },
+    ],
+  },
+  chords: {
+    steps: 16,
+    voicing: [1, 3, 4],
+    register: 55,
+    hits: [
+      { step: 0, length: 3, velocity: 0.5 },
+      { step: 6, length: 2, velocity: 0.5 },
+      { step: 10, length: 1, velocity: 0.4 },
+      { step: 12, length: 3, velocity: 0.45 },
+    ],
+  },
+  soloScale: 'major pentatonic',
+  altScales: ['major'],
 }
 
 /** The first one opens when the app starts. */
@@ -356,7 +344,7 @@ export const GROOVES: readonly Groove[] = [
   SOUL_GROOVE,
   SLOW_JAM,
   BOOGIE,
-  GHOST_NOTE_POCKET,
-  SLAP_AND_POP,
-  DOMINANT_STRUT,
+  NEO_SOUL_DRIFT,
+  RNB_BOUNCE,
+  SUNDAY_SHUFFLE,
 ]

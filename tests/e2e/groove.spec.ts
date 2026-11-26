@@ -175,9 +175,9 @@ test('every groove renders clear of the safety clip, with no dropouts', async ({
     'soul-groove',
     'slow-jam',
     'boogie',
-    'ghost-note-pocket',
-    'slap-and-pop',
-    'dominant-strut',
+    'neo-soul-drift',
+    'rnb-bounce',
+    'sunday-shuffle',
   ]) {
     const { peak, dropouts } = await page.evaluate(
       (spec) => (window as DevWindow).__keyflow!.renderGroove(spec),
