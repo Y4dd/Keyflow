@@ -176,7 +176,8 @@ export function createMonoNoteStack(): MonoNoteStack {
 /**
  * Legato-only glide: the pitch slides only when moving between held keys. A note played
  * after all keys are up starts on its own pitch, unless glide-hold (the pedal's Glide-hold
- * mode) forces glide on: then it slides from the last pitch played, if there was one.
+ * mode) forces glide on: then it slides from the last pitch played, if there was one, for at
+ * least GLIDE_HOLD_MIN_S.
  */
 export function glideTimeFor(
   action: MonoAction,
@@ -185,5 +186,9 @@ export function glideTimeFor(
   playedBefore = true,
 ): number {
   const glides = action.kind === 'legato' || (action.kind === 'attack' && glideHold && playedBefore)
-  return glides ? Math.max(0, glideTime) : 0
+  if (!glides) return 0
+  return Math.max(glideHold ? GLIDE_HOLD_MIN_S : 0, glideTime)
 }
+
+/** Glide-hold's shortest slide: Funk Lead's 60 ms default was too short to hear (P0-T7). */
+export const GLIDE_HOLD_MIN_S = 0.15

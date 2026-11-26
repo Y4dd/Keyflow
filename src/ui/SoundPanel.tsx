@@ -4,6 +4,7 @@ import { Note } from 'tonal'
 import { MAX_BEND_TIME_MS, type PedalMode } from '../audio/expression.ts'
 import { getPreset, PRESETS } from '../audio/presets/index.ts'
 import type { KnobSpec, PresetId } from '../audio/presets/types.ts'
+import { GLIDE_HOLD_MIN_S } from '../audio/voices.ts'
 import { MAX_OCTAVE, MIN_OCTAVE, type ZoneId } from '../audio/zones.ts'
 import { BEND_KEYS } from '../input/computer/bend.ts'
 import { audio, useAudioStore } from '../state/audio.ts'
@@ -252,7 +253,7 @@ const PEDAL_MODES: { mode: PedalMode; label: string; text: string }[] = [
   {
     mode: 'glideHold',
     label: 'Glide-hold',
-    text: "the main sound glides into every note while the pedal is down, at its glide time (Funk Lead's Glide time knob, a fixed glide on Wobble Bass, none on EP Keys).",
+    text: `the main sound glides into every note while the pedal is down, at its glide time but at least ${GLIDE_HOLD_MIN_S * 1000} ms (Funk Lead's Glide time knob, a fixed glide on Wobble Bass, none on EP Keys).`,
   },
 ]
 

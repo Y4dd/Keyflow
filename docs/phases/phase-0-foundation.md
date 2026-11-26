@@ -125,7 +125,7 @@ _Built and pushed as 195f466. Manual checks 1–5 passed on the deployed page (u
 5. Turn Split keyboard off: the main sound plays every key. Try EP Keys across the whole keyboard with both hands.
 6. **Your call (open question):** which split point and octave shifts feel right for left-hand bass and right-hand lead? Try the left sound at −1 octave. I'll make your choice the default. **User, 2026-11-25: not yet able to judge; defaults kept (G3, no octave shift).**
 
-### P0-T7: Pedal modes and bend substitutes [built 2026-11-25, manual check pending]
+### P0-T7: Pedal modes and bend substitutes [done 2026-11-25]
 - Pedal mode setting: **Sustain** (normal), **Bend** (pedal down bends the lead up by N semitones over T ms; release returns), **Glide-hold** (pedal down forces glide on).
 - Bend amount: 1 or 2 semitones. A later option (Phase 1): bend to the next scale tone.
 - Laptop bend: hold a configurable key to bend up while held, or use the mouse wheel or touchpad scroll as a continuous bend that springs back to center.
@@ -142,6 +142,8 @@ _Built 2026-11-25. Code: `src/audio/expression.ts` (pure: pedal modes and bend s
 4. **Must-pass. Glide-hold.** Choose **Glide-hold**. Play detached lead notes (lift each key before the next) with the pedal down, then with it up. Pass: with the pedal down, each note slides from the one before; up, each starts on its own pitch. Fail: no slide with the pedal down, or a slide with it up.
 5. **Taste. Laptop bend.** Hold a lead note on the YPT-380 and hold **Space**: the pitch bends up while Space is held. Then scroll (mouse wheel or touchpad) over the on-screen keys: the pitch follows and springs back when you stop. Which bend key do you prefer (Space or \\), and are the scroll direction and speed right?
 6. **Must-pass. Firefox.** Repeat steps 1 and 2 in Firefox. Pass and fail as there.
+
+_Manual check results (2026-11-25, deployed 622598a, Chrome and Firefox, YPT-380): steps 1, 2, 4, 5 and 6 pass. Step 4 (Glide-hold) at first seemed to do nothing and step 5 (laptop bend) at first did nothing; both then worked (see Findings, "P0-T7 manual check"). Glide-hold now slides for at least 150 ms. Taste step 3 wasn't answered, so the defaults stay (100 ms, 2 semitones); step 5 gave no key preference, so Space stays._
 
 ### P0-T8: Latency calibration [built 2026-11-25, manual check pending]
 - Tap test: a click plays for 8–16 beats and the user taps any key on the beat. Store the median offset (ms) as the calibration offset. Show its spread; if it's too noisy, ask to retry.
@@ -256,3 +258,8 @@ _(Filled in during P0-T2 and P0-T8.)_
 - **Chromium's `currentTime` moves on during a task; Firefox's doesn't.** In one `page.evaluate`, a 20 ms busy-wait advanced Chromium's clock by 20.3 ms and Firefox's by 0.
 - **Cause:** Tone's `Source.start` moves a start time that is already past up to `currentTime`. The FM voice's 1 ms guard (from P0-T7) recorded the time it asked for, not the later time Tone used, so when Chromium's clock ticked between the engine reading `Tone.immediate()` and Tone starting the oscillators, the next start on that voice could land on exactly the same time.
 - **Fix:** the voice records `max(asked time, the clock read after triggerAttack)`, which is never earlier than the time Tone used. Test: an offline render that sends a pitch twice at 0.05 s with times of 0.01 s (`sendAt` in `src/dev/render.ts`) failed with the error in both browsers before the fix and passes after. That render and the stolen-voice test then passed 100 of 100 runs each in both browsers.
+
+### P0-T7 manual check (2026-11-25, deployed 622598a, Chrome and Firefox, YPT-380)
+- **Step 4, Glide-hold, "feels like it doesn't do anything":** the slides were there but too short to hear. Glide-hold glided at the sound's glide time, 60 ms by default on Funk Lead (`glideTimeFor` returned 0.06 s for a detached note with the pedal down, as its unit test showed). The user heard it once the Glide time knob was raised. **Fix:** glide-hold now slides for at least 150 ms (`GLIDE_HOLD_MIN_S` in `src/audio/voices.ts`, unit test "glide-hold slides for at least GLIDE_HOLD_MIN_S"). With the pedal up, the knob's value is used as before.
+- **Step 5, laptop bend, "it does nothing", later "the laptop bend key does work", and the wheel bend too:** not reproduced. Muted Playwright runs of the manual sequence in Chromium (Bend, both bend amounts, a bend time, Glide-hold, a note held through the MIDI parser with pedal messages on ch 1–3, then saved settings and a reload) showed the Space bend at +2 and one wheel notch at +1 every time, with no page errors. **Probable cause, not confirmed:** the held note was left of the split line (for example after moving the split in the P0-T9 checks), so it played Wobble Bass, which bends never move, by design. No code change.
+- **Firefox not detecting the keyboard:** Chrome had the YPT-380 open at the same time (Windows lets one app hold a MIDI device). Closing it fixed it; no code change.

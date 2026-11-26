@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createMonoNoteStack, createPolyAllocator, glideTimeFor } from './voices.ts'
+import {
+  createMonoNoteStack,
+  createPolyAllocator,
+  GLIDE_HOLD_MIN_S,
+  glideTimeFor,
+} from './voices.ts'
 
 describe('createPolyAllocator', () => {
   it('gives each new pitch a free voice and releases it on note-off', () => {
@@ -177,11 +182,18 @@ describe('glideTimeFor (legato-only glide)', () => {
   })
 
   it('glide-hold also glides into a detached note, but not into the first one', () => {
-    expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.06, true)).toBe(0.06)
-    expect(glideTimeFor({ kind: 'legato', note: 64 }, 0.06, true)).toBe(0.06)
+    expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.25, true)).toBe(0.25)
+    expect(glideTimeFor({ kind: 'legato', note: 64 }, 0.25, true)).toBe(0.25)
     expect(glideTimeFor({ kind: 'release' }, 0.06, true)).toBe(0)
     // Nothing played yet: there is no pitch to glide from.
     expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.06, true, false)).toBe(0)
+  })
+
+  it('glide-hold slides for at least GLIDE_HOLD_MIN_S, so the default glide is audible', () => {
+    // Funk Lead's 60 ms default was too short to notice (P0-T7 manual check 4).
+    expect(glideTimeFor({ kind: 'attack', note: 64 }, 0.06, true)).toBe(GLIDE_HOLD_MIN_S)
+    expect(glideTimeFor({ kind: 'legato', note: 64 }, 0, true)).toBe(GLIDE_HOLD_MIN_S)
+    expect(glideTimeFor({ kind: 'legato', note: 64 }, 0.06)).toBe(0.06) // pedal up: the knob
   })
 
   it('a played phrase: glide on the overlapping notes, none after a gap', () => {
