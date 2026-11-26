@@ -132,10 +132,15 @@ test('the computer-key letters can be hidden, and only they leave the drawing', 
   page,
 }) => {
   await open(page)
+  // Sound on first: the first click anywhere starts it, and the page around the keys settles.
+  await page.getByRole('button', { name: 'Start audio' }).click()
+  await expect(page.getByTestId('audio-status')).toHaveAttribute('data-status', 'running')
   await wheels(page, 'Off')
   await shows(page, E, null) // E was dimmed: now redrawn without highlighting
-  const withLetters = await image(page)
   const toggle = page.getByLabel('Show the computer-key letters on the keys')
+  // Two drawings in a row that match: nothing else is still changing the canvas.
+  let withLetters = ''
+  await expect.poll(async () => withLetters === (withLetters = await image(page))).toBe(true)
   await toggle.uncheck()
   await expect.poll(() => image(page)).not.toBe(withLetters)
   await toggle.check()
