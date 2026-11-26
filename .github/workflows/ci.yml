@@ -73,14 +73,30 @@ jobs:
         run: npx playwright install ${{ matrix.browser }}
       # The runner has no sound device. Chromium falls back to a silent output on its own;
       # Firefox's AudioContext never starts without one, so give it a silent PulseAudio sink.
+      # The slow part is downloading pulseaudio's ~55 packages from a flaky mirror, so cache the .debs
+      # per runner image and install them with dpkg. shortcut: if dpkg can't (image drift), it falls
+      # back to the apt download, which only re-fills the cache once the image version changes.
+      - id: image
+        if: matrix.browser == 'firefox'
+        run: echo "version=$ImageVersion" >> "$GITHUB_OUTPUT"
+      - name: Cache the PulseAudio packages
+        if: matrix.browser == 'firefox'
+        uses: actions/cache@v6
+        with:
+          path: ~/apt-archives
+          key: apt-pulseaudio-${{ steps.image.outputs.version }}
       - name: Add a silent audio device
         if: matrix.browser == 'firefox'
         timeout-minutes: 5
         run: |
-          # A stalled mirror should retry, not hang the job.
-          echo 'Acquire::Retries "3"; Acquire::http::Timeout "20"; Acquire::https::Timeout "20";' | sudo tee /etc/apt/apt.conf.d/99ci-retries
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends pulseaudio
+          if ! sudo dpkg -i "$HOME"/apt-archives/*.deb; then
+            # A stalled mirror should retry, not hang the job.
+            echo 'Acquire::Retries "3"; Acquire::http::Timeout "20"; Acquire::https::Timeout "20";' | sudo tee /etc/apt/apt.conf.d/99ci-retries
+            mkdir -p ~/apt-archives/partial
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends -o Dir::Cache::archives="$HOME/apt-archives" pulseaudio
+            sudo chmod -R a+rX ~/apt-archives
+          fi
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=silent
           pactl set-default-sink silent
