@@ -170,7 +170,15 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
 test('every groove renders clear of the safety clip, with no dropouts', async ({ page }) => {
   test.setTimeout(60_000)
   await open(page)
-  for (const groove of ['electro-funk-vamp', 'soul-groove', 'slow-jam', 'boogie']) {
+  for (const groove of [
+    'electro-funk-vamp',
+    'soul-groove',
+    'slow-jam',
+    'boogie',
+    'ghost-note-pocket',
+    'slap-and-pop',
+    'dominant-strut',
+  ]) {
     const { peak, dropouts } = await page.evaluate(
       (spec) => (window as DevWindow).__keyflow!.renderGroove(spec),
       { groove, bars: 4 },

@@ -80,7 +80,7 @@ _Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velve
 
 _Manual check results (2026-11-26, Chrome, YPT-380): steps 1 to 3 pass; Warm Tines is kept as built._
 
-### P1-T3c: A funky groove in place of Boogie
+### P1-T3c: A funky groove in place of Boogie [in progress]
 Added 2026-11-26 (P1-T3 manual check): the user finds Boogie horrible and wants something funky in its place. The other three grooves stay as they are.
 - Write 2 or 3 **original funk groove candidates** (e.g. a tight 16th-note clavinet-style comp over a syncopated bass, a slap-feel octave bass with ghost notes, a mid-tempo two-chord funk vamp in a key the other grooves don't use), in the P1-T1 format, using Round Bass and the EP Keys chords. **Don't imitate a specific song** and name none after an artist.
 - **The user auditions them** on the deployed page and picks one; iterate if none is liked. The pick replaces Boogie in the Groove menu, and the other candidates are removed.
