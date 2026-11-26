@@ -53,29 +53,39 @@ export function createInstrument(
   }
 }
 
-/** Warm Tines: the FM voices through a gentle low-pass and a tremolo (an LFO swinging a gain). */
+/**
+ * Warm Tines: the FM voices through a low-mid boost, a low-pass (the Tone knob) and a tremolo
+ * (an LFO swinging a gain).
+ */
 function tinesInstrument(
   preset: Extract<Preset, { kind: 'tines' }>,
   knobs: KnobValues,
   output: Tone.Gain,
 ): Instrument {
   const input = new Tone.Gain(1)
-  const tone = new Tone.Filter({ type: 'lowpass', frequency: preset.toneHz, rolloff: -12 })
+  const body = new Tone.Filter({
+    type: 'peaking',
+    frequency: preset.body.hz,
+    gain: preset.body.db,
+    Q: 0.7,
+  })
+  const tone = new Tone.Filter({ type: 'lowpass', frequency: knobs.tone, rolloff: -12, Q: 0.7 })
   const tremolo = new Tone.Gain(1)
   const lfo = new Tone.LFO({ frequency: preset.tremoloHz, min: 1 - knobs.tremolo, max: 1 })
   lfo.connect(tremolo.gain)
   lfo.start(Tone.immediate())
-  input.chain(tone, tremolo, output)
+  input.chain(body, tone, tremolo, output)
   const poly = polyInstrument(preset, knobs, input)
   return {
     ...poly,
     setKnob(id, value) {
       if (id === 'tremolo') lfo.min = 1 - value
+      else if (id === 'tone') tone.frequency.setValueAtTime(value, Tone.immediate())
       else poly.setKnob(id, value)
     },
     dispose() {
       poly.dispose()
-      for (const node of [tone, tremolo, lfo, output]) node.dispose()
+      for (const node of [body, tone, tremolo, lfo, output]) node.dispose()
     },
   }
 }

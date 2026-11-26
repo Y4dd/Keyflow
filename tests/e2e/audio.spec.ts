@@ -360,6 +360,27 @@ test('warm-tines: the Tremolo knob makes a held note swell and dip', async ({ pa
   expect(full).toBeGreaterThan(off + 6)
 })
 
+// Warm Tines: the Tone knob is its warmth; turned down, the same chord has less high end.
+test('warm-tines: turning Tone down makes it darker', async ({ page }) => {
+  await open(page)
+  const hf = async (tone: number) =>
+    (
+      await render(page, {
+        preset: 'warm-tines',
+        // Bright and hard, so there is high end for the knob to take away.
+        knobs: { tone, tremolo: 0, brightness: 1 },
+        notes: chord([48, 55, 60, 64, 67], 1, 0.05, 1),
+        duration: 1.1,
+        master: false,
+        windows: [[0.05, 0.6]],
+      })
+    ).windows[0].hf
+  const dark = await hf(500)
+  const bright = await hf(5000)
+  info('warm-tines hf at Tone 500 / 5000 Hz', dark)
+  expect(bright).toBeGreaterThan(dark * 1.2)
+})
+
 test('the master chain adds almost no delay', async ({ page }) => {
   await open(page)
   const onset = async (master: boolean) =>

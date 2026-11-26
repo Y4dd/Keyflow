@@ -74,18 +74,18 @@ export interface FmPreset extends PresetBase<'brightness'> {
 }
 
 /**
- * Warm Tines: EP Keys' FM voice, then a gentle low-pass for warmth and a tremolo (a level swung
- * by an LFO), as on a vintage electric piano.
+ * Warm Tines: EP Keys' FM voice, then a low-mid boost and a low-pass (the Tone knob) for warmth,
+ * and a tremolo (a level swung by an LFO), as on a vintage electric piano.
  */
-export interface TinesPreset extends PresetBase<'brightness' | 'tremolo'> {
+export interface TinesPreset extends PresetBase<'brightness' | 'tremolo' | 'tone'> {
   kind: 'tines'
   voice: 'poly'
   voices: number
   harmonicity: number
   amp: Envelope
   modulation: Envelope
-  /** Low-pass after the voices, Hz. */
-  toneHz: number
+  /** A gentle low-mid boost for a fuller body. */
+  body: { hz: number; db: number }
   tremoloHz: number
 }
 

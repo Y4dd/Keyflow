@@ -109,19 +109,22 @@ export const ROUND_BASS: LeadPreset = {
 export const WARM_TINES: TinesPreset = {
   id: 'warm-tines',
   name: 'Warm Tines',
-  description: 'A mellow, warm electric piano with a slow tremolo. Play harder for more bark.',
+  description:
+    'A mellow, warm electric piano with a slow tremolo. Turn Tone down for warmer, play harder for more bark.',
   kind: 'tines',
   voice: 'poly',
-  levelDb: -5,
+  levelDb: -8,
   velocityRangeDb: 18,
   voices: 10,
   harmonicity: 1,
-  amp: { attack: 0.002, decay: 5, sustain: 0.2, release: 0.5 },
+  amp: { attack: 0.003, decay: 5, sustain: 0.2, release: 0.5 },
   modulation: { attack: 0.002, decay: 0.35, sustain: 0.15, release: 0.4 },
-  toneHz: 2200,
+  body: { hz: 220, db: 4 },
   tremoloHz: 4.2,
   knobs: {
-    brightness: { label: 'Brightness', min: 0, max: 1, default: 0.35, curve: 'linear', unit: '%' },
+    brightness: { label: 'Brightness', min: 0, max: 1, default: 0.2, curve: 'linear', unit: '%' },
+    // Lower is warmer: the low-pass after the voices.
+    tone: { label: 'Tone', min: 500, max: 5000, default: 1200, curve: 'log', unit: 'Hz' },
     tremolo: { label: 'Tremolo', min: 0, max: 0.8, default: 0.3, curve: 'linear', unit: '%' },
   },
 }
