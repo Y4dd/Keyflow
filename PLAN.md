@@ -55,7 +55,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 
 | # | Phase | Status | File |
 |---|---|---|---|
-| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | In progress (all tasks built: P0-T1 to P0-T6 done; P0-T7, P0-T8 and P0-T9 built, manual checks pending) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
+| 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
@@ -73,8 +73,6 @@ Checks only the user can do (hands, ears, the real YPT-380). Work carries on pas
 
 | Task | Must-pass steps | Taste steps | Blocks | Browsers | Minutes |
 |---|---|---|---|---|---|
-| P0-T8 latency calibration | 1, 2, 3, 4 | 5 | P1-T8, P3-T2 | Chrome, Firefox | 10 |
-| P0-T9 canvas keyboard and settings | 1, 2, 3, 4 | 5 | P1-T4 | Chrome, Firefox | 8 |
 
 ---
 
