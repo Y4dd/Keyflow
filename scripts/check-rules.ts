@@ -30,6 +30,7 @@ export const PURE_PATHS = [
   'src/audio/expression.ts',
   'src/audio/calibration.ts',
   'src/audio/presets/',
+  'src/grooves/groove.ts',
 ]
 /** `practice/` may call storage (architecture.md); keep those calls in this folder. */
 export const PURE_EXEMPT = ['src/practice/storage/']

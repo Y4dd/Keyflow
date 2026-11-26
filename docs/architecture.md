@@ -64,6 +64,13 @@ src/
 - **Master:** gain → limiter (DynamicsCompressor, about 6 ms of delay) → safety clip (WaveShaper, linear to 0.9, no delay) → destination. Kept as built (decisions log, 2026-11-23).
 - **Latency readout:** `src/audio/latency.ts` reads the native context through standardized-audio-context's private `_nativeAudioContext` field, feature-checked; see the decisions log.
 
+## Grooves (P1-T1)
+
+- **Format:** `src/grooves/groove.ts` (pure) defines `Groove` as plain JSON: tempo, swing (0..1), key (tonic pitch class plus mode), bars, a progression of Roman numerals with beats, and three looping tracks on a 16th-note step grid: drums (velocity per step per voice), bass (chord-relative scale degrees with rhythm) and chords (a chord-tone voicing template with rhythm), plus a default solo scale and alternatives. 4/4 and straight 16ths only for now.
+- **Roman numerals** (`chordOf`, `src/music/harmony.ts`) count degrees from the major scale in every mode (tonal's convention: a minor key writes bIII, bVI, bVII); case gives the triad (`i7` = m7, `IV7` = dominant 7). Everything resolves to pitch-class offsets from the tonic, so `transpose` only changes the tonic.
+- **Ticks:** `harmonyAt(groove, ticks, scale?)` takes unswung transport ticks at `PPQ = 192` (Tone's default; the player must assert it). The progression loops on its own length, and negative ticks (a count-in) wrap from the end. Swing is the pure `stepTick(step, swing)`: every second 16th moves from halfway through its 8th (swing 0) to two thirds of the way (2:1, swing 1), rounded to whole ticks, so Tone's Transport swing stays 0.
+- **Bass degrees** are degrees of the current chord's own scale (`degreeSemitones`: Dorian for m7, Mixolydian for 7, Locrian for m7b5, major for maj7), so degree 3 is always the chord's third and one pattern follows the changes.
+
 ## Timing model
 
 There are three clocks. Keep them straight.
@@ -87,7 +94,7 @@ There are three clocks. Keep them straight.
 
 ## Core types (sketch; refine in Phase 0)
 
-`InputSource` and `InputEvent` are implemented in `src/input/types.ts` (P0-T3); the rest is still a sketch.
+`InputSource` and `InputEvent` are implemented in `src/input/types.ts` (P0-T3) and `HarmonyAt` in `src/music/harmony.ts` (P1-T1); the rest is still a sketch.
 
 ```ts
 type InputSource = "midi" | "computer" | "onscreen" | "sim";
@@ -105,13 +112,14 @@ interface KeyboardLayout { split: boolean; splitNote: number /* main sound's low
 interface ZoneSound { presetId: PresetId; octave: number }
 interface Zone { id: "main" | "left"; lowNote: number; highNote: number; presetId: PresetId; transpose: number /* semitones */ }
 
-interface HarmonyAt {       // what's sounding at a moment in a groove or song
+interface HarmonyAt {       // what's sounding at a moment in a groove or song (src/music/harmony.ts, P1-T1)
   keyTonic: number;         // pitch class, e.g. 0 for C
   keyMode: "major" | "minor";
+  rn: string;               // the progression's Roman numeral, e.g. "IV7"
   chordRoot: number;        // pitch class
-  chordQuality: string;     // quality id from the shared vocabulary, e.g. "m7"
-  chordTones: number[];     // pitch classes
-  soloScale: number[];      // pitch classes for the chosen solo scale
+  chordQuality: string;     // tonal chord type id, e.g. "m7", "7", "maj7", "m7b5"
+  chordTones: number[];     // pitch classes, root first
+  soloScale: number[];      // pitch classes for the chosen solo scale, tonic first
 }
 // Display strings ("C minor", "Fm7") are derived from these with tonal at the UI boundary.
 ```

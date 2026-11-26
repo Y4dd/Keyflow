@@ -30,7 +30,7 @@ Added 2026-11-25 (the user's request): the app is redesigned before the rest of 
 - Fonts, icons and images are self-hosted (no third-party requests at runtime, the app stays local-first), with each license in `src/assets/LICENSES.md`; anything not MIT, Apache-2.0, BSD or ISC (e.g. SIL OFL fonts) gets a decisions-log line.
 - **Manual:** the look on the deployed page (taste) and that playing still feels instant with the canvas keyboard lighting the right keys (must-pass).
 
-### P1-T1: Groove data format
+### P1-T1: Groove data format [done 2026-11-25]
 - TypeScript types plus a JSON-serializable format with:
   - tempo, swing amount, key and mode, bar count
   - progression as Roman numerals with durations (e.g. `[{ rn: "i7", beats: 8 }, { rn: "IV7", beats: 8 }]`)
