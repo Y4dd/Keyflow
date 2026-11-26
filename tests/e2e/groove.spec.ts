@@ -131,3 +131,33 @@ test('Wobble sync ties the wobble rate to the tempo', async ({ page }) => {
   expect(gap(late(restartA), late(restartB))).toBeLessThan(spread / 10)
   expect(gap(late(restartA), late(eighthsAt120))).toBeGreaterThan(spread / 4)
 })
+
+// P1-T3: each shipped groove plays from the menu at its own key and tempo, and switching while
+// one plays restarts cleanly with nothing left sounding afterwards.
+test('every groove in the menu plays at its own key and tempo', async ({ page }) => {
+  await open(page)
+  await startSound(page)
+  await card(page).getByLabel('Count-in').uncheck()
+  await card(page).getByRole('button', { name: 'Play' }).click()
+  const menu = card(page).getByRole('combobox', { name: 'Groove' })
+  for (const [name, key, bpm] of [
+    ['Soul groove', 'E♭ major', 84],
+    ['Slow jam', 'D♭ major', 70],
+    ['Boogie', 'E minor', 116],
+    ['Electro-funk vamp', 'D minor', 108],
+  ] as const) {
+    await expect.poll(() => ticks(page), { timeout: 8000 }).toBeGreaterThan(BAR)
+    await menu.selectOption({ label: name })
+    await expect.poll(() => ticks(page)).toBeLessThan(BAR / 2)
+    await expect(card(page).getByRole('heading')).toContainText(name)
+    await expect(card(page).getByLabel('Key').locator('option:checked')).toHaveText(key)
+    await expect(card(page).getByText(`${bpm} BPM`)).toBeVisible()
+    // Restarted from the top, and its bass and chords sound.
+    await expect.poll(() => ticks(page), { timeout: 5000 }).toBeGreaterThan(BAR / 4)
+    await expect.poll(() => held(page), { timeout: 5000 }).toBeGreaterThan(0)
+  }
+  await card(page).getByRole('button', { name: 'Stop' }).click()
+  expect(await held(page)).toBe(0)
+  await page.waitForTimeout(300)
+  expect(await held(page)).toBe(0)
+})

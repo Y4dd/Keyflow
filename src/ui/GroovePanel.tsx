@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { useAudioStore } from '../state/audio.ts'
+import { GROOVES } from '../grooves/library.ts'
 import { groove, grooveOf, tempoRange, useGrooveStore } from '../state/groove.ts'
 
 // Key names as their key signatures spell them (the fewest accidentals for the mode).
@@ -24,7 +25,7 @@ function TransportIcon({ playing }: { playing: boolean }) {
   )
 }
 
-/** The groove transport: play and stop, key, tempo, loop and count-in. */
+/** The groove transport: play and stop, which groove, key, tempo, loop and count-in. */
 export function GroovePanel() {
   const { grooveId, tonic, bpm, loop, countIn, playing } = useGrooveStore()
   const running = useAudioStore((s) => s.status === 'running')
@@ -48,6 +49,22 @@ export function GroovePanel() {
           <TransportIcon playing={playing} />
           {playing ? 'Stop' : 'Play'}
         </button>
+        <label className="field">
+          Groove
+          <select
+            value={grooveId}
+            onChange={(e) => {
+              groove.setGroove(e.target.value)
+              blur(e)
+            }}
+          >
+            {GROOVES.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="field">
           Key
           <select

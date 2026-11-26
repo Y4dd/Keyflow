@@ -76,6 +76,17 @@ export const groove = {
     audio.engine()?.groove().stop()
     set({ playing: false })
   },
+  /**
+   * Picks a groove at its own key and tempo. While playing it restarts from the top: the old
+   * pattern's note-offs pair by ids the new one doesn't make, so swapping mid-bar could strand
+   * a note.
+   */
+  setGroove(id: string) {
+    const g = grooveOf(id)
+    set({ grooveId: g.id, tonic: g.key.tonic, bpm: g.tempo })
+    if (get().playing) groove.play()
+    else audio.engine()?.setTempo(g.tempo)
+  },
   setTonic: (tonic: number) => change({ tonic: ((tonic % 12) + 12) % 12 }),
   setBpm(bpm: number) {
     const [min, max] = tempoRange(grooveOf(get().grooveId))

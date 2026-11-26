@@ -46,7 +46,7 @@ Added 2026-11-25 (the user's request): the app is redesigned before the rest of 
 - **Automated:** the scheduler produces the expected event list for one bar (test it as data, without audio).
 - **Manual:** grooves stay tight with no drift over 5 minutes.
 
-### P1-T3: Four original grooves
+### P1-T3: Four original grooves [built 2026-11-26, manual check pending]
 Write original patterns. **Don't imitate a specific song.** Suggested starting points, open to change:
 
 | Groove | Feel | Tempo | Progression idea | Default solo scale |
@@ -57,6 +57,7 @@ Write original patterns. **Don't imitate a specific song.** Suggested starting p
 | Boogie | Driving four-on-the-floor, octave bass | ~116 | i7 – iv7 | Minor pentatonic / blues |
 
 - **Manual:** the user rates each one as fun to play over, and any that aren't get iterated.
+- Built: the four above as written (keys E♭ major, D♭ major and E minor for the new three), plus a Groove menu in the Groove card to pick one (its own key and tempo; restarts if playing). **Automated:** every shipped groove fills its bars, loops evenly, never overlaps bass notes, keeps the bass in the key or on the chord, and stays in a playable register in all 12 keys (`library.test.ts`); e2e plays each from the menu.
 
 ### P1-T4: Highlighting and "training wheels"
 - The canvas keyboard shows three tiers: **chord tones** (strong), **scale tones** (soft) and **other notes** (dimmed, **never red**).
