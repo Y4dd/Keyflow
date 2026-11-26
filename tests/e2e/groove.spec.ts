@@ -144,7 +144,7 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
   for (const [name, key, bpm] of [
     ['Soul groove', 'E♭ major', 84],
     ['Slow jam', 'D♭ major', 70],
-    ['Boogie', 'E minor', 116],
+    ['Neo-soul drift', 'F minor', 80],
     ['Electro-funk vamp', 'D minor', 108],
   ] as const) {
     await expect.poll(() => ticks(page), { timeout: 8000 }).toBeGreaterThan(BAR)
@@ -170,15 +170,7 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
 test('every groove renders clear of the safety clip, with no dropouts', async ({ page }) => {
   test.setTimeout(60_000)
   await open(page)
-  for (const groove of [
-    'electro-funk-vamp',
-    'soul-groove',
-    'slow-jam',
-    'boogie',
-    'neo-soul-drift',
-    'rnb-bounce',
-    'sunday-shuffle',
-  ]) {
+  for (const groove of ['electro-funk-vamp', 'soul-groove', 'slow-jam', 'neo-soul-drift']) {
     const { peak, dropouts } = await page.evaluate(
       (spec) => (window as DevWindow).__keyflow!.renderGroove(spec),
       { groove, bars: 4 },

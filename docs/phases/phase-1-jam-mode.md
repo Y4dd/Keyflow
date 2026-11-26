@@ -80,12 +80,14 @@ _Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velve
 
 _Manual check results (2026-11-26, Chrome, YPT-380): steps 1 to 3 pass; Warm Tines is kept as built._
 
-### P1-T3c: A funky groove in place of Boogie [in progress]
+### P1-T3c: An R&B groove in place of Boogie [done 2026-11-26]
 Added 2026-11-26 (P1-T3 manual check): the user finds Boogie horrible and wants something funky in its place. The other three grooves stay as they are.
 - Write 2 or 3 **original groove candidates** in **R&B, soul R&B or neo-soul** (revised 2026-11-26: the user turned down a first round of three funk candidates and asked for these genres), in keys the other grooves don't use, in the P1-T1 format, using Round Bass and the EP Keys chords. **Don't imitate a specific song** and name none after an artist.
 - **The user auditions them** on the deployed page and picks one; iterate if none is liked. The pick replaces Boogie in the Groove menu, and the other candidates are removed.
 - **Automated:** the same library checks as P1-T3 (fills its bars, loops evenly, bass in key or on the chord, playable register in all 12 keys) and the render checks (no dropouts, under the safety clip); e2e plays it from the menu.
 - **Manual:** the audition and the pick (taste).
+
+_Audition (2026-11-26): round 1 (three funk candidates: Ghost-note pocket, Slap and pop, Dominant strut) was turned down; the user asked for R&B, soul R&B or neo-soul. Round 2 offered Neo-soul drift, R&B bounce and Sunday shuffle, and **the user picked Neo-soul drift**. Built: Neo-soul drift (F minor, 80 BPM, swing 0.5, i9–iv9–bVImaj7–bVII9, rootless 3rd–7th–9th chord voicings, a lazy kick and rim ghosts) replaces Boogie in `GROOVES`; Boogie and the other candidates are removed. **Automated:** the library tests and the offline render (no dropouts, under the safety clip) cover it, and e2e plays it from the menu; the highlight test that switched to Boogie now switches to the Soul groove (its own scales, E♭maj7, then F major). **Manual:** the pick was the check (taste), so none is queued._
 
 
 ### P1-T4: Highlighting and "training wheels" [done 2026-11-26]

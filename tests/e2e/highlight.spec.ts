@@ -83,15 +83,19 @@ for (const look of LOOKS) {
     await scale.selectOption({ label: 'Dorian' })
     await shows(page, E, 'scale') // Dorian adds E and B
 
-    await card(page).getByRole('combobox', { name: 'Groove' }).selectOption({ label: 'Boogie' })
-    await expect(scale).toHaveValue('minor pentatonic')
-    await expect(scale.locator('option')).toHaveText(['Minor pentatonic', 'Blues'])
-    // Boogie: E minor, i7 = Em7 (E G B D).
-    await shows(page, E, 'chord')
-
-    await card(page).getByLabel('Key').selectOption({ label: 'F minor' })
-    await shows(page, F, 'chord')
+    await card(page)
+      .getByRole('combobox', { name: 'Groove' })
+      .selectOption({ label: 'Soul groove' })
+    await expect(scale).toHaveValue('major pentatonic')
+    await expect(scale.locator('option')).toHaveText(['Major pentatonic', 'Major'])
+    // Soul groove: E♭ major, Imaj7 = E♭maj7 (E♭ G B♭ D); E is outside it and the scale.
+    await shows(page, D, 'chord')
     await shows(page, E, 'other')
+
+    await card(page).getByLabel('Key').selectOption({ label: 'F major' })
+    // Fmaj7: F A C E.
+    await shows(page, F, 'chord')
+    await shows(page, E, 'chord')
   })
 
   test(`${look}: while a groove plays, the next chord shows before it sounds`, async ({ page }) => {

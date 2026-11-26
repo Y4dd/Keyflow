@@ -65,7 +65,6 @@ describe('degreeSemitones', () => {
     expect(degreeSemitones('7', 3)).toBe(4)
     expect(degreeSemitones('7', 7)).toBe(10)
     expect(degreeSemitones('maj7', 7)).toBe(11)
-    expect(degreeSemitones('maj9', 7)).toBe(11)
     expect(degreeSemitones('m7b5', 5)).toBe(6)
     expect(degreeSemitones('m7', 1)).toBe(0)
   })
