@@ -33,7 +33,7 @@ const ART: Record<PresetId, JSX.Element> = {
       <circle cx="92" cy="52" r="7" fill="#1c1512" />
     </>
   ),
-  // P1-T3b candidates. Round: soft rings blooming from a corner.
+  // Round Bass: soft rings blooming from a corner.
   'round-bass': (
     <>
       <rect width="140" height="140" fill="#a28bff" />
@@ -42,42 +42,16 @@ const ART: Record<PresetId, JSX.Element> = {
       <circle cx="0" cy="140" r="40" fill="#1c1512" />
     </>
   ),
-  // Pluck: a struck string, its swing dying away.
-  'finger-pluck': (
+  // Warm Tines: a row of tines over the bar they ring against.
+  'warm-tines': (
     <>
       <rect width="140" height="140" fill="#3fcfc0" />
-      <path d="M0 140 V96 L140 60 V140 Z" fill="#25a397" />
-      <path
-        d="M0 70 L14 26 L28 108 L44 44 L60 92 L78 58 L96 80 L114 66 L140 70"
-        stroke="#f1e8da"
-        strokeWidth="5"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </>
-  ),
-  // Velvet: low bands, heavier the deeper they sit.
-  'velvet-sub': (
-    <>
-      <rect width="140" height="140" fill="#dd8cf2" />
-      <rect y="62" width="140" height="10" fill="#b25fcb" />
-      <rect y="82" width="140" height="18" fill="#b25fcb" />
-      <rect y="110" width="140" height="30" fill="#b25fcb" />
-      <rect y="40" width="140" height="4" fill="#f1e8da" />
-    </>
-  ),
-  // Rubber: a ball bouncing lower each time.
-  'rubber-bass': (
-    <>
-      <rect width="140" height="140" fill="#bfe04f" />
-      <rect y="112" width="140" height="28" fill="#94b52c" />
-      <path
-        d="M6 112 Q30 10 54 112 Q72 46 90 112 Q103 74 116 112 Q124 96 132 112"
-        stroke="#f1e8da"
-        strokeWidth="5"
-        fill="none"
-      />
-      <circle cx="30" cy="47" r="11" fill="#1c1512" />
+      <rect y="96" width="140" height="44" fill="#25a397" />
+      {[22, 52, 30, 66, 40, 80, 48].map((h, i) => (
+        <rect key={i} x={12 + i * 18} y={96 - h} width="8" height={h} fill="#25a397" />
+      ))}
+      <rect y="96" width="140" height="6" fill="#f1e8da" />
+      <circle cx="30" cy="30" r="10" fill="#1c1512" />
     </>
   ),
 }

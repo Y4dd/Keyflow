@@ -29,7 +29,7 @@ Grooves are pattern data, not audio, so the app always knows the current chord a
 - Local-first: no backend, no accounts, no third-party requests at runtime. Fonts, icons and images are self-hosted with their licenses in `assets/LICENSES.md`.
 - Firefox and Chrome, desktop. Phones are not a target.
 - Audio and input never go through React; the canvas keyboard draws in an animation frame after a change.
-- Terminology: main sound and left sound (the split), Sustain / Bend / Glide-hold (pedal modes), presets Funk Lead, Wobble Bass, EP Keys. Note names spelled by key at the display boundary; C4 is middle C.
+- Terminology: main sound and left sound (the split), Sustain / Bend / Glide-hold (pedal modes), presets Funk Lead, Wobble Bass, EP Keys, Round Bass, Warm Tines. Note names spelled by key at the display boundary; C4 is middle C.
 
 ## Brand Commitments
 

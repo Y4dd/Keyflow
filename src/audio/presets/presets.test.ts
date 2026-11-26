@@ -2,15 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { defaultKnobs, getPreset, PRESETS } from './index.ts'
 
 describe('presets', () => {
-  it('are the Phase 0 presets and the P1-T3b bass candidates, with unique ids', () => {
+  it('are the Phase 0 presets, Round Bass and Warm Tines (P1-T3b), with unique ids', () => {
     expect(PRESETS.map((p) => p.id)).toEqual([
       'funk-lead',
       'wobble-bass',
       'ep-keys',
       'round-bass',
-      'finger-pluck',
-      'velvet-sub',
-      'rubber-bass',
+      'warm-tines',
     ])
     expect(getPreset('ep-keys').name).toBe('EP Keys')
     expect(() => getPreset('nope' as 'ep-keys')).toThrow(/Unknown preset/)
@@ -24,8 +22,8 @@ describe('presets', () => {
     expect(getPreset('ep-keys').voice).toBe('poly')
     expect(getPreset('funk-lead').voice).toBe('mono')
     expect(getPreset('wobble-bass').voice).toBe('mono')
-    for (const id of ['round-bass', 'finger-pluck', 'velvet-sub', 'rubber-bass'] as const)
-      expect(getPreset(id).voice).toBe('mono')
+    expect(getPreset('round-bass').voice).toBe('mono')
+    expect(getPreset('warm-tines').voice).toBe('poly')
   })
 
   it('have knob defaults inside their ranges, with sane envelopes', () => {

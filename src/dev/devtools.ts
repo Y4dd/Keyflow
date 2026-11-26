@@ -55,7 +55,7 @@ export interface KeyflowDevApi {
   }
   /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
   render(spec: RenderSpec): Promise<RenderResult>
-  /** Renders a groove offline with a chosen bass; its peak, and each bar's (src/dev/render.ts). */
+  /** Renders a groove offline; its peak, and each bar's (src/dev/render.ts). */
   renderGroove(spec: GrooveRenderSpec): Promise<{ peak: number; bars: number[] }>
   /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
   calibrationClicks(): { perf: number[]; context: number[] } | null

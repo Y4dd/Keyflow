@@ -73,14 +73,22 @@ export interface FmPreset extends PresetBase<'brightness'> {
   modulation: Envelope
 }
 
-export type Preset = LeadPreset | WobblePreset | FmPreset
-export type PresetId =
-  | 'funk-lead'
-  | 'wobble-bass'
-  | 'ep-keys'
-  // shortcut: P1-T3b audition candidates, the losers go once the user picks one.
-  | 'round-bass'
-  | 'finger-pluck'
-  | 'velvet-sub'
-  | 'rubber-bass'
+/**
+ * Warm Tines: EP Keys' FM voice, then a gentle low-pass for warmth and a tremolo (a level swung
+ * by an LFO), as on a vintage electric piano.
+ */
+export interface TinesPreset extends PresetBase<'brightness' | 'tremolo'> {
+  kind: 'tines'
+  voice: 'poly'
+  voices: number
+  harmonicity: number
+  amp: Envelope
+  modulation: Envelope
+  /** Low-pass after the voices, Hz. */
+  toneHz: number
+  tremoloHz: number
+}
+
+export type Preset = LeadPreset | WobblePreset | FmPreset | TinesPreset
+export type PresetId = 'funk-lead' | 'wobble-bass' | 'ep-keys' | 'round-bass' | 'warm-tines'
 export type KnobValues = Record<string, number>

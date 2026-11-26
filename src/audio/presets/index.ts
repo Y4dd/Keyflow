@@ -1,6 +1,14 @@
 // The presets, as data. Original sounds; names describe the sound, not an artist.
 
-import type { FmPreset, KnobValues, LeadPreset, Preset, PresetId, WobblePreset } from './types.ts'
+import type {
+  FmPreset,
+  KnobValues,
+  LeadPreset,
+  Preset,
+  PresetId,
+  TinesPreset,
+  WobblePreset,
+} from './types.ts'
 
 export const FUNK_LEAD: LeadPreset = {
   id: 'funk-lead',
@@ -98,75 +106,27 @@ export const ROUND_BASS: LeadPreset = {
   knobs: bass(380),
 }
 
-export const FINGER_PLUCK: LeadPreset = {
-  id: 'finger-pluck',
-  name: 'Finger Pluck',
-  description: 'A plucked, finger-style bass: a quick bright attack that fades like a string.',
-  kind: 'lead',
-  voice: 'mono',
-  levelDb: -8,
-  velocityRangeDb: 12,
-  saw: { level: 0.3 },
-  square: { level: 0.3, detuneCents: 0 },
-  sine: { level: 0.4 },
-  filter: {
-    q: 1.5,
-    envOctaves: 2.8,
-    env: { attack: 0.002, decay: 0.12, sustain: 0.05, release: 0.15 },
+export const WARM_TINES: TinesPreset = {
+  id: 'warm-tines',
+  name: 'Warm Tines',
+  description: 'A mellow, warm electric piano with a slow tremolo. Play harder for more bark.',
+  kind: 'tines',
+  voice: 'poly',
+  levelDb: -5,
+  velocityRangeDb: 18,
+  voices: 10,
+  harmonicity: 1,
+  amp: { attack: 0.002, decay: 5, sustain: 0.2, release: 0.5 },
+  modulation: { attack: 0.002, decay: 0.35, sustain: 0.15, release: 0.4 },
+  toneHz: 2200,
+  tremoloHz: 4.2,
+  knobs: {
+    brightness: { label: 'Brightness', min: 0, max: 1, default: 0.35, curve: 'linear', unit: '%' },
+    tremolo: { label: 'Tremolo', min: 0, max: 0.8, default: 0.3, curve: 'linear', unit: '%' },
   },
-  amp: { attack: 0.003, decay: 0.9, sustain: 0.35, release: 0.1 },
-  knobs: bass(220),
 }
 
-export const VELVET_SUB: LeadPreset = {
-  id: 'velvet-sub',
-  name: 'Velvet Sub',
-  description: 'A smooth, deep bass: mostly a pure low tone with a little edge on top.',
-  kind: 'lead',
-  voice: 'mono',
-  levelDb: -13,
-  velocityRangeDb: 8,
-  saw: { level: 0.2 },
-  square: { level: 0, detuneCents: 0 },
-  sine: { level: 0.8 },
-  filter: {
-    q: 0.7,
-    envOctaves: 0.8,
-    env: { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.2 },
-  },
-  amp: { attack: 0.008, decay: 0.2, sustain: 1, release: 0.15 },
-  knobs: bass(500),
-}
-
-export const RUBBER_BASS: LeadPreset = {
-  id: 'rubber-bass',
-  name: 'Rubber Bass',
-  description: 'A bouncy synth bass: a resonant filter snaps shut on every note.',
-  kind: 'lead',
-  voice: 'mono',
-  levelDb: -12.5,
-  velocityRangeDb: 10,
-  saw: { level: 0.25 },
-  square: { level: 0.4, detuneCents: 0 },
-  sine: { level: 0.3 },
-  filter: {
-    q: 6,
-    envOctaves: 3,
-    env: { attack: 0.002, decay: 0.18, sustain: 0.15, release: 0.15 },
-  },
-  amp: { attack: 0.003, decay: 0.2, sustain: 0.85, release: 0.1 },
-  knobs: bass(180),
-}
-
-export const PRESETS: readonly Preset[] = [
-  FUNK_LEAD,
-  WOBBLE_BASS,
-  EP_KEYS,
-  ROUND_BASS,
-  FINGER_PLUCK,
-  VELVET_SUB,
-  RUBBER_BASS,
-]
+export const PRESETS: readonly Preset[] = [FUNK_LEAD, WOBBLE_BASS, EP_KEYS, ROUND_BASS, WARM_TINES]
 
 export function getPreset(id: PresetId): Preset {
   const preset = PRESETS.find((p) => p.id === id)

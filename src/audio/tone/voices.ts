@@ -255,9 +255,9 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
 // preset's levelDb comparable with the other presets.
 const FM_INTERNAL_GAIN = dbToGain(-10)
 
-/** EP Keys: one two-operator FM voice. Velocity sets loudness and the modulation index. */
+/** EP Keys and Warm Tines: one two-operator FM voice. Velocity sets loudness and the modulation index. */
 export function createFmVoice(
-  p: FmPreset,
+  p: Pick<FmPreset, 'harmonicity' | 'amp' | 'modulation'>,
   knobs: KnobValues,
   destination: Tone.InputNode,
 ): PolyVoice {

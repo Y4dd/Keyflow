@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 // Dev tools are on in the e2e build (see playwright.config.ts). Browsers are muted there.
 // The basses play an octave lower in the shared passages below.
-const BASSES = ['wobble-bass', 'round-bass', 'finger-pluck', 'velvet-sub', 'rubber-bass'] as const
+const BASSES = ['wobble-bass', 'round-bass'] as const
 type Bass = (typeof BASSES)[number]
 const isBass = (preset: string) => (BASSES as readonly string[]).includes(preset)
 
@@ -13,7 +13,7 @@ interface RenderNote {
   off: number
 }
 interface RenderSpec {
-  preset: 'funk-lead' | 'ep-keys' | Bass
+  preset: 'funk-lead' | 'ep-keys' | 'warm-tines' | Bass
   knobs?: Record<string, number>
   notes: RenderNote[]
   duration: number
@@ -131,7 +131,7 @@ test('the split keyboard plays each hand on its own sound, and no note sticks', 
   await page.getByRole('button', { name: 'Start audio' }).click()
   await expect(status(page)).toHaveAttribute('data-status', 'running')
   await expect(page.getByTestId('split-summary')).toHaveText(/^Keys below G3 play the left sound/)
-  await expect(zone(page, 'Left sound').getByLabel(/Wobble Bass/)).toBeChecked()
+  await expect(zone(page, 'Left sound').getByLabel(/Round Bass/)).toBeChecked()
   await expect(zone(page, 'Main sound').getByLabel(/Funk Lead/)).toBeChecked()
 
   // F#3 is the left sound's top key and G3 the main sound's lowest.
@@ -227,18 +227,6 @@ const info = (type: string, value: number) =>
 const chord = (notes: number[], velocity: number, on: number, off: number) =>
   notes.map((note) => ({ note, velocity, on, off }))
 
-// The clean basses (P1-T3b): low notes at full velocity, filter wide open, glide at most.
-const CLEAN_BASS_WORST: Omit<RenderSpec, 'preset'> = {
-  knobs: { cutoff: 2000, glide: 0.3 },
-  notes: [28, 36, 24].map((note, i) => ({
-    note,
-    velocity: 1,
-    on: 0.1 + i * 0.5,
-    off: 0.55 + i * 0.5,
-  })),
-  duration: 3,
-}
-
 const WORST_CASE: Record<RenderSpec['preset'], Omit<RenderSpec, 'preset'>> = {
   // Ten fingers at full velocity, at full brightness.
   'ep-keys': {
@@ -268,13 +256,26 @@ const WORST_CASE: Record<RenderSpec['preset'], Omit<RenderSpec, 'preset'>> = {
     })),
     duration: 3,
   },
-  'round-bass': CLEAN_BASS_WORST,
-  'finger-pluck': CLEAN_BASS_WORST,
-  'velvet-sub': CLEAN_BASS_WORST,
-  'rubber-bass': CLEAN_BASS_WORST,
+  // Ten fingers at full velocity, brightness and tremolo at maximum.
+  'warm-tines': {
+    knobs: { brightness: 1, tremolo: 0.8 },
+    notes: chord([36, 43, 48, 52, 55, 60, 64, 67, 72, 76], 1, 0.1, 1.5),
+    duration: 3.5,
+  },
+  // Low notes, filter wide open, glide at most.
+  'round-bass': {
+    knobs: { cutoff: 2000, glide: 0.3 },
+    notes: [28, 36, 24].map((note, i) => ({
+      note,
+      velocity: 1,
+      on: 0.1 + i * 0.5,
+      off: 0.55 + i * 0.5,
+    })),
+    duration: 3,
+  },
 }
 
-for (const preset of ['ep-keys', 'funk-lead', ...BASSES] as const) {
+for (const preset of ['ep-keys', 'warm-tines', 'funk-lead', ...BASSES] as const) {
   test(`${preset}: a worst-case passage plays below full scale and goes silent after release`, async ({
     page,
   }) => {
@@ -300,7 +301,7 @@ for (const preset of ['ep-keys', 'funk-lead', ...BASSES] as const) {
     // 79/127 is the hardest note in tests/fixtures/ypt380-chrome-song.json.
     const v = 79 / 127
     const notes =
-      preset === 'ep-keys'
+      preset === 'ep-keys' || preset === 'warm-tines'
         ? chord([48, 55, 60, 64, 67, 71], v, 0.1, 1.5) // a six-note voicing
         : [48, 55, 60, 63, 67, 72].map((note, i) => ({
             note: isBass(preset) ? note - 12 : note,
@@ -332,6 +333,32 @@ for (const preset of ['ep-keys', 'funk-lead', ...BASSES] as const) {
     if (preset === 'ep-keys') expect(hard.hf).toBeGreaterThan(soft.hf * 1.1) // brighter, too
   })
 }
+
+// Warm Tines (P1-T3b): the Tremolo knob swings the level of a held note; at 0 it doesn't.
+test('warm-tines: the Tremolo knob makes a held note swell and dip', async ({ page }) => {
+  await open(page)
+  // 30 ms windows over about four tremolo cycles (4.2 Hz), well inside the 5 s decay.
+  const windows: [number, number][] = Array.from({ length: 30 }, (_, i) => [
+    0.3 + i * 0.03,
+    0.33 + i * 0.03,
+  ])
+  const swing = async (tremolo: number) => {
+    const r = await render(page, {
+      preset: 'warm-tines',
+      knobs: { tremolo },
+      notes: [{ note: 60, velocity: 0.8, on: 0.05, off: 1.3 }],
+      duration: 1.4,
+      master: false,
+      windows,
+    })
+    const db = r.windows.map((w) => w.rmsDb)
+    return Math.max(...db) - Math.min(...db)
+  }
+  const off = await swing(0)
+  const full = await swing(0.8)
+  info('warm-tines level swing off / full (dB)', off)
+  expect(full).toBeGreaterThan(off + 6)
+})
 
 test('the master chain adds almost no delay', async ({ page }) => {
   await open(page)

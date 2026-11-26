@@ -168,7 +168,7 @@ export function GroovePanel() {
       <p className="blurb">{wheel.text}</p>
       <p className="muted small transport-note">
         {running
-          ? `Drums, bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
+          ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
           : 'Turn sound on to play the groove.'}
       </p>
     </section>

@@ -16,6 +16,8 @@ colors:
   funk: "#ff7b2e"
   wobble: "#ff7fae"
   keys: "#7cc4f2"
+  round: "#a28bff"
+  tines: "#3fcfc0"
   now: "#ffd25a"
   done: "#7fd49b"
 typography:
@@ -150,6 +152,8 @@ A restrained warm-dark ground with a few committed sticker colours; every colour
 - **Funk Orange** (`funk`): Funk Lead.
 - **Wobble Pink** (`wobble`): Wobble Bass.
 - **EP Blue** (`keys`): EP Keys.
+- **Round Violet** (`round`): Round Bass, the grooves' bass and the default left sound (P1-T3b).
+- **Tine Teal** (`tines`): Warm Tines (P1-T3b, still being auditioned).
 
 Each fills its sleeve art, its zone strip over the keyboard, the keys it lights, and the accent of its sliders (via `--sound` set by `data-sound`). The sleeve art may use one deeper shade of its own colour plus `bone` and `bin` (`src/ui/Sleeve.tsx`).
 

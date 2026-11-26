@@ -65,13 +65,16 @@ Write original patterns. **Don't imitate a specific song.** Suggested starting p
 
 _Manual check (2026-11-26, Chrome, YPT-380): not rated yet. The grooves' bass (the Wobble Bass) sounds harsh and distorted, which makes them unpleasant to play over; the EP Keys chords are great. Re-checked after P1-T3b gives the grooves a better bass._
 
-### P1-T3b: A bass that's good to play over [in progress]
+### P1-T3b: A bass that's good to play over [built 2026-11-26, manual check pending]
 Added 2026-11-26 (P1-T3 manual check): the grooves play their bass on the Wobble Bass, whose saws run through distortion by design, and the user finds it harsh and distorted, both in the grooves and played with the left hand. The EP Keys chords are great and stay; the lead stays.
 - Build 3 or 4 original **clean bass candidates** (e.g. a round filtered synth bass, a plucky finger-style bass, a sub-heavy smooth bass), each a preset with original, non-artist names, using the existing voice code where it fits.
 - **The user auditions them** on the deployed page, in the grooves and with the left hand (a picker, which can stay as the preset choice), and picks one. Iterate if none is liked. The pick becomes the grooves' bass and the default left sound; the losing candidates are removed.
 - The Wobble Bass stays selectable, made less harsh (at least a lower Drive default); how much is the user's call in the audition.
 - **Automated:** preset tests as for the other presets; an offline render of each groove with the new bass stays in the master's linear range (no safety-clip distortion).
 - **Manual:** the audition (taste), then the waiting P1-T3 check is re-run with the new bass.
+- **Added 2026-11-26 (the user's request in the audition):** a warm electric piano in the spirit of the mellow, tremolo-washed keys the user loves, built as an original sound and not named after the instrument, artist or song: **Warm Tines** (EP Keys' FM voice, a gentle low-pass, a tremolo knob). The user rates it on the page; whether the grooves' chords use it instead of EP Keys is the user's call.
+
+_Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velvet Sub, Rubber Bass). The user picked **Round Bass** "for now": it is the grooves' bass and the default left sound, and the other three are removed. Wobble Bass Drive default lowered from 0.4 to 0.15 (the user didn't name a value). **Automated:** preset tests, worst-case and typical renders for Round Bass and Warm Tines below the safety clip, and an offline render of all four grooves with Round Bass peaking under 0.9 (0.73 to 0.78 measured), and a Warm Tines render with the Tremolo knob up swings its level far more than with it off. **Manual:** rating Warm Tines (taste)._
 
 ### P1-T4: Highlighting and "training wheels" [done 2026-11-26]
 - The canvas keyboard shows three tiers: **chord tones** (strong), **scale tones** (soft) and **other notes** (dimmed, **never red**).

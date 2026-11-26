@@ -49,7 +49,7 @@ export const DEFAULT_LAYOUT: KeyboardLayout = {
   split: true,
   splitNote: DEFAULT_SPLIT_NOTE,
   main: { presetId: 'funk-lead', octave: 0 },
-  left: { presetId: 'wobble-bass', octave: 0 },
+  left: { presetId: 'round-bass', octave: 0 },
 }
 
 /** The zones a layout plays, low to high. Together they cover every MIDI note. */

@@ -1,5 +1,5 @@
 // The groove player: the pure schedule (src/grooves/schedule.ts) on Tone's Transport. Drums,
-// bass (the left sound when it is a bass, P1-T3b) and chords (EP Keys) play at the transport callbacks' times, never
+// bass (Round Bass) and chords (EP Keys) play at the transport callbacks' times, never
 // through the live input path.
 //
 // Transport ticks start at 0 with the count-in bar, when there is one; groove ticks are
@@ -10,8 +10,12 @@
 import * as Tone from 'tone'
 import { PPQ, transpose, type Groove } from '../../grooves/groove.ts'
 import { BAR_TICKS, barEvents, countInEvents, type GrooveEvent } from '../../grooves/schedule.ts'
+import type { PresetId } from '../presets/types.ts'
 import { createDrumKit } from './drums.ts'
 import type { Instrument } from './instrument.ts'
+
+/** The grooves' bass: clean, so it sits under a lead (P1-T3b). */
+export const GROOVE_BASS: PresetId = 'round-bass'
 
 export interface GrooveSettings {
   groove: Groove
@@ -32,8 +36,6 @@ export interface GroovePlayer {
   /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
   ticks(): number | null
   heldCount(): number
-  /** Swaps the bass, releasing the old one's notes now (P1-T3b audition). */
-  setBass(bass: Instrument): void
 }
 
 export function createGroovePlayer(options: {
@@ -176,14 +178,6 @@ export function createGroovePlayer(options: {
     },
     stop,
     ticks: () => (settings ? transport.getTicksAtTime(Tone.immediate()) - offset : null),
-    heldCount: () => parts.bass.heldCount() + parts.chords.heldCount(),
-    setBass(bass) {
-      if (bass === parts.bass) return
-      // One look-ahead out, as in stop(): notes the transport already handed it start by then.
-      parts.bass.releaseAll(Tone.immediate() + context.lookAhead)
-      // Ids start with the part (src/grooves/schedule.ts): the old notes' offs mustn't end the new bass's.
-      for (const id of sounding.keys()) if (id.startsWith('bass:')) sounding.delete(id)
-      parts.bass = bass
-    },
+    heldCount: () => options.bass.heldCount() + options.chords.heldCount(),
   }
 }

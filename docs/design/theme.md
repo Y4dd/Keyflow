@@ -40,6 +40,8 @@ Restrained ground, committed sticker colours. Every colour has a job.
 | `--funk` | `#ff7b2e` | **Funk Lead** (sleeve, zone strip, lit keys) |
 | `--wobble` | `#ff7fae` | **Wobble Bass** |
 | `--keys` | `#7cc4f2` | **EP Keys** |
+| `--round` | `#a28bff` | **Round Bass** (added in P1-T3b) |
+| `--tines` | `#3fcfc0` | **Warm Tines** (added in P1-T3b) |
 | `--now` | `#ffd25a` | The next thing to do: the current step, the primary button, hints |
 | `--done` | `#7fd49b` | Done or connected |
 

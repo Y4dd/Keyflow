@@ -48,6 +48,35 @@ export function createInstrument(
       return monoInstrument(preset, createWobbleVoice(preset, knobs), output)
     case 'fm':
       return polyInstrument(preset, knobs, output)
+    case 'tines':
+      return tinesInstrument(preset, knobs, output)
+  }
+}
+
+/** Warm Tines: the FM voices through a gentle low-pass and a tremolo (an LFO swinging a gain). */
+function tinesInstrument(
+  preset: Extract<Preset, { kind: 'tines' }>,
+  knobs: KnobValues,
+  output: Tone.Gain,
+): Instrument {
+  const input = new Tone.Gain(1)
+  const tone = new Tone.Filter({ type: 'lowpass', frequency: preset.toneHz, rolloff: -12 })
+  const tremolo = new Tone.Gain(1)
+  const lfo = new Tone.LFO({ frequency: preset.tremoloHz, min: 1 - knobs.tremolo, max: 1 })
+  lfo.connect(tremolo.gain)
+  lfo.start(Tone.immediate())
+  input.chain(tone, tremolo, output)
+  const poly = polyInstrument(preset, knobs, input)
+  return {
+    ...poly,
+    setKnob(id, value) {
+      if (id === 'tremolo') lfo.min = 1 - value
+      else poly.setKnob(id, value)
+    },
+    dispose() {
+      poly.dispose()
+      for (const node of [tone, tremolo, lfo, output]) node.dispose()
+    },
   }
 }
 
@@ -104,7 +133,7 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
 }
 
 function polyInstrument(
-  preset: Extract<Preset, { kind: 'fm' }>,
+  preset: Extract<Preset, { kind: 'fm' | 'tines' }>,
   knobs: KnobValues,
   output: Tone.Gain,
 ): Instrument {

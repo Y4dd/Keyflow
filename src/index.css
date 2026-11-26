@@ -21,11 +21,8 @@
   --funk: #ff7b2e;
   --wobble: #ff7fae;
   --keys: #7cc4f2;
-  /* P1-T3b bass candidates; only the user's pick stays. */
   --round: #a28bff;
-  --pluck: #3fcfc0;
-  --velvet: #dd8cf2;
-  --rubber: #bfe04f;
+  --tines: #3fcfc0;
   --now: #ffd25a;
   --done: #7fd49b;
 
@@ -373,16 +370,8 @@ input[type='range'] {
   --sound: var(--round);
 }
 
-[data-sound='finger-pluck'] {
-  --sound: var(--pluck);
-}
-
-[data-sound='velvet-sub'] {
-  --sound: var(--velvet);
-}
-
-[data-sound='rubber-bass'] {
-  --sound: var(--rubber);
+[data-sound='warm-tines'] {
+  --sound: var(--tines);
 }
 
 /* Sleeves: the preset radios. The chosen one lifts out of the crate with an ON sticker. */

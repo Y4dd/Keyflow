@@ -23,9 +23,7 @@ const SOUND_COLORS: Record<PresetId, Rgb> = {
   'wobble-bass': [255, 127, 174],
   'ep-keys': [124, 196, 242],
   'round-bass': [162, 139, 255],
-  'finger-pluck': [63, 207, 192],
-  'velvet-sub': [221, 140, 242],
-  'rubber-bass': [191, 224, 79],
+  'warm-tines': [63, 207, 192],
 }
 const WELL: Rgb = [18, 13, 11] // --well
 const KRAFT = '#c8a271'

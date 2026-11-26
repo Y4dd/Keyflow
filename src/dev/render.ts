@@ -7,7 +7,7 @@ import { defaultKnobs, getPreset } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
 import { dbToGain } from '../audio/curves.ts'
 import { GROOVE_LEVEL_DB } from '../audio/tone/engine.ts'
-import { createGroovePlayer } from '../audio/tone/groove.ts'
+import { createGroovePlayer, GROOVE_BASS } from '../audio/tone/groove.ts'
 import { createInstrument } from '../audio/tone/instrument.ts'
 import { BEATS_PER_BAR } from '../grooves/groove.ts'
 import { GROOVES } from '../grooves/library.ts'
@@ -109,8 +109,6 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
 export interface GrooveRenderSpec {
   /** A groove id from src/grooves/library.ts, at its own key and tempo. */
   groove: string
-  /** The preset playing the bass. */
-  bass: PresetId
   /** One window per bar, in order. */
   bars: number
 }
@@ -129,7 +127,7 @@ export async function renderGroove(
       const build = (id: PresetId) =>
         createInstrument(getPreset(id), defaultKnobs(getPreset(id)), bus)
       createGroovePlayer({
-        bass: build(spec.bass),
+        bass: build(GROOVE_BASS),
         chords: build('ep-keys'),
         destination: bus,
         onStart() {},

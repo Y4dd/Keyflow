@@ -15,9 +15,9 @@ const layout = (patch: Partial<KeyboardLayout> = {}): KeyboardLayout => ({
 })
 
 describe('zonesOf', () => {
-  it('defaults to Wobble Bass below G3 and Funk Lead from G3 up', () => {
+  it('defaults to Round Bass below G3 and Funk Lead from G3 up', () => {
     expect(zonesOf(DEFAULT_LAYOUT)).toEqual([
-      { id: 'left', lowNote: 0, highNote: 54, presetId: 'wobble-bass', transpose: 0 },
+      { id: 'left', lowNote: 0, highNote: 54, presetId: 'round-bass', transpose: 0 },
       { id: 'main', lowNote: 55, highNote: 127, presetId: 'funk-lead', transpose: 0 },
     ])
   })
