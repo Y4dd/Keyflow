@@ -69,10 +69,10 @@ describe('marksOf and nameY', () => {
     x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h
   const overlap = (a: Rect, b: Rect) =>
     a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
-  // A note name at 12 px: up to nameWidth wide, 10 px above its baseline and 2 below.
+  // A note name at 12 or 13 px: up to nameWidth wide, 11 px above its baseline and 2 below.
   const nameBox = (k: KeyRect, look: Look): Rect => {
     const w = nameWidth(k)
-    return { x: k.x + (k.w - w) / 2, y: nameY(k, look) - 10, w, h: 12 }
+    return { x: k.x + (k.w - w) / 2, y: nameY(k, look) - 11, w, h: 13 }
   }
   // The computer-key letter and, on white keys, the C-octave name below it.
   const letterBox = (k: KeyRect): Rect =>
@@ -96,7 +96,7 @@ describe('marksOf and nameY', () => {
         }
   })
 
-  it('stay inside the key, clear of the letters; names clear of every mark but the tags', () => {
+  it('stay inside the key and clear of the letters', () => {
     for (const ks of sizes)
       for (const k of ks)
         for (const look of LOOKS) {
@@ -109,9 +109,6 @@ describe('marksOf and nameY', () => {
           }
           if (!labelled(ks)) continue
           expect(overlap(nameBox(k, look), letterBox(k))).toBe(false)
-          // Tags hold their name; on narrow black keys a frame's side may touch it.
-          if (look !== 'tags' && !(look === 'frames' && k.black))
-            for (const r of all(k, look)) expect(overlap(r, nameBox(k, look))).toBe(false)
         }
   })
 
@@ -119,9 +116,9 @@ describe('marksOf and nameY', () => {
     const area = (rs: Rect[]) => rs.reduce((a, r) => a + r.w * r.h, 0)
     for (const k of sizes[2]!) {
       expect(marksOf(k, 'spotlight', true, true)).toEqual([])
-      for (const look of ['tape', 'frames', 'tags'] as const)
-        expect(area(marksOf(k, look, true, false))).toBeGreaterThan(
-          area(marksOf(k, look, false, false)),
+      for (const named of [true, false])
+        expect(area(marksOf(k, 'tags', true, named))).toBeGreaterThan(
+          area(marksOf(k, 'tags', false, named)),
         )
     }
   })
@@ -137,13 +134,13 @@ describe('idleFill', () => {
     }
   })
 
-  it('in the spotlight, keys step down from chord tones to scale tones to the rest', () => {
+  it('in the spotlight, keys step down clearly from chord tones to scale tones to the rest', () => {
     for (const black of [false, true]) {
       const [chord, scale, other] = (['chord', 'scale', 'other'] as const).map((t) =>
         lum(idleFill(black, t, 'spotlight', 2)),
       )
-      expect(chord).toBeGreaterThan(scale!)
-      expect(scale).toBeGreaterThan(other!)
+      expect(chord! - scale!).toBeGreaterThan(40) // steps you can see from a stand's distance
+      expect(scale! - other!).toBeGreaterThan(40)
       // At Chord tones only, the unmarked keys still sit below the chord tones.
       expect(lum(idleFill(black, null, 'spotlight', 1))).toBeLessThan(chord!)
     }

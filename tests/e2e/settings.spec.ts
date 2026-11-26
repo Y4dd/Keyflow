@@ -40,6 +40,7 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
   await page.getByLabel('Bend key').selectOption({ label: 'Off' })
   await page.getByLabel(/Invert pedal/).check()
   await page.getByLabel('Show the computer-key letters on the keys').uncheck()
+  await page.getByRole('radiogroup', { name: 'Look' }).getByLabel('Spotlight').check()
   await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
   // Only what differs from the defaults is stored: no device or calibration row, and the layout
   // row holds just the changed fields, so later default changes still reach this user.
@@ -67,6 +68,7 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
     'keyLetters',
     'knobs',
     'layout',
+    'look',
   ])
   expect(rows.layout).toEqual({
     splitNote: 48,
@@ -88,6 +90,7 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
   await expect(page.getByLabel('Bend key')).toHaveValue('')
   await expect(page.getByLabel(/Invert pedal/)).toBeChecked()
   await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
+  await expect(page.getByRole('radiogroup', { name: 'Look' }).getByLabel('Spotlight')).toBeChecked()
   // Sound ran last time: the page says a click brings it back (it can't start by itself).
   await expect(status(page)).toHaveAttribute('data-status', 'off')
   await expect(status(page)).toContainText('Your sound settings are back')

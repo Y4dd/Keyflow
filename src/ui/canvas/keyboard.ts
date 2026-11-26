@@ -1,9 +1,9 @@
 // Draws the 61-key keyboard: held keys lit by velocity in the colour of the sound playing them, a
 // strip naming each zone's sound in its colour, a line at the split point, and jam mode's
-// highlighting in the chosen look (keys.ts: idleFill and marksOf): chord tones marked strongly,
-// scale tones softly, other keys dimmed toward the well (never red), and note names at training
-// wheels 3. Colours are the theme's (docs/design/theme.md). Called from an animation frame, never
-// per note.
+// highlighting in the chosen look (keys.ts: idleFill and marksOf): Tags (a dark tag on each chord
+// tone holding its name) or Spotlight (brightness alone), other keys dimmed toward the well
+// (never red), and note names at training wheels 3. Colours are the theme's
+// (docs/design/theme.md). Called from an animation frame, never per note.
 
 import { Note } from 'tonal'
 import { getPreset } from '../../audio/presets/index.ts'
@@ -39,7 +39,6 @@ export const SOUND_COLORS: Record<PresetId, Rgb> = {
   'round-bass': [162, 139, 255],
   'warm-tines': [63, 207, 192],
 }
-const LINE = '#8a7462'
 const BIN = '#1c1512'
 const BONE = '#f1e8da'
 const LETTER = '#6b5a4c'
@@ -79,12 +78,9 @@ function splitX(view: KeyboardView): number {
   return k ? (k.black ? k.x + k.w / 2 : k.x) : 0
 }
 
-/** A mark's colour: tape and tags dark on white keys and light on black ones, frames in the sound's colour. */
-function markColor(look: Look, black: boolean, chord: boolean, sound: Rgb): string {
-  if (look === 'frames' && chord) return css(sound)
-  if (chord) return black ? (look === 'tags' ? KRAFT : BONE) : BIN
-  return black ? KRAFT : LINE
-}
+/** A mark's colour: dark tags on white keys, light ones on black keys; scale dashes softer. */
+const markColor = (black: boolean, chord: boolean): string =>
+  chord ? (black ? BONE : BIN) : black ? KRAFT : LETTER
 
 export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) {
   const { width, height, keys, held, layout, letters, jam } = view
@@ -128,11 +124,10 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
     const marked = chord || tier === 'scale'
     // A held key's fill covers its marks.
     if (marked && !lit) {
-      ctx.fillStyle = markColor(jam.look, k.black, chord, sound)
+      ctx.fillStyle = markColor(k.black, chord)
       for (const r of marksOf(k, jam.look, chord, named)) {
         ctx.beginPath()
-        if (jam.look === 'tags') ctx.roundRect(r.x, r.y, r.w, r.h, r.h / 2)
-        else ctx.rect(r.x, r.y, r.w, r.h)
+        ctx.roundRect(r.x, r.y, r.w, r.h, r.h / 2)
         ctx.fill()
       }
     }
@@ -141,8 +136,11 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
     if (marked && named) {
       // Chord tones' names bold. Inside a tag, the name takes the tag's opposite colour.
       const inTag = jam.look === 'tags' && chord && !lit
-      ctx.font = `${chord ? 700 : 500} 12px system-ui, sans-serif`
-      ctx.fillStyle = inTag ? (k.black ? BIN : KRAFT) : light ? BIN : BONE
+      ctx.font =
+        chord && !k.black
+          ? '700 13px system-ui, sans-serif'
+          : `${chord ? 700 : 600} 12px system-ui, sans-serif`
+      ctx.fillStyle = inTag ? (k.black ? BIN : BONE) : light ? BIN : BONE
       ctx.fillText(jam.names[k.note % 12]!, k.x + k.w / 2, nameY(k, jam.look), nameWidth(k))
       ctx.font = LABEL_FONT
     }

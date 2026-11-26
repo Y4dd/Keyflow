@@ -28,7 +28,7 @@ async function open(page: Page) {
 const key = (page: Page, note: number) =>
   page.evaluate((n) => (window as DevWindow).__keyflow!.pianoKey(n)!, note)
 const card = (page: Page) => page.getByTestId('groove')
-const LOOKS = ['Spotlight', 'Tape', 'Frames', 'Tags']
+const LOOKS = ['Tags', 'Spotlight']
 const lookIs = (page: Page, label: string) =>
   card(page).getByRole('radiogroup', { name: /^Look/ }).getByLabel(label).check()
 const wheels = (page: Page, label: string) =>
@@ -45,7 +45,7 @@ const image = (page: Page) =>
 const shows = (page: Page, note: number, tier: Tier) =>
   expect.poll(() => key(page, note)).toMatchObject({ tier, lit: false })
 
-// Every look on trial (P1-T4b) draws each level, and follows the chord while a groove plays.
+// Both looks (P1-T4b) draw each level, and follow the chord while a groove plays.
 for (const look of LOOKS) {
   test(`${look}: stopped, the keyboard shows the groove's first chord at every training-wheels level`, async ({
     page,

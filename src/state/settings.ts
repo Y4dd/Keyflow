@@ -36,6 +36,7 @@ function collect(): Settings {
         ? null
         : { offsetMs: c.offsetMs, outputTimestampLeadMs: c.outputTimestampLeadMs },
     keyLetters: useViewStore.getState().keyLetters,
+    look: useViewStore.getState().look,
     audioStarted: a.startedBefore || a.status === 'running',
   }
 }
@@ -52,6 +53,7 @@ function apply(s: Settings) {
   laptopBend.setKey(s.bendKey, performance.now())
   if (s.calibration) useCalibrationStore.setState(s.calibration)
   view.setKeyLetters(s.keyLetters)
+  view.setLook(s.look)
 }
 
 let timer = 0

@@ -17,6 +17,7 @@ import {
   type ZoneSound,
 } from '../audio/zones.ts'
 import { BEND_KEYS, DEFAULT_BEND_KEY } from '../input/computer/bend.ts'
+import { LOOKS, type Look } from '../ui/canvas/keys.ts'
 
 export interface Settings {
   layout: KeyboardLayout
@@ -31,6 +32,8 @@ export interface Settings {
   calibration: { offsetMs: number; outputTimestampLeadMs: number | null } | null
   /** The computer-key letters on the canvas keys (P1-T4b). */
   keyLetters: boolean
+  /** Jam mode's highlighting look (P1-T4b). */
+  look: Look
   /** Sound was started on an earlier visit, so the page can say a click brings it back. */
   audioStarted: boolean
 }
@@ -49,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
   deviceId: null,
   calibration: null,
   keyLetters: true,
+  look: 'tags',
   audioStarted: false,
 }
 
@@ -175,6 +179,7 @@ export function parseSettings(raw: unknown): Settings {
     deviceId: typeof v.deviceId === 'string' ? v.deviceId : d.deviceId,
     calibration: calibration(v.calibration),
     keyLetters: bool(v.keyLetters, d.keyLetters),
+    look: LOOKS.find((l) => l === v.look) ?? d.look,
     audioStarted: bool(v.audioStarted, d.audioStarted),
   }
 }

@@ -102,14 +102,13 @@ Restrained ground, committed sticker colours. Every colour has a job.
 | Zone strip | Each zone's sound colour, label in 11 px bold capitals in `--bin` |
 | Split point | A 2 px `--bin` line through the strip and keys (dark, so it shows on the light keys) |
 | Held key | Filled toward the colour of the sound playing it: soft notes lighter, hard notes closer to the full colour |
-| Computer-key letters | `#6b5a4c` on white keys, `--bin` on lit white keys, `--bone` on black keys |
+| Computer-key letters | `#6b5a4c` on idle white keys, `--bin` on other light fills, `--bone` on dark fills; a checkbox hides them (P1-T4b) |
 
-Planned for Phase 1 (P1-T4), so jam mode builds on this:
-- **chord tones:** a large sticker dot in the sound's colour at the bottom of the key;
-- **scale tones:** a small `--kraft` dot;
-- **other notes:** the key dimmed toward `--well`, never red.
+Jam mode's highlighting (P1-T4, reworked in P1-T4b after the user found the first dots unpleasant and confusing) comes in two looks the player chooses:
+- **Tags:** a chord tone wears a high-contrast tag (`--bin` on white keys, `--bone` on black keys) holding its name; scale tones show their name or a small dash;
+- **Spotlight:** no marks, only light: chord tones brightest, scale tones dimmer, the rest darkest.
 
-A held key keeps its fill on top of any dot.
+In both, other notes are dimmed toward `--well`, never red, and a held key keeps its fill on top of any mark.
 
 ## Voice
 

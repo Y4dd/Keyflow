@@ -26,6 +26,7 @@ const CHANGED: Settings = {
   deviceId: 'input-1',
   calibration: { offsetMs: 41.5, outputTimestampLeadMs: -12 },
   keyLetters: false,
+  look: 'spotlight',
   audioStarted: true,
 }
 
@@ -90,6 +91,7 @@ describe('parseSettings', () => {
       bendKey: 'KeyQ',
       deviceId: 42,
       keyLetters: 'no',
+      look: 'tape',
       audioStarted: 'true',
     })
     expect(s.layout).toEqual({
@@ -106,6 +108,7 @@ describe('parseSettings', () => {
       bendKey: 'Space',
       deviceId: null,
       keyLetters: true,
+      look: 'tags',
       audioStarted: false,
     })
   })

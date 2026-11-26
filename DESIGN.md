@@ -283,9 +283,12 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Zone strip:** 20px band over the keys in each zone's sound colour, named in 11px bold capitals in `bin`.
 - **Split point:** a 2px `bin` line through strip and keys.
 - **Held key:** filled toward the sound playing it, from 30% (soft) to full colour (hard).
-- **Letters:** `key-letter` on idle whites, `bin` on lit and dimmed whites, `bone` on blacks; letters and C-octave names only when a white key is at least 14px wide.
-- **Highlighting (jam mode, P1-T4):** a chord tone gets a large dot (radius 7px on whites and 6px on blacks, capped by key width) in the colour of the sound its zone plays. A scale tone gets a small `kraft` dot. Both dots have a 1.5px `bin` ring, so the light colours still show on ivory, and both sit centred 36px (whites) or 22px (blacks) above the key's bottom, clear of the letters. Other notes are dimmed toward `well` (45% on whites, 50% on blacks), never red. A held key's fill covers its dot. At training wheels Names, marked keys carry their 12px note name above the dot, spelled by the scale and then the key, in `bin` on whites and `bone` on blacks.
-- **Training wheels:** chips in the Groove card (Names, Dots, Chord tones, Off), beside a Scale select that offers only the groove's own scales, with one 14px `bone-muted` line describing the chosen level.
+- **Letters:** `key-letter` on idle whites, `bin` on other light fills (dimmed, lit), `bone` on dark fills; letters and C-octave names only when a white key is at least 14px wide. A Play-card checkbox (a saved setting) hides the computer-key letters; the C-octave names stay.
+- **Highlighting (jam mode, P1-T4b):** two looks, chosen with Look chips in the Groove card and saved. Both dim notes outside the scale toward `well`, never red, and a held key's fill covers every mark.
+  - **Tags** (default): a chord tone wears a pill centred 40px (whites) or 26px (blacks) above the key's bottom, `bin` on whites and `bone` on blacks. At Names it holds the note name (13px bold `bone` on whites, 12px bold `bin` on blacks); otherwise it's a 9px-tall pill. A scale tone shows its 12px name at Names, else a 4px dash in `key-letter` (whites) or `kraft` (blacks). Other whites dim 55%, blacks 50%.
+  - **Spotlight:** no marks, three brightness steps. Chord tones are lit (whites `#fffbf3`, blacks 90% toward `kraft`), scale tones mid (whites 40% toward `well`, blacks 40% toward `kraft`), the rest dark (whites 70% toward `well`, blacks 50%). At Chord tones every non-chord white sits at 50%. Names at Names sit 32px (whites) or 24px (blacks) above the key's bottom, chord tones in bold.
+  - Names are spelled by the scale and then the key, dark on light fills and `bone` on dark ones.
+- **Training wheels:** chips in the Groove card (Names, No names, Chord tones, Off), beside a Scale select that offers only the groove's own scales, with one 14px `bone-muted` line describing the chosen level and look.
 - **Redraw:** in an animation frame scheduled only after a change, never per note through React.
 
 ## Do's and Don'ts

@@ -32,12 +32,17 @@ const WHEELS: { level: Wheels; label: string; text: string }[] = [
   { level: 0, label: 'Off', text: 'No help on the keys: play by ear.' },
 ]
 
-// shortcut: the looks are on trial (P1-T4b); the pick stays and this picker goes.
 const LOOK_CHIPS: { look: Look; label: string; text: string }[] = [
-  { look: 'spotlight', label: 'Spotlight', text: 'Brightness only: no marks on the keys.' },
-  { look: 'tape', label: 'Tape', text: 'A bar across each key, under the black keys.' },
-  { look: 'frames', label: 'Frames', text: "An outline inside each key, in the sound's colour." },
-  { look: 'tags', label: 'Tags', text: 'A dark tag holding the name on chord tones.' },
+  {
+    look: 'tags',
+    label: 'Tags',
+    text: 'A tag on each chord tone; the other scale tones get their name or a small dash.',
+  },
+  {
+    look: 'spotlight',
+    label: 'Spotlight',
+    text: 'No marks, only light: chord tones brightest, the other scale tones dimmer, the rest darkest.',
+  },
 ]
 
 // A focused menu takes the computer keys (type-ahead), so let go after a choice.
@@ -177,7 +182,7 @@ export function GroovePanel() {
           </div>
         </div>
         <div className="field">
-          <span id="look-label">Look (on trial: pick one)</span>
+          <span id="look-label">Look</span>
           <div className="chips" role="radiogroup" aria-labelledby="look-label">
             {LOOK_CHIPS.map((l) => (
               <label key={l.look} className="chip">
