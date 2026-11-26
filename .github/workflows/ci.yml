@@ -65,19 +65,21 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ steps.pw.outputs.version }}
-      # Only the browser download is cached; the system libraries are always installed.
+      # No `--with-deps`: the apt step it ran was slow and flaky, and the runner image already has the
+      # libraries both browsers need (e2e proves it). shortcut: if an image update drops one, the
+      # browser fails to launch and e2e fails loudly; then add `npx playwright install-deps` back.
       - if: steps.cache.outputs.cache-hit != 'true'
         timeout-minutes: 5
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-      - if: steps.cache.outputs.cache-hit == 'true'
-        timeout-minutes: 5
-        run: npx playwright install-deps ${{ matrix.browser }}
+        run: npx playwright install ${{ matrix.browser }}
       # The runner has no sound device. Chromium falls back to a silent output on its own;
       # Firefox's AudioContext never starts without one, so give it a silent PulseAudio sink.
-      # The install step above already ran `apt-get update`, so there is no second one here.
       - name: Add a silent audio device
         if: matrix.browser == 'firefox'
+        timeout-minutes: 5
         run: |
+          # A stalled mirror should retry, not hang the job.
+          echo 'Acquire::Retries "3"; Acquire::http::Timeout "20"; Acquire::https::Timeout "20";' | sudo tee /etc/apt/apt.conf.d/99ci-retries
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends pulseaudio
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=silent
