@@ -16,6 +16,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       VITE_BASE: /${{ github.event.repository.name }}/
     steps:
@@ -45,6 +46,7 @@ jobs:
   # One job per browser, so they run in parallel with each other and with `check`.
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -65,8 +67,10 @@ jobs:
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ steps.pw.outputs.version }}
       # Only the browser download is cached; the system libraries are always installed.
       - if: steps.cache.outputs.cache-hit != 'true'
+        timeout-minutes: 5
         run: npx playwright install --with-deps ${{ matrix.browser }}
       - if: steps.cache.outputs.cache-hit == 'true'
+        timeout-minutes: 5
         run: npx playwright install-deps ${{ matrix.browser }}
       # The runner has no sound device. Chromium falls back to a silent output on its own;
       # Firefox's AudioContext never starts without one, so give it a silent PulseAudio sink.
@@ -88,6 +92,7 @@ jobs:
     needs: [check, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       pages: write
       id-token: write
