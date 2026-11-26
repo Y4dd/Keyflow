@@ -15,6 +15,7 @@ const CHANGED: Settings = {
     left: { presetId: 'funk-lead', octave: -1 },
   },
   knobs: {
+    ...DEFAULT_SETTINGS.knobs,
     'funk-lead': { cutoff: 3000, glide: 0.1 },
     'wobble-bass': { cutoff: 500, lfoSync: 2, lfoRate: 4, drive: 0.8 },
     'ep-keys': { brightness: 0.2 },

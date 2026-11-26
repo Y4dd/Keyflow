@@ -35,12 +35,16 @@ interface PresetBase<K extends string> {
   knobs: Record<K, KnobSpec>
 }
 
-/** Funk Lead: saw + square through a low-pass filter with its own envelope; legato glide. */
+/**
+ * Funk Lead and the clean basses: saw + square through a low-pass filter with its own envelope,
+ * plus an optional sine at the played pitch that skips the filter; legato glide.
+ */
 export interface LeadPreset extends PresetBase<'cutoff' | 'glide'> {
   kind: 'lead'
   voice: 'mono'
   saw: { level: number }
   square: { level: number; detuneCents: number }
+  sine?: { level: number }
   filter: { q: number; envOctaves: number; env: Envelope }
   amp: Envelope
 }
@@ -70,5 +74,13 @@ export interface FmPreset extends PresetBase<'brightness'> {
 }
 
 export type Preset = LeadPreset | WobblePreset | FmPreset
-export type PresetId = 'funk-lead' | 'wobble-bass' | 'ep-keys'
+export type PresetId =
+  | 'funk-lead'
+  | 'wobble-bass'
+  | 'ep-keys'
+  // shortcut: P1-T3b audition candidates, the losers go once the user picks one.
+  | 'round-bass'
+  | 'finger-pluck'
+  | 'velvet-sub'
+  | 'rubber-bass'
 export type KnobValues = Record<string, number>

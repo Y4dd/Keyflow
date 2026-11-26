@@ -63,7 +63,10 @@ function pitchSignal() {
   }
 }
 
-/** Funk Lead: saw + square → 24 dB low-pass with its own envelope → amp envelope. */
+/**
+ * Funk Lead and the clean basses: saw + square → 24 dB low-pass with its own envelope → amp
+ * envelope, plus a sine at the played pitch straight into the amp envelope.
+ */
 export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
   const pitch = pitchSignal()
   // The oscillators run continuously; the envelopes gate them. No restart, so no phase clicks.
@@ -86,9 +89,13 @@ export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
   saw.chain(sawLevel, filter)
   square.chain(squareLevel, filter)
   filter.connect(amp)
+  // The clean sine skips the filter, so a bass keeps its low end at any cutoff.
+  const sine = new Tone.Oscillator({ type: 'sine' })
+  const sineLevel = new Tone.Gain(p.sine?.level ?? 0)
+  pitch.out.connect(sine.frequency)
+  sine.chain(sineLevel, amp)
   const t = Tone.immediate()
-  saw.start(t)
-  square.start(t)
+  for (const osc of [saw, square, sine]) osc.start(t)
   let glide = knobs.glide
 
   return {
@@ -110,7 +117,17 @@ export function createLeadVoice(p: LeadPreset, knobs: KnobValues): MonoVoice {
     },
     dispose() {
       pitch.dispose()
-      for (const node of [saw, square, sawLevel, squareLevel, filter, filterEnv, amp]) {
+      for (const node of [
+        saw,
+        square,
+        sine,
+        sawLevel,
+        squareLevel,
+        sineLevel,
+        filter,
+        filterEnv,
+        amp,
+      ]) {
         node.dispose()
       }
     },

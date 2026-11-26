@@ -1,4 +1,4 @@
-// The three Phase 0 presets, as data. Original sounds; names describe the sound, not an artist.
+// The presets, as data. Original sounds; names describe the sound, not an artist.
 
 import type { FmPreset, KnobValues, LeadPreset, Preset, PresetId, WobblePreset } from './types.ts'
 
@@ -51,7 +51,7 @@ export const WOBBLE_BASS: WobblePreset = {
       choices: ['Free', '8ths', '16ths'],
     },
     lfoRate: { label: 'Wobble rate', min: 0.25, max: 10, default: 2, curve: 'log', unit: 'Hz' },
-    drive: { label: 'Drive', min: 0, max: 1, default: 0.4, curve: 'linear', unit: '%' },
+    drive: { label: 'Drive', min: 0, max: 1, default: 0.15, curve: 'linear', unit: '%' },
   },
 }
 
@@ -72,7 +72,101 @@ export const EP_KEYS: FmPreset = {
   },
 }
 
-export const PRESETS: readonly Preset[] = [FUNK_LEAD, WOBBLE_BASS, EP_KEYS]
+// Clean basses (P1-T3b): no distortion or compressor, so the low end stays round under a groove.
+const bass = (cutoff: number): LeadPreset['knobs'] => ({
+  cutoff: { label: 'Cutoff', min: 80, max: 2000, default: cutoff, curve: 'log', unit: 'Hz' },
+  glide: { label: 'Glide time', min: 0, max: 0.3, default: 0.03, curve: 'linear', unit: 's' },
+})
+
+export const ROUND_BASS: LeadPreset = {
+  id: 'round-bass',
+  name: 'Round Bass',
+  description: 'A warm, rounded saw bass with a soft filter bloom on each note.',
+  kind: 'lead',
+  voice: 'mono',
+  levelDb: -9,
+  velocityRangeDb: 10,
+  saw: { level: 0.55 },
+  square: { level: 0, detuneCents: 0 },
+  sine: { level: 0.35 },
+  filter: {
+    q: 1.2,
+    envOctaves: 1.6,
+    env: { attack: 0.005, decay: 0.35, sustain: 0.3, release: 0.2 },
+  },
+  amp: { attack: 0.005, decay: 0.2, sustain: 0.9, release: 0.12 },
+  knobs: bass(380),
+}
+
+export const FINGER_PLUCK: LeadPreset = {
+  id: 'finger-pluck',
+  name: 'Finger Pluck',
+  description: 'A plucked, finger-style bass: a quick bright attack that fades like a string.',
+  kind: 'lead',
+  voice: 'mono',
+  levelDb: -8,
+  velocityRangeDb: 12,
+  saw: { level: 0.3 },
+  square: { level: 0.3, detuneCents: 0 },
+  sine: { level: 0.4 },
+  filter: {
+    q: 1.5,
+    envOctaves: 2.8,
+    env: { attack: 0.002, decay: 0.12, sustain: 0.05, release: 0.15 },
+  },
+  amp: { attack: 0.003, decay: 0.9, sustain: 0.35, release: 0.1 },
+  knobs: bass(220),
+}
+
+export const VELVET_SUB: LeadPreset = {
+  id: 'velvet-sub',
+  name: 'Velvet Sub',
+  description: 'A smooth, deep bass: mostly a pure low tone with a little edge on top.',
+  kind: 'lead',
+  voice: 'mono',
+  levelDb: -13,
+  velocityRangeDb: 8,
+  saw: { level: 0.2 },
+  square: { level: 0, detuneCents: 0 },
+  sine: { level: 0.8 },
+  filter: {
+    q: 0.7,
+    envOctaves: 0.8,
+    env: { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.2 },
+  },
+  amp: { attack: 0.008, decay: 0.2, sustain: 1, release: 0.15 },
+  knobs: bass(500),
+}
+
+export const RUBBER_BASS: LeadPreset = {
+  id: 'rubber-bass',
+  name: 'Rubber Bass',
+  description: 'A bouncy synth bass: a resonant filter snaps shut on every note.',
+  kind: 'lead',
+  voice: 'mono',
+  levelDb: -12.5,
+  velocityRangeDb: 10,
+  saw: { level: 0.25 },
+  square: { level: 0.4, detuneCents: 0 },
+  sine: { level: 0.3 },
+  filter: {
+    q: 6,
+    envOctaves: 3,
+    env: { attack: 0.002, decay: 0.18, sustain: 0.15, release: 0.15 },
+  },
+  amp: { attack: 0.003, decay: 0.2, sustain: 0.85, release: 0.1 },
+  knobs: bass(180),
+}
+
+export const PRESETS: readonly Preset[] = [
+  FUNK_LEAD,
+  WOBBLE_BASS,
+  EP_KEYS,
+  ROUND_BASS,
+  FINGER_PLUCK,
+  VELVET_SUB,
+  RUBBER_BASS,
+]
 
 export function getPreset(id: PresetId): Preset {
   const preset = PRESETS.find((p) => p.id === id)

@@ -7,6 +7,7 @@ import { expect, test, type Page } from '@playwright/test'
 interface DevApi {
   groove: { ticks(): number | null; heldCount(): number }
   render(spec: unknown): Promise<{ windows: { rmsDb: number; hf: number }[] }>
+  renderGroove(spec: { groove: string; bass: string; bars: number }): Promise<{ peak: number }>
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
@@ -154,6 +155,47 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
     await expect(card(page).getByText(`${bpm} BPM`)).toBeVisible()
     // Restarted from the top, and its bass and chords sound.
     await expect.poll(() => ticks(page), { timeout: 5000 }).toBeGreaterThan(BAR / 4)
+    await expect.poll(() => held(page), { timeout: 5000 }).toBeGreaterThan(0)
+  }
+  await card(page).getByRole('button', { name: 'Stop' }).click()
+  expect(await held(page)).toBe(0)
+  await page.waitForTimeout(300)
+  expect(await held(page)).toBe(0)
+})
+
+// P1-T3b: every groove with each bass stays in the master's linear range (the safety clip bends
+// above 0.9), so no bass is heard through clipping. Offline renders of all four bars, default knobs.
+for (const bass of ['wobble-bass', 'round-bass', 'finger-pluck', 'velvet-sub', 'rubber-bass']) {
+  test(`${bass}: every groove renders clear of the safety clip`, async ({ page }) => {
+    test.setTimeout(60_000)
+    await open(page)
+    for (const groove of ['electro-funk-vamp', 'soul-groove', 'slow-jam', 'boogie']) {
+      const { peak } = await page.evaluate(
+        (spec) => (window as DevWindow).__keyflow!.renderGroove(spec),
+        { groove, bass, bars: 4 },
+      )
+      test.info().annotations.push({ type: `${groove} peak`, description: peak.toFixed(3) })
+      expect(peak, groove).toBeGreaterThan(0.1)
+      expect(peak, groove).toBeLessThan(0.9)
+    }
+  })
+}
+
+// P1-T3b audition: the groove's bass follows the left sound when that is a bass. Swapping it while
+// the groove plays leaves nothing sounding after Stop.
+test('a bass picked as the left sound takes over the groove bass while it plays', async ({
+  page,
+}) => {
+  await open(page)
+  await startSound(page)
+  await card(page).getByLabel('Count-in').uncheck()
+  await card(page).getByRole('button', { name: 'Play' }).click()
+  await expect.poll(() => held(page), { timeout: 5000 }).toBeGreaterThan(0)
+  const left = page.getByRole('group', { name: /^Left sound/ })
+  for (const name of [/Round Bass/, /Finger Pluck/, /Velvet Sub/, /Rubber Bass/]) {
+    await left.getByLabel(name).check()
+    const at = (await ticks(page))!
+    await expect.poll(() => ticks(page), { timeout: 5000 }).toBeGreaterThan(at + BAR / 2)
     await expect.poll(() => held(page), { timeout: 5000 }).toBeGreaterThan(0)
   }
   await card(page).getByRole('button', { name: 'Stop' }).click()

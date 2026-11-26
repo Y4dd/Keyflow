@@ -5,7 +5,12 @@
 import * as Tone from 'tone'
 import { defaultKnobs, getPreset } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
+import { dbToGain } from '../audio/curves.ts'
+import { GROOVE_LEVEL_DB } from '../audio/tone/engine.ts'
+import { createGroovePlayer } from '../audio/tone/groove.ts'
 import { createInstrument } from '../audio/tone/instrument.ts'
+import { BEATS_PER_BAR } from '../grooves/groove.ts'
+import { GROOVES } from '../grooves/library.ts'
 import { createMaster } from '../audio/tone/master.ts'
 import { onsetTime, pitchHz, windowStats, type WindowStats } from './signal.ts'
 
@@ -99,4 +104,48 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
       ? (spec.windows ?? []).map(([from, to]) => pitchHz(samples, rate, from, to, ...range))
       : [],
   }
+}
+
+export interface GrooveRenderSpec {
+  /** A groove id from src/grooves/library.ts, at its own key and tempo. */
+  groove: string
+  /** The preset playing the bass. */
+  bass: PresetId
+  /** One window per bar, in order. */
+  bars: number
+}
+
+/** Renders a groove offline through the engine's groove bus and master; peak per bar. */
+export async function renderGroove(
+  spec: GrooveRenderSpec,
+): Promise<{ peak: number; bars: number[] }> {
+  const groove = GROOVES.find((g) => g.id === spec.groove)
+  if (!groove) throw new Error(`Unknown groove ${spec.groove}`)
+  const bar = (BEATS_PER_BAR * 60) / groove.tempo
+  const buffer = await Tone.Offline(
+    () => {
+      const master = createMaster()
+      const bus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
+      const build = (id: PresetId) =>
+        createInstrument(getPreset(id), defaultKnobs(getPreset(id)), bus)
+      createGroovePlayer({
+        bass: build(spec.bass),
+        chords: build('ep-keys'),
+        destination: bus,
+        onStart() {},
+      }).play(
+        { groove, tonic: groove.key.tonic, bpm: groove.tempo, loop: true, countIn: false },
+        () => {},
+      )
+    },
+    spec.bars * bar + 0.2,
+    1,
+  )
+  const samples = buffer.getChannelData(0)
+  const rate = buffer.sampleRate
+  const bars = Array.from(
+    { length: spec.bars },
+    (_, i) => windowStats(samples, rate, i * bar, (i + 1) * bar).peak,
+  )
+  return { peak: Math.max(...bars), bars }
 }

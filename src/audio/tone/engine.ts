@@ -20,7 +20,7 @@ import {
 } from '../expression.ts'
 import { dbToGain } from '../curves.ts'
 import { readClock, readLatency, type ClockPair, type LatencyReadout } from '../latency.ts'
-import { getPreset } from '../presets/index.ts'
+import { getPreset, PRESETS } from '../presets/index.ts'
 import type { KnobValues, PresetId } from '../presets/types.ts'
 import { createZoneRouter, ZONE_IDS, type KeyboardLayout, type ZoneId } from '../zones.ts'
 import { createGroovePlayer, type GroovePlayer } from './groove.ts'
@@ -65,7 +65,7 @@ export interface Engine {
 }
 
 // shortcut: one fixed level for the whole groove until the mixer (P1-T6).
-const GROOVE_LEVEL_DB = -3
+export const GROOVE_LEVEL_DB = -3
 
 function toState(s: string): ContextState {
   // "interrupted" (Safari) and anything else not running counts as suspended.
@@ -125,21 +125,30 @@ export function createEngine(options: EngineOptions): Engine {
   }
 
   // The groove's own instruments, apart from the zones: the pedal and bends never reach them.
-  // They're in `instruments`, so knob changes (your Wobble Bass and EP Keys sound) and
-  // releaseAll reach them too.
+  // They're in `instruments`, so knob changes (your bass and EP Keys sound) and releaseAll reach
+  // them too.
   let groovePlayer: GroovePlayer | null = null
+  const grooveBus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
+  const grooveInstrument = (id: PresetId) => {
+    let instrument = instruments.get(`groove:${id}`)
+    if (!instrument) {
+      instrument = createInstrument(getPreset(id), knobs[id], grooveBus)
+      instruments.set(`groove:${id}`, instrument)
+    }
+    return instrument
+  }
+  // shortcut: for the P1-T3b audition the groove's bass follows the left sound whenever that is a
+  // bass, so one sleeve click changes both; it goes once the user has picked a bass.
+  const isBass = (id: PresetId) => id !== 'funk-lead' && id !== 'ep-keys'
+  let grooveBass: PresetId = isBass(layout.left.presetId) ? layout.left.presetId : 'wobble-bass'
   function groove() {
     if (groovePlayer) return groovePlayer
-    const bus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
-    const build = (id: PresetId) => {
-      const instrument = createInstrument(getPreset(id), knobs[id], bus)
-      instruments.set(`groove:${id}`, instrument)
-      return instrument
-    }
+    // Every bass up front, so a Play lines up a synced wobble picked later in the groove too.
+    for (const p of PRESETS) if (isBass(p.id)) grooveInstrument(p.id)
     groovePlayer = createGroovePlayer({
-      bass: build('wobble-bass'),
-      chords: build('ep-keys'),
-      destination: bus,
+      bass: grooveInstrument(grooveBass),
+      chords: grooveInstrument('ep-keys'),
+      destination: grooveBus,
       onStart(time) {
         for (const instrument of instruments.values()) instrument.restartLfo(time)
       },
@@ -209,6 +218,11 @@ export function createEngine(options: EngineOptions): Engine {
       }
       // A new split point or octave applies to the next note-on; held notes keep their routes.
       layout = next
+      const left = next.left.presetId
+      if (isBass(left) && left !== grooveBass) {
+        grooveBass = left
+        groovePlayer?.setBass(grooveInstrument(left))
+      }
     },
     setKnob(presetId, id, value) {
       knobs[presetId] = { ...knobs[presetId], [id]: value }

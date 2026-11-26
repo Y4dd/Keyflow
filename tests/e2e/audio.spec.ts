@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Dev tools are on in the e2e build (see playwright.config.ts). Browsers are muted there.
+// The basses play an octave lower in the shared passages below.
+const BASSES = ['wobble-bass', 'round-bass', 'finger-pluck', 'velvet-sub', 'rubber-bass'] as const
+type Bass = (typeof BASSES)[number]
+const isBass = (preset: string) => (BASSES as readonly string[]).includes(preset)
+
 interface RenderNote {
   note: number
   velocity: number
@@ -8,7 +13,7 @@ interface RenderNote {
   off: number
 }
 interface RenderSpec {
-  preset: 'funk-lead' | 'wobble-bass' | 'ep-keys'
+  preset: 'funk-lead' | 'ep-keys' | Bass
   knobs?: Record<string, number>
   notes: RenderNote[]
   duration: number
@@ -222,6 +227,18 @@ const info = (type: string, value: number) =>
 const chord = (notes: number[], velocity: number, on: number, off: number) =>
   notes.map((note) => ({ note, velocity, on, off }))
 
+// The clean basses (P1-T3b): low notes at full velocity, filter wide open, glide at most.
+const CLEAN_BASS_WORST: Omit<RenderSpec, 'preset'> = {
+  knobs: { cutoff: 2000, glide: 0.3 },
+  notes: [28, 36, 24].map((note, i) => ({
+    note,
+    velocity: 1,
+    on: 0.1 + i * 0.5,
+    off: 0.55 + i * 0.5,
+  })),
+  duration: 3,
+}
+
 const WORST_CASE: Record<RenderSpec['preset'], Omit<RenderSpec, 'preset'>> = {
   // Ten fingers at full velocity, at full brightness.
   'ep-keys': {
@@ -251,9 +268,13 @@ const WORST_CASE: Record<RenderSpec['preset'], Omit<RenderSpec, 'preset'>> = {
     })),
     duration: 3,
   },
+  'round-bass': CLEAN_BASS_WORST,
+  'finger-pluck': CLEAN_BASS_WORST,
+  'velvet-sub': CLEAN_BASS_WORST,
+  'rubber-bass': CLEAN_BASS_WORST,
 }
 
-for (const preset of ['ep-keys', 'funk-lead', 'wobble-bass'] as const) {
+for (const preset of ['ep-keys', 'funk-lead', ...BASSES] as const) {
   test(`${preset}: a worst-case passage plays below full scale and goes silent after release`, async ({
     page,
   }) => {
@@ -282,7 +303,7 @@ for (const preset of ['ep-keys', 'funk-lead', 'wobble-bass'] as const) {
       preset === 'ep-keys'
         ? chord([48, 55, 60, 64, 67, 71], v, 0.1, 1.5) // a six-note voicing
         : [48, 55, 60, 63, 67, 72].map((note, i) => ({
-            note: preset === 'wobble-bass' ? note - 12 : note,
+            note: isBass(preset) ? note - 12 : note,
             velocity: v,
             on: 0.1 + i * 0.2,
             off: 0.35 + i * 0.2,
@@ -295,7 +316,7 @@ for (const preset of ['ep-keys', 'funk-lead', 'wobble-bass'] as const) {
 
   test(`${preset}: velocity is audible`, async ({ page }) => {
     await open(page)
-    const note = preset === 'wobble-bass' ? 36 : 60
+    const note = isBass(preset) ? 36 : 60
     const level = async (velocity: number) =>
       (
         await render(page, {

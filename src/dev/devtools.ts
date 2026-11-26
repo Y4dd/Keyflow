@@ -15,7 +15,7 @@ import { keyPoint, keyRects } from '../ui/canvas/keys.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
-import type { RenderResult, RenderSpec } from './render.ts'
+import type { GrooveRenderSpec, RenderResult, RenderSpec } from './render.ts'
 
 export const simPlayer = createSimPlayer(
   {
@@ -55,6 +55,8 @@ export interface KeyflowDevApi {
   }
   /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
   render(spec: RenderSpec): Promise<RenderResult>
+  /** Renders a groove offline with a chosen bass; its peak, and each bar's (src/dev/render.ts). */
+  renderGroove(spec: GrooveRenderSpec): Promise<{ peak: number; bars: number[] }>
   /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
   calibrationClicks(): { perf: number[]; context: number[] } | null
   /** Writes pending settings to IndexedDB now, so a test can reload (P0-T9). */
@@ -121,6 +123,7 @@ export function installDevTools() {
     },
     // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),
+    renderGroove: (spec) => import('./render.ts').then((m) => m.renderGroove(spec)),
     calibrationClicks: () => calibration.clicks(),
     flushSettings,
     pianoKey,

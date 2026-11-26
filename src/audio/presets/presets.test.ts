@@ -2,8 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { defaultKnobs, getPreset, PRESETS } from './index.ts'
 
 describe('presets', () => {
-  it('are the three Phase 0 presets with unique ids', () => {
-    expect(PRESETS.map((p) => p.id)).toEqual(['funk-lead', 'wobble-bass', 'ep-keys'])
+  it('are the Phase 0 presets and the P1-T3b bass candidates, with unique ids', () => {
+    expect(PRESETS.map((p) => p.id)).toEqual([
+      'funk-lead',
+      'wobble-bass',
+      'ep-keys',
+      'round-bass',
+      'finger-pluck',
+      'velvet-sub',
+      'rubber-bass',
+    ])
     expect(getPreset('ep-keys').name).toBe('EP Keys')
     expect(() => getPreset('nope' as 'ep-keys')).toThrow(/Unknown preset/)
   })
@@ -16,6 +24,8 @@ describe('presets', () => {
     expect(getPreset('ep-keys').voice).toBe('poly')
     expect(getPreset('funk-lead').voice).toBe('mono')
     expect(getPreset('wobble-bass').voice).toBe('mono')
+    for (const id of ['round-bass', 'finger-pluck', 'velvet-sub', 'rubber-bass'] as const)
+      expect(getPreset(id).voice).toBe('mono')
   })
 
   it('have knob defaults inside their ranges, with sane envelopes', () => {
@@ -38,7 +48,7 @@ describe('presets', () => {
       cutoff: 900,
       lfoSync: 1,
       lfoRate: 2,
-      drive: 0.4,
+      drive: 0.15, // lowered in P1-T3b: the user found 0.4 harsh
     })
   })
 })

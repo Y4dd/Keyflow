@@ -65,7 +65,7 @@ Write original patterns. **Don't imitate a specific song.** Suggested starting p
 
 _Manual check (2026-11-26, Chrome, YPT-380): not rated yet. The grooves' bass (the Wobble Bass) sounds harsh and distorted, which makes them unpleasant to play over; the EP Keys chords are great. Re-checked after P1-T3b gives the grooves a better bass._
 
-### P1-T3b: A bass that's good to play over
+### P1-T3b: A bass that's good to play over [in progress]
 Added 2026-11-26 (P1-T3 manual check): the grooves play their bass on the Wobble Bass, whose saws run through distortion by design, and the user finds it harsh and distorted, both in the grooves and played with the left hand. The EP Keys chords are great and stay; the lead stays.
 - Build 3 or 4 original **clean bass candidates** (e.g. a round filtered synth bass, a plucky finger-style bass, a sub-heavy smooth bass), each a preset with original, non-artist names, using the existing voice code where it fits.
 - **The user auditions them** on the deployed page, in the grooves and with the left hand (a picker, which can stay as the preset choice), and picks one. Iterate if none is liked. The pick becomes the grooves' bass and the default left sound; the losing candidates are removed.

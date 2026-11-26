@@ -17,11 +17,15 @@ export const ZONE_STRIP = 20
 
 export const WHITE_KEY: Rgb = [239, 230, 214]
 export const BLACK_KEY: Rgb = [42, 32, 26]
-/** Each sound's colour (--funk, --wobble, --keys in src/index.css). */
+/** Each sound's colour (--funk, --wobble, --keys and the rest in src/index.css). */
 const SOUND_COLORS: Record<PresetId, Rgb> = {
   'funk-lead': [255, 123, 46],
   'wobble-bass': [255, 127, 174],
   'ep-keys': [124, 196, 242],
+  'round-bass': [162, 139, 255],
+  'finger-pluck': [63, 207, 192],
+  'velvet-sub': [221, 140, 242],
+  'rubber-bass': [191, 224, 79],
 }
 const WELL: Rgb = [18, 13, 11] // --well
 const KRAFT = '#c8a271'
