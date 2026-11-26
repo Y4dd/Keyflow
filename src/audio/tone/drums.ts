@@ -12,6 +12,8 @@ export interface DrumKit {
 }
 
 export function createDrumKit(destination: Tone.InputNode): DrumKit {
+  // Its own context: inside an offline render the global one is the live context again.
+  const context = Tone.getContext()
   const membrane = (
     hz: number,
     decay: number,
@@ -61,7 +63,7 @@ export function createDrumKit(destination: Tone.InputNode): DrumKit {
   const at = (voice: DrumVoice | 'click', time: number, trigger: (t: number) => void) => {
     const t = Math.max(time, (last.get(voice) ?? -Infinity) + 0.001)
     trigger(t)
-    last.set(voice, Math.max(t, Tone.immediate()))
+    last.set(voice, Math.max(t, context.immediate()))
   }
 
   const click = new Tone.Synth({

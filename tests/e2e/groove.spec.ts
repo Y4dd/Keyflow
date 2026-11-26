@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test'
 interface DevApi {
   groove: { ticks(): number | null; heldCount(): number }
   render(spec: unknown): Promise<{ windows: { rmsDb: number; hf: number }[] }>
-  renderGroove(spec: { groove: string; bars: number }): Promise<{ peak: number }>
+  renderGroove(spec: { groove: string; bars: number }): Promise<{ peak: number; dropouts: number }>
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
@@ -165,16 +165,19 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
 
 // P1-T3b: every groove with its Round Bass stays in the master's linear range (the safety clip bends
 // above 0.9), so nothing in it is heard through clipping. Offline renders of all four bars.
-test('every groove renders clear of the safety clip', async ({ page }) => {
+// And no dropouts: Firefox's limiter kept cutting 6 ms of silence into every groove (heard as
+// ticks in time) until its input channel count was fixed (src/audio/tone/master.ts).
+test('every groove renders clear of the safety clip, with no dropouts', async ({ page }) => {
   test.setTimeout(60_000)
   await open(page)
   for (const groove of ['electro-funk-vamp', 'soul-groove', 'slow-jam', 'boogie']) {
-    const { peak } = await page.evaluate(
+    const { peak, dropouts } = await page.evaluate(
       (spec) => (window as DevWindow).__keyflow!.renderGroove(spec),
       { groove, bars: 4 },
     )
     test.info().annotations.push({ type: `${groove} peak`, description: peak.toFixed(3) })
     expect(peak, groove).toBeGreaterThan(0.1)
     expect(peak, groove).toBeLessThan(0.9)
+    expect(dropouts, groove).toBe(0)
   }
 })
