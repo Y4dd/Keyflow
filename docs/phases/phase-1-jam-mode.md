@@ -50,7 +50,7 @@ _Manual check results (2026-11-26, deployed page, Chrome, YPT-380): steps 1 and 
 
 _Manual check results (2026-11-26, deployed page, Chrome and Firefox, YPT-380): steps 1 to 4 pass. Taste steps 5 and 6: defaults kept (wobble sync on 8ths, drum kit and balance as built)._
 
-### P1-T3: Four original grooves [built 2026-11-26, manual check pending]
+### P1-T3: Four original grooves [done 2026-11-26]
 Write original patterns. **Don't imitate a specific song.** Suggested starting points, open to change:
 
 | Groove | Feel | Tempo | Progression idea | Default solo scale |
@@ -65,7 +65,9 @@ Write original patterns. **Don't imitate a specific song.** Suggested starting p
 
 _Manual check (2026-11-26, Chrome, YPT-380): not rated yet. The grooves' bass (the Wobble Bass) sounds harsh and distorted, which makes them unpleasant to play over; the EP Keys chords are great. Re-checked after P1-T3b gives the grooves a better bass._
 
-### P1-T3b: A bass that's good to play over [built 2026-11-26, manual check pending]
+_Manual check results (2026-11-26, re-run with Round Bass, Chrome, YPT-380): the Electro-funk vamp, Soul groove and Slow jam are great. Boogie is not liked ("horrible"), so P1-T3c replaces it with a funkier original groove. Step 5 unanswered: the vamp still opens first._
+
+### P1-T3b: A bass that's good to play over [done 2026-11-26]
 Added 2026-11-26 (P1-T3 manual check): the grooves play their bass on the Wobble Bass, whose saws run through distortion by design, and the user finds it harsh and distorted, both in the grooves and played with the left hand. The EP Keys chords are great and stay; the lead stays.
 - Build 3 or 4 original **clean bass candidates** (e.g. a round filtered synth bass, a plucky finger-style bass, a sub-heavy smooth bass), each a preset with original, non-artist names, using the existing voice code where it fits.
 - **The user auditions them** on the deployed page, in the grooves and with the left hand (a picker, which can stay as the preset choice), and picks one. Iterate if none is liked. The pick becomes the grooves' bass and the default left sound; the losing candidates are removed.
@@ -75,6 +77,16 @@ Added 2026-11-26 (P1-T3 manual check): the grooves play their bass on the Wobble
 - **Added 2026-11-26 (the user's request in the audition):** a warm electric piano in the spirit of the mellow, tremolo-washed keys the user loves, built as an original sound and not named after the instrument, artist or song: **Warm Tines** (EP Keys' FM voice, a gentle low-pass, a tremolo knob). The user rates it on the page; whether the grooves' chords use it instead of EP Keys is the user's call.
 
 _Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velvet Sub, Rubber Bass). The user picked **Round Bass** "for now": it is the grooves' bass and the default left sound, and the other three are removed. Wobble Bass Drive default lowered from 0.4 to 0.15 (the user didn't name a value). **Automated:** preset tests, worst-case and typical renders for Round Bass and Warm Tines below the safety clip, and an offline render of all four grooves with Round Bass peaking under 0.9 (0.73 to 0.78 measured), and a Warm Tines render with the Tremolo knob up swings its level far more than with it off. **Manual:** rating Warm Tines (taste)._
+
+_Manual check results (2026-11-26, Chrome, YPT-380): steps 1 to 3 pass; Warm Tines is kept as built._
+
+### P1-T3c: A funky groove in place of Boogie
+Added 2026-11-26 (P1-T3 manual check): the user finds Boogie horrible and wants something funky in its place. The other three grooves stay as they are.
+- Write 2 or 3 **original funk groove candidates** (e.g. a tight 16th-note clavinet-style comp over a syncopated bass, a slap-feel octave bass with ghost notes, a mid-tempo two-chord funk vamp in a key the other grooves don't use), in the P1-T1 format, using Round Bass and the EP Keys chords. **Don't imitate a specific song** and name none after an artist.
+- **The user auditions them** on the deployed page and picks one; iterate if none is liked. The pick replaces Boogie in the Groove menu, and the other candidates are removed.
+- **Automated:** the same library checks as P1-T3 (fills its bars, loops evenly, bass in key or on the chord, playable register in all 12 keys) and the render checks (no dropouts, under the safety clip); e2e plays it from the menu.
+- **Manual:** the audition and the pick (taste).
+
 
 ### P1-T4: Highlighting and "training wheels" [done 2026-11-26]
 - The canvas keyboard shows three tiers: **chord tones** (strong), **scale tones** (soft) and **other notes** (dimmed, **never red**).
@@ -86,7 +98,7 @@ _Audition (2026-11-26): four candidates shipped (Round Bass, Finger Pluck, Velve
 
 _Manual check results (2026-11-26, deployed page, Chrome, YPT-380): step 1 passes and the user likes the training wheels. Taste step 2: the dots are unpleasant to look at and can confuse, so P1-T4b tries several visuals until the user likes one. Steps 3 and 4 unanswered: defaults kept (half a beat early, Names)._
 
-### P1-T4b: Highlighting visuals the user likes, and hiding the key letters [built 2026-11-26, manual check pending]
+### P1-T4b: Highlighting visuals the user likes, and hiding the key letters [done 2026-11-26]
 Added 2026-11-26 (P1-T0 and P1-T4 manual checks): the user likes the training wheels, but the dots are unpleasant to look at and can confuse.
 - With the `impeccable` skill, design **3 or 4 clearly different highlighting visuals** for the three tiers (chord tones, scale tones, other notes dimmed, never red) and the note names, within the Crate Dig theme. Ship them switchable on the deployed page so the user can compare them while playing; iterate until the user likes one. The chosen one becomes the only one, and the others are removed (revised 2026-11-26 at the user's request: two stay, see below).
 - Add an option to **hide the computer-key letters** on the canvas keyboard, saved with the other settings.
@@ -94,6 +106,8 @@ Added 2026-11-26 (P1-T0 and P1-T4 manual checks): the user likes the training wh
 - **Manual:** the comparison and the pick (taste); playing stays instant with the chosen visual (must-pass).
 
 _Audition (2026-11-26): four looks shipped switchable (Spotlight, Tape, Frames, Tags). **The user kept two, Tags and Spotlight** (agreed change: two looks stay, not one), and asked for more contrast so they pop. Built: both reworked for contrast (Tags: dark tags on white keys and light ones on black keys holding 13 px bold names, other keys dimmed more; Spotlight: three clear brightness steps, chord tones lit brighter than idle ivory), Tape and Frames removed, the Look chips stay in the Groove card and the look is saved (Tags by default). The letters checkbox in the Play card hides the computer-key letters (saved). The training-wheels chip Dots is now No names. **Automated:** marks stay inside the key, clear of the letters and of the pixel check, Spotlight's steps are at least 40 brightness apart, a held key (velocity 0.25 and up) stays far from every unheld fill, settings round-trip the look and the letters; e2e runs the highlight checks in both looks, hides and restores the letters, and reloads with Spotlight and the letters off saved. **Manual:** contrast and default look (taste), playing stays instant (must-pass)._
+
+_Manual check results (2026-11-26, Chrome, YPT-380): step 1 passes; the contrast is fine and **Tags stays the default look** (taste step 4; it already was)._
 
 ### P1-T5: Scale-aware bend [built 2026-11-26, manual check pending]
 - New bend amount option: **"to next scale tone"**. The pedal or laptop bend targets the next note up in the current solo scale (1 or 2 semitones, depending on the note).
