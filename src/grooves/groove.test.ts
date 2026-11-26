@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   BEATS_PER_BAR,
   harmonyAt,
+  previewTick,
   PPQ,
   scaleTempo,
+  stepIndexAt,
   stepTick,
   STEPS_PER_BEAT,
   transpose,
@@ -166,5 +168,28 @@ describe('groove format', () => {
   it('fills its bars with the progression', () => {
     const beats = vamp.progression.reduce((sum, c) => sum + c.beats, 0)
     expect(beats).toBe(vamp.bars * BEATS_PER_BAR)
+  })
+})
+
+describe('stepIndexAt', () => {
+  it('is the progression step harmonyAt reads, looping and wrapping like it', () => {
+    expect(stepIndexAt(vamp, beat(8) - 1)).toBe(0)
+    expect(stepIndexAt(vamp, beat(8))).toBe(1)
+    expect(stepIndexAt(vamp, beat(16))).toBe(0)
+    expect(stepIndexAt(vamp, -1)).toBe(1)
+  })
+})
+
+describe('previewTick', () => {
+  it('looks half a beat ahead, so the next chord shows before it sounds', () => {
+    expect(previewTick(beat(8) - PPQ / 2 - 1)).toBe(beat(8) - 1)
+    expect(harmonyAt(vamp, previewTick(beat(7.5))).rn).toBe('IV7')
+    expect(harmonyAt(vamp, previewTick(beat(7.5) - 1)).rn).toBe('i7')
+  })
+
+  it('shows the first chord when stopped and through the count-in, not the last', () => {
+    expect(previewTick(null)).toBe(0)
+    expect(harmonyAt(vamp, previewTick(-beat(4))).rn).toBe('i7')
+    expect(harmonyAt(vamp, previewTick(-1)).rn).toBe('i7')
   })
 })

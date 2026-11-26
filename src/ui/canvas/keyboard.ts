@@ -1,12 +1,16 @@
 // Draws the 61-key keyboard: held keys lit by velocity in the colour of the sound playing them, a
-// strip naming each zone's sound in its colour, and a line at the split point. Colours are the
-// theme's (docs/design/theme.md). Called from an animation frame, never per note.
+// strip naming each zone's sound in its colour, a line at the split point, and jam mode's
+// highlighting (P1-T4): a large dot in the zone's sound colour on chord tones, a small kraft dot on
+// scale tones, other keys dimmed toward the well (never red), and note names at training wheels 3.
+// Colours are the theme's (docs/design/theme.md). Called from an animation frame, never per note.
 
 import { Note } from 'tonal'
 import { getPreset } from '../../audio/presets/index.ts'
 import type { PresetId } from '../../audio/presets/types.ts'
 import { zoneOf, type KeyboardLayout, type ZoneSound } from '../../audio/zones.ts'
-import { heldFill, HIGH_NOTE, LOW_NOTE, type KeyRect, type Rgb } from './keys.ts'
+import type { HarmonyAt } from '../../music/harmony.ts'
+import { tierOf, type Tier, type Wheels } from '../../music/highlight.ts'
+import { dotOf, heldFill, HIGH_NOTE, LOW_NOTE, mix, nameY, type KeyRect, type Rgb } from './keys.ts'
 
 /** Height of the zone strip above the keys, CSS px. */
 export const ZONE_STRIP = 20
@@ -19,12 +23,20 @@ const SOUND_COLORS: Record<PresetId, Rgb> = {
   'wobble-bass': [255, 127, 174],
   'ep-keys': [124, 196, 242],
 }
+const WELL: Rgb = [18, 13, 11] // --well
+const KRAFT = '#c8a271'
 const BIN = '#1c1512'
 const BONE = '#f1e8da'
 const LETTER = '#6b5a4c'
 const OUTLINE = 'rgba(28, 21, 18, 0.5)'
 
 const css = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`
+
+/** An unheld key's fill: notes outside the chord and scale are dimmed toward the well. */
+export const idleFill = (black: boolean, tier: Tier | null): Rgb => {
+  const base = black ? BLACK_KEY : WHITE_KEY
+  return tier === 'other' ? mix(base, WELL, black ? 0.5 : 0.45) : base
+}
 
 export interface KeyboardView {
   width: number
@@ -35,6 +47,8 @@ export interface KeyboardView {
   layout: KeyboardLayout
   /** Computer-key letters by note. */
   letters: ReadonlyMap<number, string>
+  /** What to highlight: the shown harmony, the level, and note names by pitch class. */
+  jam: { harmony: HarmonyAt; wheels: Wheels; names: readonly string[] }
 }
 
 function zoneLabel({ presetId, octave }: ZoneSound) {
@@ -55,7 +69,7 @@ function splitX(view: KeyboardView): number {
 }
 
 export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) {
-  const { width, height, keys, held, layout, letters } = view
+  const { width, height, keys, held, layout, letters, jam } = view
   ctx.clearRect(0, 0, width, height)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
@@ -81,16 +95,38 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
     const velocity = held.get(k.note)
     const base = k.black ? BLACK_KEY : WHITE_KEY
     const sound = SOUND_COLORS[layout[zoneOf(layout, k.note)].presetId]
-    ctx.fillStyle = css(velocity === undefined ? base : heldFill(base, sound, velocity))
+    const tier = tierOf(k.note, jam.harmony, jam.wheels)
+    const lit = velocity !== undefined
+    ctx.fillStyle = css(lit ? heldFill(base, sound, velocity) : idleFill(k.black, tier))
     ctx.fillRect(k.x, k.y, k.w, k.h)
     if (!k.black) {
       ctx.strokeStyle = OUTLINE
       ctx.strokeRect(k.x + 0.5, k.y + 0.5, k.w - 1, k.h - 1)
     }
-    const lit = velocity !== undefined
-    // Dark letters once the fill is light: every lit white key, and black keys played harder.
-    ctx.fillStyle = lit && (!k.black || velocity >= 0.4) ? BIN : k.black ? BONE : LETTER
+    const marked = tier === 'chord' || tier === 'scale'
+    // A held key's fill covers its dot. The bin ring keeps light dots visible on white keys.
+    if (marked && !lit) {
+      const dot = dotOf(k, tier === 'chord')
+      ctx.beginPath()
+      ctx.arc(dot.x, dot.y, dot.r, 0, 2 * Math.PI)
+      ctx.fillStyle = tier === 'chord' ? css(sound) : KRAFT
+      ctx.fill()
+      ctx.lineWidth = 1.5
+      ctx.strokeStyle = BIN
+      ctx.stroke()
+      ctx.lineWidth = 1
+    }
+    // Dark text on light fills: white keys (dimmed ones too, which the brown letters fade on),
+    // and black keys played harder.
+    const dark = k.black ? lit && velocity >= 0.4 : lit || tier === 'other'
+    ctx.fillStyle = dark ? BIN : k.black ? BONE : LETTER
     if (!labels) continue
+    if (marked && jam.wheels === 3) {
+      ctx.save()
+      ctx.fillStyle = k.black && !dark ? BONE : BIN
+      ctx.fillText(jam.names[k.note % 12]!, k.x + k.w / 2, nameY(k), k.w - 2)
+      ctx.restore()
+    }
     const letter = letters.get(k.note)
     if (letter) ctx.fillText(letter, k.x + k.w / 2, k.y + k.h - (k.black ? 4 : 18))
     if (!k.black && k.note % 12 === 0)

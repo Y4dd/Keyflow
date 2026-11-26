@@ -239,7 +239,7 @@ Motion: 160ms `cubic-bezier(0.16, 1, 0.3, 1)` for a sleeve lifting, the ON stick
 
 **The No Notation Rule.** No sheet music or notation anywhere. Prompts and labels use note names (spelled by key), chord symbols and Roman numerals.
 
-**The Redraw On Change Rule.** The canvas keyboard and the live readout redraw in one animation frame scheduled only after a change, never per note through React, and nothing else on screen moves while you play.
+**The Redraw On Change Rule.** The canvas keyboard and the live readout redraw in one animation frame scheduled only after a change, never per note through React, and nothing else on screen moves while you play. While a groove plays, the keyboard checks each frame whether the shown chord moved on and redraws only when it did.
 
 ### Buttons
 Ordinary native buttons, outlined pills.
@@ -249,7 +249,7 @@ Ordinary native buttons, outlined pills.
 - **Disabled:** 45% opacity.
 - **Focus:** 2px `now` outline, 2px offset (global).
 
-### Chips (pedal mode)
+### Chips (pedal mode, training wheels)
 - **Style:** native radios hidden over a pill label, 2px `line` border, 6px 16px.
 - **Selected:** solid `bone` fill, `bin` text, 650 weight. Focus shows the yellow outline on the chip.
 
@@ -279,7 +279,9 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Zone strip:** 20px band over the keys in each zone's sound colour, named in 11px bold capitals in `bin`.
 - **Split point:** a 2px `bin` line through strip and keys.
 - **Held key:** filled toward the sound playing it, from 30% (soft) to full colour (hard).
-- **Letters:** `key-letter` on idle whites, `bin` on lit whites, `bone` on blacks; letters and C-octave names only when a white key is at least 14px wide.
+- **Letters:** `key-letter` on idle whites, `bin` on lit and dimmed whites, `bone` on blacks; letters and C-octave names only when a white key is at least 14px wide.
+- **Highlighting (jam mode, P1-T4):** a chord tone gets a large dot (radius 7px on whites and 6px on blacks, capped by key width) in the colour of the sound its zone plays. A scale tone gets a small `kraft` dot. Both dots have a 1.5px `bin` ring, so the light colours still show on ivory, and both sit centred 36px (whites) or 22px (blacks) above the key's bottom, clear of the letters. Other notes are dimmed toward `well` (45% on whites, 50% on blacks), never red. A held key's fill covers its dot. At training wheels Names, marked keys carry their 12px note name above the dot, spelled by the scale and then the key, in `bin` on whites and `bone` on blacks.
+- **Training wheels:** chips in the Groove card (Names, Dots, Chord tones, Off), beside a Scale select that offers only the groove's own scales, with one 14px `bone-muted` line describing the chosen level.
 - **Redraw:** in an animation frame scheduled only after a change, never per note through React.
 
 ## Do's and Don'ts

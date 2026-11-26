@@ -51,16 +51,38 @@ export function noteAt(keys: readonly KeyRect[], x: number, y: number): number |
   return null
 }
 
-/** A point inside a key that no other key or label covers: for clicks and pixel checks. */
+/**
+ * A point inside a key that no other key, label, dot or note name covers: for clicks and pixel
+ * checks. On white keys it's off the centre column, where the dots and names sit.
+ */
 export function keyPoint(k: KeyRect): { x: number; y: number } {
-  return { x: k.x + k.w / 2, y: k.y + k.h * (k.black ? 0.35 : 0.72) }
+  return k.black
+    ? { x: k.x + k.w / 2, y: k.y + k.h * 0.35 }
+    : { x: k.x + k.w * 0.2, y: k.y + k.h * 0.72 }
 }
+
+/**
+ * Where a key's highlight dot sits (centred, near the bottom, above the key letters) and its
+ * radius: large for a chord tone, small for a scale tone, capped by the key's width.
+ */
+export function dotOf(k: KeyRect, chord: boolean): { x: number; y: number; r: number } {
+  const r = k.black
+    ? Math.min(chord ? 6 : 3, k.w * (chord ? 0.3 : 0.15))
+    : Math.min(chord ? 7 : 3.5, k.w * (chord ? 0.22 : 0.11))
+  return { x: k.x + k.w / 2, y: k.y + k.h - (k.black ? 22 : 36), r }
+}
+
+/** Baseline of a key's note name (training wheels 3), centred above its dot. */
+export const nameY = (k: KeyRect): number => k.y + k.h - (k.black ? 34 : 50)
 
 export type Rgb = readonly [number, number, number]
 
-/** A held key's colour: harder notes (velocity 0..1) sit closer to the accent. */
-export function heldFill(base: Rgb, accent: Rgb, velocity: number): Rgb {
-  const t = 0.3 + 0.7 * Math.min(1, Math.max(0, velocity))
-  const mix = (i: number) => Math.round(base[i] + (accent[i] - base[i]) * t)
-  return [mix(0), mix(1), mix(2)]
+/** `a` moved toward `b` by `t` (0..1). */
+export function mix(a: Rgb, b: Rgb, t: number): Rgb {
+  const m = (i: number) => Math.round(a[i]! + (b[i]! - a[i]!) * t)
+  return [m(0), m(1), m(2)]
 }
+
+/** A held key's colour: harder notes (velocity 0..1) sit closer to the accent. */
+export const heldFill = (base: Rgb, accent: Rgb, velocity: number): Rgb =>
+  mix(base, accent, 0.3 + 0.7 * Math.min(1, Math.max(0, velocity)))

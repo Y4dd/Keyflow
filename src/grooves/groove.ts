@@ -73,16 +73,21 @@ export interface Groove {
   altScales: ScaleId[]
 }
 
+/** The progression step at a transport position (unswung ticks); negative ticks wrap from the end. */
+export function stepIndexAt(groove: Groove, ticks: number): number {
+  const total = groove.progression.reduce((sum, c) => sum + c.beats, 0) * PPQ
+  let t = ((ticks % total) + total) % total
+  for (const [i, step] of groove.progression.entries()) {
+    if (t < step.beats * PPQ) return i
+    t -= step.beats * PPQ
+  }
+  return 0 // unreachable: t < total
+}
+
 /** The harmony at a transport position (unswung ticks); negative ticks wrap from the end. */
 export function harmonyAt(groove: Groove, ticks: number, scale = groove.soloScale): HarmonyAt {
   const { tonic, mode } = groove.key
-  const total = groove.progression.reduce((sum, c) => sum + c.beats, 0) * PPQ
-  let t = ((ticks % total) + total) % total
-  let step = groove.progression[0]!
-  for (step of groove.progression) {
-    if (t < step.beats * PPQ) break
-    t -= step.beats * PPQ
-  }
+  const step = groove.progression[stepIndexAt(groove, ticks)]!
   const chord = chordOf(step.rn, tonic)
   return {
     keyTonic: tonic,
@@ -94,6 +99,14 @@ export function harmonyAt(groove: Groove, ticks: number, scale = groove.soloScal
     soloScale: scalePcs(scale, tonic),
   }
 }
+
+/**
+ * The position whose harmony the keyboard shows, from the player's groove ticks (null when
+ * stopped): half a beat ahead, so a chord change shows before it sounds, and the first chord
+ * when stopped and through the count-in (whose negative ticks would wrap to the last chord).
+ */
+export const previewTick = (ticks: number | null): number =>
+  ticks === null ? 0 : Math.max(0, ticks + PPQ / 2)
 
 /** The same groove in another key: only the tonic moves, since all harmony is relative to it. */
 export const transpose = (groove: Groove, semitones: number): Groove => ({

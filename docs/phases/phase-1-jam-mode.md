@@ -59,12 +59,13 @@ Write original patterns. **Don't imitate a specific song.** Suggested starting p
 - **Manual:** the user rates each one as fun to play over, and any that aren't get iterated.
 - Built: the four above as written (keys E♭ major, D♭ major and E minor for the new three), plus a Groove menu in the Groove card to pick one (its own key and tempo; restarts if playing). **Automated:** every shipped groove fills its bars, loops evenly, never overlaps bass notes, keeps the bass in the key or on the chord, and stays in a playable register in all 12 keys (`library.test.ts`); e2e plays each from the menu.
 
-### P1-T4: Highlighting and "training wheels"
+### P1-T4: Highlighting and "training wheels" [built 2026-11-26, manual check pending]
 - The canvas keyboard shows three tiers: **chord tones** (strong), **scale tones** (soft) and **other notes** (dimmed, **never red**).
 - The upcoming chord change is previewed half a beat early.
 - Training-wheel levels: 3 = all tiers plus note names; 2 = all tiers; 1 = chord tones only; 0 = off.
 - Solo-scale picker per groove: minor pentatonic, blues, Dorian, major pentatonic, major, Mixolydian.
 - **Automated:** the tier for each key, given a `HarmonyAt` (pure function).
+- Built: `tierOf` and key-aware `noteNames` (`src/music/`), `previewTick` (half a beat ahead, first chord in the count-in and when stopped), a Scale menu offering the groove's own scales (reset on a groove change) and Training wheels chips (Names, Dots, Chord tones, Off; Names by default) in the Groove card, and the dots and dimming the theme planned. Highlighting shows whenever wheels are on, the selected groove's first chord when stopped. **Automated:** unit tests for tiers, spelling (all keys, modes and scales), the preview position and the dot geometry; e2e checks each level, the scale menu and that the next chord is drawn half a beat early in Chromium and Firefox. **Manual:** [`docs/manual-tests/P1-T4.md`](../manual-tests/P1-T4.md) (lag while the dots move, readability, preview timing, default level).
 
 ### P1-T5: Scale-aware bend
 - New bend amount option: **"to next scale tone"**. The pedal or laptop bend targets the next note up in the current solo scale (1 or 2 semitones, depending on the note).

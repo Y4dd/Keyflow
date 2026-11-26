@@ -7,8 +7,10 @@ import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
 import { audio } from '../state/audio.ts'
 import { calibration } from '../state/calibration.ts'
+import { shownHarmony, useGrooveStore } from '../state/groove.ts'
 import { flushSettings } from '../state/settings.ts'
-import { BLACK_KEY, WHITE_KEY, ZONE_STRIP } from '../ui/canvas/keyboard.ts'
+import { tierOf, type Tier } from '../music/highlight.ts'
+import { idleFill, ZONE_STRIP } from '../ui/canvas/keyboard.ts'
 import { keyPoint, keyRects } from '../ui/canvas/keys.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
@@ -58,10 +60,12 @@ export interface KeyflowDevApi {
   /** Writes pending settings to IndexedDB now, so a test can reload (P0-T9). */
   flushSettings(): Promise<void>
   /**
-   * A key of the canvas keyboard: a point on it in client px (to click), and whether it's drawn
-   * lit (its pixel there isn't the idle key colour). Null if the note isn't on the keyboard.
+   * A key of the canvas keyboard: a point on it in client px (to click), its highlight tier now
+   * (P1-T4; null when unmarked), and whether it's drawn lit (its pixel there isn't the unheld
+   * colour for that tier, so a key the canvas hasn't redrawn for the shown chord reads lit too).
+   * Null if the note isn't on the keyboard.
    */
-  pianoKey(note: number): { x: number; y: number; lit: boolean } | null
+  pianoKey(note: number): { x: number; y: number; lit: boolean; tier: Tier | null } | null
 }
 
 function pianoKey(note: number) {
@@ -74,11 +78,13 @@ function pianoKey(note: number) {
   const pixel = canvas
     .getContext('2d')!
     .getImageData(Math.floor(p.x * dpr), Math.floor(p.y * dpr), 1, 1).data
-  const idle = key.black ? BLACK_KEY : WHITE_KEY
+  const tier = tierOf(note, shownHarmony(), useGrooveStore.getState().wheels)
+  const idle = idleFill(key.black, tier)
   return {
     x: rect.left + p.x,
     y: rect.top + p.y,
     lit: idle.some((c, i) => c !== pixel[i]),
+    tier,
   }
 }
 

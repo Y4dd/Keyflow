@@ -1,14 +1,34 @@
 import type { ChangeEvent } from 'react'
 import { useAudioStore } from '../state/audio.ts'
 import { GROOVES } from '../grooves/library.ts'
-import { groove, grooveOf, tempoRange, useGrooveStore } from '../state/groove.ts'
+import type { ScaleId } from '../music/harmony.ts'
+import type { Wheels } from '../music/highlight.ts'
+import { keyName } from '../music/spelling.ts'
+import { groove, grooveOf, scalesOf, tempoRange, useGrooveStore } from '../state/groove.ts'
 
-// Key names as their key signatures spell them (the fewest accidentals for the mode).
-// shortcut: fixed spellings; the flats-or-sharps question is open in the Phase 1 file.
-const KEY_NAMES = {
-  major: ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'],
-  minor: ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'B♭', 'B'],
+const SCALE_NAMES: Record<ScaleId, string> = {
+  'minor pentatonic': 'Minor pentatonic',
+  'minor blues': 'Blues',
+  dorian: 'Dorian',
+  'major pentatonic': 'Major pentatonic',
+  major: 'Major',
+  mixolydian: 'Mixolydian',
 }
+
+const WHEELS: { level: Wheels; label: string; text: string }[] = [
+  {
+    level: 3,
+    label: 'Names',
+    text: 'Big dots on the chord tones, small dots on the rest of the scale, names on both, and the other keys dimmed.',
+  },
+  {
+    level: 2,
+    label: 'Dots',
+    text: 'Big dots on the chord tones, small dots on the rest of the scale, and the other keys dimmed.',
+  },
+  { level: 1, label: 'Chord tones', text: 'Big dots on the chord tones only.' },
+  { level: 0, label: 'Off', text: 'No help on the keys: play by ear.' },
+]
 
 // A focused menu takes the computer keys (type-ahead), so let go after a choice.
 const blur = (e: ChangeEvent<HTMLSelectElement>) => e.currentTarget.blur()
@@ -27,11 +47,11 @@ function TransportIcon({ playing }: { playing: boolean }) {
 
 /** The groove transport: play and stop, which groove, key, tempo, loop and count-in. */
 export function GroovePanel() {
-  const { grooveId, tonic, bpm, loop, countIn, playing } = useGrooveStore()
+  const { grooveId, tonic, bpm, loop, countIn, playing, scale, wheels } = useGrooveStore()
   const running = useAudioStore((s) => s.status === 'running')
   const g = grooveOf(grooveId)
   const [min, max] = tempoRange(g)
-  const names = KEY_NAMES[g.key.mode]
+  const wheel = WHEELS.find((w) => w.level === wheels)!
 
   return (
     <section className="card groove" aria-labelledby="groove-tab" data-testid="groove">
@@ -74,9 +94,9 @@ export function GroovePanel() {
               blur(e)
             }}
           >
-            {names.map((n, pc) => (
-              <option key={n} value={pc}>
-                {n} {g.key.mode}
+            {Array.from({ length: 12 }, (_, pc) => (
+              <option key={pc} value={pc}>
+                {keyName({ tonic: pc, mode: g.key.mode })} {g.key.mode}
               </option>
             ))}
           </select>
@@ -110,6 +130,42 @@ export function GroovePanel() {
           Count-in
         </label>
       </div>
+      <div className="fields">
+        <label className="field">
+          Scale
+          <select
+            value={scale}
+            onChange={(e) => {
+              groove.setScale(e.target.value as ScaleId)
+              blur(e)
+            }}
+          >
+            {scalesOf(g).map((id) => (
+              <option key={id} value={id}>
+                {SCALE_NAMES[id]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="field">
+          <span id="wheels-label">Training wheels</span>
+          <div className="chips" role="radiogroup" aria-labelledby="wheels-label">
+            {WHEELS.map(({ level, label }) => (
+              <label key={level} className="chip">
+                <input
+                  type="radio"
+                  name="wheels"
+                  value={level}
+                  checked={level === wheels}
+                  onChange={() => groove.setWheels(level)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="blurb">{wheel.text}</p>
       <p className="muted small transport-note">
         {running
           ? `Drums, Wobble Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`

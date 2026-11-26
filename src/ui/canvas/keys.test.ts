@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { heldFill, HIGH_NOTE, keyPoint, keyRects, LOW_NOTE, noteAt } from './keys.ts'
+import { dotOf, heldFill, HIGH_NOTE, keyPoint, keyRects, LOW_NOTE, nameY, noteAt } from './keys.ts'
 
 const keys = keyRects(720, 140, 16)
 const rect = (note: number) => keys.find((k) => k.note === note)!
@@ -39,5 +39,35 @@ describe('heldFill', () => {
     expect(hard).toEqual([200, 0, 0])
     expect(soft[1]).toBeGreaterThan(hard[1])
     expect(heldFill([255, 255, 255], [200, 0, 0], 0)).not.toEqual([255, 255, 255]) // still visible
+  })
+})
+
+describe('dotOf and nameY', () => {
+  // The keyboard's real height (180 px with a 20 px strip), from a phone to a wide screen.
+  const sizes = [400, 720, 1100, 1400].map((w) => keyRects(w, 180, 20))
+
+  it("never cover a key's point, so the pixel check reads the key's own fill", () => {
+    for (const ks of sizes)
+      for (const k of ks) {
+        const p = keyPoint(k)
+        const dot = dotOf(k, true)
+        expect(Math.hypot(p.x - dot.x, p.y - dot.y)).toBeGreaterThan(dot.r + 1)
+        // A two-letter name at 12 px: about 16 px wide, 10 px above its baseline.
+        const inName = Math.abs(p.x - dot.x) < 8 && p.y > nameY(k) - 11 && p.y < nameY(k) + 1
+        expect(inName).toBe(false)
+      }
+  })
+
+  it('stay inside the key, clear of the key letters at the bottom and of each other', () => {
+    for (const ks of sizes)
+      for (const k of ks) {
+        const dot = dotOf(k, true)
+        expect(dot.x - dot.r).toBeGreaterThan(k.x)
+        expect(dot.x + dot.r).toBeLessThan(k.x + k.w)
+        // Letters' tops: 27 px above the bottom on white keys, 13 on black ones.
+        expect(dot.y + dot.r).toBeLessThan(k.y + k.h - (k.black ? 13 : 27))
+        expect(nameY(k)).toBeLessThan(dot.y - dot.r)
+        expect(dotOf(k, false).r).toBeLessThan(dot.r)
+      }
   })
 })
