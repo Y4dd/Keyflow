@@ -109,7 +109,9 @@ function knobs(v: unknown): Record<PresetId, KnobValues> {
     out[preset.id] = Object.fromEntries(
       Object.entries(preset.knobs).map(([id, spec]) => {
         const x = values[id]
-        return [id, num(x) ? Math.min(spec.max, Math.max(spec.min, x)) : spec.default]
+        if (!num(x)) return [id, spec.default]
+        const v = Math.min(spec.max, Math.max(spec.min, x))
+        return [id, spec.unit === 'choice' ? Math.round(v) : v]
       }),
     )
   }

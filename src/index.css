@@ -630,6 +630,65 @@ kbd {
   margin-top: 48px;
 }
 
+/* Groove: one transport row under the keyboard, so the keys keep their place. */
+
+.groove {
+  margin-top: 48px;
+}
+
+.transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+}
+
+.transport-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 7.5em; /* Play and Stop take the same room */
+  padding: 10px 24px;
+  font-size: 18px;
+}
+
+.transport-play[aria-pressed='true'] {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--bin);
+}
+
+.transport-play[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--bone-muted);
+  background: var(--bone-muted);
+}
+
+.tempo {
+  display: grid;
+  grid-template-columns: max-content minmax(160px, 260px) 5.5em;
+  gap: 16px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tempo output {
+  text-align: right;
+}
+
+.transport-note {
+  margin-top: 16px;
+}
+
+.knob-chips {
+  grid-column: span 2;
+}
+
+input[type='range']:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* Timing alone on the last crate row (split on) spans it, its tips in a second column. */
 @media (min-width: 1320px) {
   .grid > #timing:nth-child(4) {

@@ -24,6 +24,10 @@ export interface RenderSpec {
   /** Bends, as the engine sends them: semitones from center, sliding over `ramp` s. */
   bends?: { at: number; semitones: number; ramp: number }[]
   duration: number
+  /** Transport tempo, for tempo-synced LFOs (the Wobble sync knob). Tone's default is 120. */
+  bpm?: number
+  /** Restarts a tempo-synced LFO here, as a groove starting at this time does. */
+  lfoRestartAt?: number
   /** Through the full master chain (default), the master without its limiter, or straight. */
   master?: boolean | 'noLimiter'
   /** [from, to] in seconds; one WindowStats each. */
@@ -52,6 +56,7 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
   const knobs = { ...defaultKnobs(preset), ...spec.knobs }
   const buffer = await Tone.Offline(
     (context) => {
+      if (spec.bpm !== undefined) context.transport.bpm.value = spec.bpm
       const master =
         spec.master === false ? null : createMaster({ limiter: spec.master !== 'noLimiter' })
       const instrument = createInstrument(
@@ -75,6 +80,7 @@ export async function renderPreset(spec: RenderSpec): Promise<RenderResult> {
           instrument.bend(b.semitones, b.at, b.ramp)
         }
       }
+      if (spec.lfoRestartAt !== undefined) instrument.restartLfo(spec.lfoRestartAt)
       if (spec.sendAt === undefined) send()
       else context.setTimeout(send, spec.sendAt)
     },

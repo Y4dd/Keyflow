@@ -27,6 +27,8 @@ export interface Instrument {
   /** Bends every sounding and later note to `semitones`, sliding over `ramp` seconds. */
   bend(semitones: number, time: number, ramp: number): void
   setKnob(id: string, value: number): void
+  /** Lines a tempo-synced LFO up with a groove starting at `time` (Wobble Bass only). */
+  restartLfo(time: number): void
   /** Pitches currently held, for tests and dev tools. */
   heldCount(): number
   dispose(): void
@@ -92,6 +94,7 @@ function monoInstrument(preset: Preset, voice: MonoVoice, output: Tone.Gain): In
     },
     bend: voice.bend,
     setKnob: voice.setKnob,
+    restartLfo: (time) => voice.restartLfo?.(time),
     heldCount: () => stack.held().length,
     dispose() {
       voice.dispose()
@@ -138,6 +141,7 @@ function polyInstrument(
       for (const note of latch.hold(down)) stop(note, time)
     },
     setGlideHold() {}, // no glide on a poly instrument
+    restartLfo() {},
     bend(semitones, time, ramp) {
       for (const voice of voices) voice.bend(semitones, time, ramp)
     },

@@ -40,6 +40,16 @@ export const WOBBLE_BASS: WobblePreset = {
   amp: { attack: 0.004, decay: 0.1, sustain: 1, release: 0.1 },
   knobs: {
     cutoff: { label: 'Cutoff', min: 150, max: 3000, default: 900, curve: 'log', unit: 'Hz' },
+    // An index into LFO_SYNC_PER_BEAT (src/audio/tone/voices.ts); Free uses the Wobble rate knob.
+    lfoSync: {
+      label: 'Wobble sync',
+      min: 0,
+      max: 2,
+      default: 1,
+      curve: 'linear',
+      unit: 'choice',
+      choices: ['Free', '8ths', '16ths'],
+    },
     lfoRate: { label: 'Wobble rate', min: 0.25, max: 10, default: 2, curve: 'log', unit: 'Hz' },
     drive: { label: 'Drive', min: 0, max: 1, default: 0.4, curve: 'linear', unit: '%' },
   },

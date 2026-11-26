@@ -39,7 +39,7 @@ Added 2026-11-25 (the user's request): the app is redesigned before the rest of 
 - Pure functions: `harmonyAt(groove, transportTicks) → HarmonyAt`, transpose and tempo scaling.
 - **Automated:** unit tests for `harmonyAt` across bar boundaries, transposition and swing math.
 
-### P1-T2: Groove player
+### P1-T2: Groove player [built 2026-11-25, manual check pending]
 - Tone Transport scheduling of drums (synthesized kit or small CC0 samples; record each sample's license in `src/assets/LICENSES.md`), bass (reuse the Wobble Bass or a funk bass preset) and chords (EP Keys).
 - The Wobble Bass LFO now syncs to the transport (e.g. 8th or 16th notes, selectable).
 - Controls: play/stop, loop, key (12 keys), tempo (±30%), count-in.

@@ -17,8 +17,13 @@ export interface MonoVoice {
   /** Bends to `semitones` from the played pitch, sliding over `ramp` seconds. */
   bend(semitones: number, time: number, ramp: number): void
   setKnob(id: string, value: number): void
+  /** Restarts a tempo-synced LFO's cycle at `time` (a groove's first beat), on the beat. */
+  restartLfo?(time: number): void
   dispose(): void
 }
+
+/** LFO cycles per beat for each Wobble sync choice (the lfoSync knob); 0 is free-running. */
+export const LFO_SYNC_PER_BEAT = [0, 2, 4] as const
 
 export interface PolyVoice {
   start(hz: number, velocity: number, gain: number, time: number): void
@@ -130,8 +135,7 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
 
   const sawLevel = new Tone.Gain(p.saws.level)
   const filter = new Tone.Filter({ type: 'lowpass', rolloff: -24, Q: p.filter.q })
-  // Free-running in Phase 0; tempo-synced once Phase 1 adds a transport. It overrides
-  // filter.frequency, so the cutoff knob sets the sweep's top.
+  // It overrides filter.frequency, so the cutoff knob sets the sweep's top.
   const lfo = new Tone.LFO({
     type: 'sine',
     frequency: knobs.lfoRate,
@@ -139,6 +143,20 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
     max: knobs.cutoff,
   })
   lfo.connect(filter.frequency)
+  // Synced, the rate follows the transport's tempo through Tone's syncSignal (frequency only:
+  // LFO.sync() would also stop the wobble whenever the transport is stopped, as it is when you
+  // play without a groove).
+  const transport = lfo.context.transport
+  let rate = knobs.lfoRate
+  let perBeat: number = LFO_SYNC_PER_BEAT[knobs.lfoSync ?? 0] ?? 0
+  function applyRate() {
+    transport.unsyncSignal(lfo.frequency) // a no-op unless synced
+    // Through .value, not at Tone.immediate(): unsyncSignal sets the value that way, a look-ahead
+    // later, and would win over an earlier-timed value.
+    if (perBeat > 0) transport.syncSignal(lfo.frequency, perBeat / transport.PPQ)
+    else lfo.frequency.value = rate
+  }
+  applyRate()
   const drive = new Tone.Distortion({ distortion: knobs.drive, oversample: '4x' })
   const comp = new Tone.Compressor({
     threshold: p.compressor.thresholdDb,
@@ -176,10 +194,22 @@ export function createWobbleVoice(p: WobblePreset, knobs: KnobValues): MonoVoice
       if (id === 'cutoff') {
         lfo.min = value / p.filter.sweepRatio
         lfo.max = value
-      } else if (id === 'lfoRate') lfo.frequency.setValueAtTime(value, Tone.immediate())
-      else if (id === 'drive') drive.distortion = value
+      } else if (id === 'lfoRate') {
+        rate = value
+        if (perBeat === 0) lfo.frequency.setValueAtTime(value, Tone.immediate())
+      } else if (id === 'lfoSync') {
+        perBeat = LFO_SYNC_PER_BEAT[value] ?? 0
+        applyRate()
+      } else if (id === 'drive') drive.distortion = value
+    },
+    restartLfo(time) {
+      if (perBeat === 0) return
+      // A new oscillator starts its cycle at 0; restarting a running one would keep its phase.
+      lfo.stop(time)
+      lfo.start(time)
     },
     dispose() {
+      transport.unsyncSignal(lfo.frequency)
       pitch.dispose()
       for (const node of [
         sawA,

@@ -17,7 +17,9 @@ export interface KnobSpec {
   max: number
   default: number
   curve: KnobCurve
-  unit: 'Hz' | 's' | '%'
+  /** 'choice': the value is an index into `choices`, picked with chips instead of a slider. */
+  unit: 'Hz' | 's' | '%' | 'choice'
+  choices?: readonly string[]
 }
 
 interface PresetBase<K extends string> {
@@ -44,7 +46,7 @@ export interface LeadPreset extends PresetBase<'cutoff' | 'glide'> {
 }
 
 /** Wobble Bass: two detuned saws through an LFO filter and distortion, plus a clean sub. */
-export interface WobblePreset extends PresetBase<'cutoff' | 'lfoRate' | 'drive'> {
+export interface WobblePreset extends PresetBase<'cutoff' | 'lfoSync' | 'lfoRate' | 'drive'> {
   kind: 'wobble'
   voice: 'mono'
   saws: { level: number; detuneCents: number }

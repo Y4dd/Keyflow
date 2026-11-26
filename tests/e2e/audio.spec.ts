@@ -242,7 +242,7 @@ const WORST_CASE: Record<RenderSpec['preset'], Omit<RenderSpec, 'preset'>> = {
   },
   // Low notes, drive and cutoff at maximum.
   'wobble-bass': {
-    knobs: { cutoff: 3000, drive: 1, lfoRate: 10 },
+    knobs: { cutoff: 3000, drive: 1, lfoSync: 0, lfoRate: 10 },
     notes: [28, 36, 24].map((note, i) => ({
       note,
       velocity: 1,

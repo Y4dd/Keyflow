@@ -45,6 +45,12 @@ export interface KeyflowDevApi {
     /** What the pedal and bends are doing now (src/audio/expression.ts); null before audio. */
     expression(): ExpressionTargets | null
   }
+  groove: {
+    /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
+    ticks(): number | null
+    /** Notes the groove's bass and chords hold; 0 before audio or the first play. */
+    heldCount(): number
+  }
   /** Renders a preset offline and measures it (src/dev/render.ts). Loads Tone.js. */
   render(spec: RenderSpec): Promise<RenderResult>
   /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
@@ -102,6 +108,10 @@ export function installDevTools() {
       currentTime: () => audio.engine()?.currentTime() ?? null,
       latency: () => audio.engine()?.latency() ?? null,
       expression: () => audio.engine()?.expression() ?? null,
+    },
+    groove: {
+      ticks: () => audio.engine()?.groove().ticks() ?? null,
+      heldCount: () => audio.engine()?.groove().heldCount() ?? 0,
     },
     // Imported on demand: importing Tone creates the AudioContext, which must wait for a click.
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),

@@ -34,6 +34,11 @@ describe('presets', () => {
   })
 
   it('defaultKnobs lists every knob', () => {
-    expect(defaultKnobs(getPreset('wobble-bass'))).toEqual({ cutoff: 900, lfoRate: 2, drive: 0.4 })
+    expect(defaultKnobs(getPreset('wobble-bass'))).toEqual({
+      cutoff: 900,
+      lfoSync: 1,
+      lfoRate: 2,
+      drive: 0.4,
+    })
   })
 })

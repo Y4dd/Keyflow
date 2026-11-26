@@ -18,10 +18,12 @@ import {
   type ExpressionSettings,
   type ExpressionTargets,
 } from '../expression.ts'
+import { dbToGain } from '../curves.ts'
 import { readClock, readLatency, type ClockPair, type LatencyReadout } from '../latency.ts'
 import { getPreset } from '../presets/index.ts'
 import type { KnobValues, PresetId } from '../presets/types.ts'
 import { createZoneRouter, ZONE_IDS, type KeyboardLayout, type ZoneId } from '../zones.ts'
+import { createGroovePlayer, type GroovePlayer } from './groove.ts'
 import { createInstrument, type Instrument } from './instrument.ts'
 import { createMaster } from './master.ts'
 
@@ -56,7 +58,14 @@ export interface Engine {
   /** Dev tools: pitches a zone's instruments hold (including presets switched away from). */
   heldCount(zone: ZoneId): number
   currentTime(): number
+  /** The groove player (src/audio/tone/groove.ts), built with its instruments on first use. */
+  groove(): GroovePlayer
+  /** The transport tempo, which a synced wobble follows even with no groove playing. */
+  setTempo(bpm: number): void
 }
+
+// shortcut: one fixed level for the whole groove until the mixer (P1-T6).
+const GROOVE_LEVEL_DB = -3
 
 function toState(s: string): ContextState {
   // "interrupted" (Safari) and anything else not running counts as suspended.
@@ -115,6 +124,29 @@ export function createEngine(options: EngineOptions): Engine {
     instrument.bend(zone === 'main' ? applied.bend : 0, now, 0)
   }
 
+  // The groove's own instruments, apart from the zones: the pedal and bends never reach them.
+  // They're in `instruments`, so knob changes (your Wobble Bass and EP Keys sound) and
+  // releaseAll reach them too.
+  let groovePlayer: GroovePlayer | null = null
+  function groove() {
+    if (groovePlayer) return groovePlayer
+    const bus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
+    const build = (id: PresetId) => {
+      const instrument = createInstrument(getPreset(id), knobs[id], bus)
+      instruments.set(`groove:${id}`, instrument)
+      return instrument
+    }
+    groovePlayer = createGroovePlayer({
+      bass: build('wobble-bass'),
+      chords: build('ep-keys'),
+      destination: bus,
+      onStart(time) {
+        for (const instrument of instruments.values()) instrument.restartLfo(time)
+      },
+    })
+    return groovePlayer
+  }
+
   const resume = () => Tone.start().catch(() => {}) // retried on the next gesture
 
   const releaseAll = () => {
@@ -127,8 +159,11 @@ export function createEngine(options: EngineOptions): Engine {
     const next = toState(context.state)
     if (next === state) return
     state = next
-    // Notes held across a suspension would play stale on resume.
-    if (state !== 'running') releaseAll()
+    // Notes held across a suspension would play stale on resume; so would the groove.
+    if (state !== 'running') {
+      groovePlayer?.stop()
+      releaseAll()
+    }
     options.onStateChange(state)
   })
 
@@ -203,5 +238,9 @@ export function createEngine(options: EngineOptions): Engine {
       return n
     },
     currentTime: () => Tone.immediate(),
+    groove,
+    setTempo(bpm) {
+      Tone.getTransport().bpm.value = bpm
+    },
   }
 }

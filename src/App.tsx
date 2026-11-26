@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { CalibrationPanel } from './ui/CalibrationPanel.tsx'
+import { GroovePanel } from './ui/GroovePanel.tsx'
 import { MidiPanel } from './ui/MidiPanel.tsx'
 import { PlayPanel } from './ui/PlayPanel.tsx'
 import { SetupSteps } from './ui/SetupSteps.tsx'
@@ -25,6 +26,7 @@ export function App() {
         <SoundStatus />
       </div>
       <PlayPanel />
+      <GroovePanel />
       <div className="grid">
         <SoundCrate />
         <CalibrationPanel />

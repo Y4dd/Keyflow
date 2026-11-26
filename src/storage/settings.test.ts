@@ -16,7 +16,7 @@ const CHANGED: Settings = {
   },
   knobs: {
     'funk-lead': { cutoff: 3000, glide: 0.1 },
-    'wobble-bass': { cutoff: 500, lfoRate: 4, drive: 0.8 },
+    'wobble-bass': { cutoff: 500, lfoSync: 2, lfoRate: 4, drive: 0.8 },
     'ep-keys': { brightness: 0.2 },
   },
   expression: { pedalMode: 'bend', bendSemitones: 1, bendTimeMs: 250 },

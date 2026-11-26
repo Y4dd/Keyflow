@@ -1,5 +1,5 @@
 import { knobToPosition, positionToKnob } from '../audio/curves.ts'
-import { useSyncExternalStore, type ChangeEvent } from 'react'
+import { useId, useSyncExternalStore, type ChangeEvent } from 'react'
 import { Note } from 'tonal'
 import { MAX_BEND_TIME_MS, type PedalMode } from '../audio/expression.ts'
 import { getPreset, PRESETS } from '../audio/presets/index.ts'
@@ -24,6 +24,8 @@ function formatKnob(value: number, spec: KnobSpec): string {
       return `${Math.round(value * 1000)} ms`
     case '%':
       return `${Math.round(value * 100)}%`
+    case 'choice':
+      return spec.choices?.[value] ?? ''
   }
 }
 
@@ -189,15 +191,40 @@ export function SplitControls() {
 function Knobs({ presetId }: { presetId: PresetId }) {
   const knobs = useAudioStore((s) => s.knobs[presetId])
   const preset = getPreset(presetId)
+  // Both zones can show the same preset, so radio names and label ids come from the instance.
+  const uid = useId()
   return (
     <div className="knobs">
       {Object.entries(preset.knobs).map(([id, spec]: [string, KnobSpec]) => {
         const value = knobs[id] ?? spec.default
+        if (spec.choices) {
+          return (
+            <div key={`${presetId}-${id}`} className="knob">
+              <span id={`${uid}-${id}`}>{spec.label}</span>
+              <div className="chips knob-chips" role="radiogroup" aria-labelledby={`${uid}-${id}`}>
+                {spec.choices.map((label, i) => (
+                  <label key={label} className="chip">
+                    <input
+                      type="radio"
+                      name={`${uid}-${id}`}
+                      checked={value === i}
+                      onChange={() => audio.setKnob(presetId, id, i)}
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        }
+        // A tempo-synced wobble doesn't use its free rate.
+        const synced = id === 'lfoRate' && (knobs.lfoSync ?? 0) > 0
         return (
           <label key={`${presetId}-${id}`} className="knob">
             <span>{spec.label}</span>
             <input
               type="range"
+              disabled={synced}
               min={0}
               max={SLIDER_STEPS}
               value={Math.round(
@@ -216,7 +243,7 @@ function Knobs({ presetId }: { presetId: PresetId }) {
                 )
               }
             />
-            <output>{formatKnob(value, spec)}</output>
+            <output>{synced ? 'Synced' : formatKnob(value, spec)}</output>
           </label>
         )
       })}
