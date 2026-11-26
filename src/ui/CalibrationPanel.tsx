@@ -1,6 +1,8 @@
 import { TAP_TEST } from '../audio/calibration.ts'
 import { useAudioStore } from '../state/audio.ts'
 import { calibration, useCalibrationStore } from '../state/calibration.ts'
+import { useSetupSteps } from '../state/setup.ts'
+import { StepAction } from './SetupSteps.tsx'
 
 const ms = (v: number) => `${Math.round(v)} ms`
 const signedMs = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : ''}${ms(Math.abs(v))}`
@@ -47,16 +49,17 @@ export function CalibrationPanel() {
   const outputLatencyMs = useAudioStore((s) => s.latency?.outputLatencyMs)
   const running = useCalibrationStore((s) => s.running)
   const lead = useCalibrationStore((s) => s.outputTimestampLeadMs)
+  const state = useSetupSteps().timing
 
   return (
-    <section className="panel" aria-label="Timing">
-      <h2>Timing</h2>
+    <section className="card" id="timing" aria-label="Timing" data-state={state}>
+      <h2 className="tab">Timing</h2>
       <p>
         Calibrate once in each browser, so later timing feedback is fair. A click plays{' '}
         {TAP_TEST.beats} beats; listen to the first {TAP_TEST.countIn}, then tap any key on each
         click.
       </p>
-      <ul className="muted">
+      <ul className="muted small">
         <li>Use wired headphones in the laptop; Bluetooth adds delay.</li>
         <li>
           Turn the keyboard&apos;s Local Control off so its own sound doesn&apos;t double the
@@ -65,7 +68,7 @@ export function CalibrationPanel() {
         <li>Close other music apps.</li>
       </ul>
       {status === 'running' ? (
-        <p className="muted" data-testid="calibration-latency">
+        <p className="muted small" data-testid="calibration-latency">
           Output latency:{' '}
           {outputLatencyMs != null
             ? `${ms(outputLatencyMs)} (the browser's estimate)`
@@ -73,19 +76,26 @@ export function CalibrationPanel() {
           {lead != null && `; output timestamp ${signedMs(lead)}`}.
         </p>
       ) : (
-        <p className="muted">Start audio to calibrate.</p>
+        <p className="muted small">Start audio to calibrate.</p>
       )}
       {running ? (
         <>
-          <p role="status">Listen to {TAP_TEST.countIn} clicks, then tap along.</p>
-          <button type="button" onClick={calibration.cancel}>
-            Stop
-          </button>
+          <p role="status" className="title" style={{ marginTop: 16 }}>
+            Listen to {TAP_TEST.countIn} clicks, then tap along.
+          </p>
+          <div className="actions">
+            <button type="button" onClick={calibration.cancel}>
+              Stop
+            </button>
+          </div>
         </>
       ) : (
-        <button type="button" disabled={status !== 'running'} onClick={calibration.start}>
-          Calibrate
-        </button>
+        <StepAction
+          step="timing"
+          label="Calibrate"
+          disabled={status !== 'running'}
+          onClick={calibration.start}
+        />
       )}
       <Result />
     </section>

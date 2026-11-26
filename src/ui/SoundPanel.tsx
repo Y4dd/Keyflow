@@ -10,6 +10,9 @@ import { BEND_KEYS } from '../input/computer/bend.ts'
 import { audio, useAudioStore } from '../state/audio.ts'
 import { laptopBend } from '../state/input.ts'
 import { midi, useMidiStore } from '../state/midi.ts'
+import { useSetupSteps } from '../state/setup.ts'
+import { StepAction } from './SetupSteps.tsx'
+import { SleeveArt } from './Sleeve.tsx'
 
 const SLIDER_STEPS = 1000
 
@@ -36,7 +39,8 @@ function StatusLine() {
     case 'starting':
       // One branch for both, and nothing appears or disappears until sound runs: pressing the
       // button starts audio on pointerdown (attachAudioUnlock), so the layout must not shift
-      // under the pointer before its click.
+      // under the pointer before its click. The button comes before the status text, whose
+      // length changes on "starting" and could wrap differently.
       return (
         <>
           {notesWaiting && (
@@ -44,6 +48,7 @@ function StatusLine() {
               Your keyboard is playing, but sound is off. Click anywhere on the page to hear it.
             </p>
           )}
+          <StepAction step="sound" label="Start audio" onClick={start} />
           <p role="status">
             {status === 'starting'
               ? 'Starting audio...'
@@ -51,9 +56,6 @@ function StatusLine() {
                 ? 'Your sound settings are back. Click anywhere or press a key to turn sound on.'
                 : 'Browsers start sound only after a click or key press on the page.'}
           </p>
-          <button type="button" onClick={start}>
-            Start audio
-          </button>
         </>
       )
     case 'suspended':
@@ -62,9 +64,7 @@ function StatusLine() {
           <p className="hint" role="status">
             The browser paused the sound. Click anywhere on the page to turn it back on.
           </p>
-          <button type="button" onClick={start}>
-            Resume audio
-          </button>
+          <StepAction step="sound" label="Resume audio" onClick={start} />
         </>
       )
     case 'failed':
@@ -73,22 +73,39 @@ function StatusLine() {
           <p className="hint" role="alert">
             Sound couldn't start{error ? `: ${error}` : ''}. Reload the page and try again.
           </p>
-          <button type="button" onClick={start}>
-            Try again
-          </button>
+          <StepAction step="sound" label="Try again" onClick={start} />
         </>
       )
     case 'running':
       return (
-        <p data-testid="audio-latency">
-          Sound is on. Output latency:{' '}
-          {latency?.outputLatencyMs != null
-            ? `${ms(latency.outputLatencyMs)} (the browser's estimate)`
-            : 'not reported by this browser'}
-          .
-        </p>
+        <>
+          <p className="title">Sound is on</p>
+          <p className="muted" data-testid="audio-latency">
+            Output latency:{' '}
+            {latency?.outputLatencyMs != null
+              ? `${ms(latency.outputLatencyMs)} (the browser's estimate)`
+              : 'not reported by this browser'}
+            .
+          </p>
+        </>
       )
   }
+}
+
+/** The Sound card in the setup row: whether sound is on, and the button that starts it. */
+export function SoundStatus() {
+  const status = useAudioStore((s) => s.status)
+  const state = useSetupSteps().sound
+  return (
+    <section className="card" id="sound" aria-labelledby="sound-tab" data-state={state}>
+      <h2 className="tab" id="sound-tab">
+        Sound
+      </h2>
+      <div data-testid="audio-status" data-status={status}>
+        <StatusLine />
+      </div>
+    </section>
+  )
 }
 
 // Split points offered in the menu: every key of the 61 but the lowest (C2 + 1 to C7). A
@@ -102,7 +119,8 @@ const name = (note: number) => Note.fromMidiSharps(note)
 const blur = (e: ChangeEvent<HTMLSelectElement>) => e.currentTarget.blur()
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0')
 
-function SplitControls() {
+/** Split on or off, the split point, and setting it by pressing a key. Sits under the keys. */
+export function SplitControls() {
   const split = useAudioStore((s) => s.layout.split)
   const splitNote = useAudioStore((s) => s.layout.splitNote)
   const learning = useAudioStore((s) => s.learningSplit)
@@ -113,16 +131,20 @@ function SplitControls() {
 
   return (
     <fieldset className="split">
-      <legend>Keyboard</legend>
-      <label className="check">
-        <input type="checkbox" checked={split} onChange={(e) => audio.setSplit(e.target.checked)} />
-        Split keyboard
-      </label>
-      {split && (
-        <>
-          <div className="split-point">
-            <label>
-              Split point{' '}
+      <legend className="visually-hidden">Split</legend>
+      <div className="field">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={split}
+            onChange={(e) => audio.setSplit(e.target.checked)}
+          />
+          Split keyboard
+        </label>
+        {split && (
+          <>
+            <label className="field">
+              Split point
               <select
                 value={splitNote}
                 onChange={(e) => {
@@ -151,12 +173,14 @@ function SplitControls() {
                 Set by pressing a key
               </button>
             )}
-          </div>
-          <p className="muted" data-testid="split-summary">
-            Keys below {name(splitNote)} play the left sound; {name(splitNote)} and up play the main
-            sound.
-          </p>
-        </>
+          </>
+        )}
+      </div>
+      {split && (
+        <p className="muted small" data-testid="split-summary" style={{ marginTop: 8 }}>
+          Keys below {name(splitNote)} play the left sound; {name(splitNote)} and up play the main
+          sound.
+        </p>
       )}
     </fieldset>
   )
@@ -206,13 +230,13 @@ for (let o = MIN_OCTAVE; o <= MAX_OCTAVE; o++) OCTAVES.push(o)
 function ZoneControls({ zone, title, keys }: { zone: ZoneId; title: string; keys: string }) {
   const { presetId, octave } = useAudioStore((s) => s.layout[zone])
   return (
-    <fieldset className="zone">
-      <legend>
-        {title} <span className="muted">{keys}</span>
+    <fieldset className="card" data-sound={presetId}>
+      <legend className="tab">
+        {title} <span className="range">{keys}</span>
       </legend>
-      <div className="presets" role="radiogroup" aria-label={`${title} preset`}>
+      <div className="sleeves" role="radiogroup" aria-label={`${title} preset`}>
         {PRESETS.map((p) => (
-          <label key={p.id} className="preset">
+          <label key={p.id} className="sleeve">
             <input
               type="radio"
               name={`preset-${zone}`}
@@ -220,28 +244,33 @@ function ZoneControls({ zone, title, keys }: { zone: ZoneId; title: string; keys
               checked={p.id === presetId}
               onChange={() => audio.setZonePreset(zone, p.id)}
             />
-            <span>
-              <strong>{p.name}</strong> <span className="muted">{p.description}</span>
+            <SleeveArt presetId={p.id} />
+            <span className="sticker on" aria-hidden="true">
+              ON
             </span>
+            <span className="sleeve-name">{p.name}</span>
           </label>
         ))}
       </div>
-      <label className="octave">
-        Octave{' '}
-        <select
-          value={octave}
-          onChange={(e) => {
-            audio.setZoneOctave(zone, Number(e.target.value))
-            blur(e)
-          }}
-        >
-          {OCTAVES.map((o) => (
-            <option key={o} value={o}>
-              {signed(o)}
-            </option>
-          ))}
-        </select>
-      </label>
+      <p className="blurb">{getPreset(presetId).description}</p>
+      <div className="fields">
+        <label className="field">
+          Octave
+          <select
+            value={octave}
+            onChange={(e) => {
+              audio.setZoneOctave(zone, Number(e.target.value))
+              blur(e)
+            }}
+          >
+            {OCTAVES.map((o) => (
+              <option key={o} value={o}>
+                {signed(o)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <Knobs presetId={presetId} />
     </fieldset>
   )
@@ -261,13 +290,14 @@ function PedalControls() {
   const { pedalMode, bendSemitones, bendTimeMs } = useAudioStore((s) => s.expression)
   const invert = useMidiStore((s) => s.invertPedal)
   const bendKey = useSyncExternalStore(laptopBend.subscribe, laptopBend.getKey)
+  const current = PEDAL_MODES.find((m) => m.mode === pedalMode)
 
   return (
-    <fieldset className="pedal">
-      <legend>Pedal and bend</legend>
-      <div className="presets" role="radiogroup" aria-label="Pedal">
-        {PEDAL_MODES.map(({ mode, label, text }) => (
-          <label key={mode} className="preset">
+    <fieldset className="card">
+      <legend className="tab">Pedal &amp; bend</legend>
+      <div className="chips" role="radiogroup" aria-label="Pedal">
+        {PEDAL_MODES.map(({ mode, label }) => (
+          <label key={mode} className="chip">
             <input
               type="radio"
               name="pedal-mode"
@@ -275,23 +305,29 @@ function PedalControls() {
               checked={mode === pedalMode}
               onChange={() => audio.setExpression({ pedalMode: mode })}
             />
-            <span>
-              <strong>{label}</strong> <span className="muted">{text}</span>
-            </span>
+            {label}
           </label>
         ))}
       </div>
-      <label className="check">
+      {current && (
+        <p className="blurb">
+          {current.label} {current.text}
+        </p>
+      )}
+      <label className="check" style={{ marginTop: 16 }}>
         <input
           type="checkbox"
           checked={invert}
           onChange={(e) => midi.setInvertPedal(e.target.checked)}
         />
-        Invert pedal <span className="muted">(if the Play panel shows it down when it's up)</span>
+        <span>
+          Invert pedal{' '}
+          <span className="muted small">(if the Play panel shows it down when it's up)</span>
+        </span>
       </label>
-      <div className="split-point">
-        <label>
-          Bend amount{' '}
+      <div className="fields">
+        <label className="field">
+          Bend amount
           <select
             value={bendSemitones}
             onChange={(e) => {
@@ -303,8 +339,8 @@ function PedalControls() {
             <option value={2}>2 semitones</option>
           </select>
         </label>
-        <label>
-          Bend key{' '}
+        <label className="field">
+          Bend key
           <select
             value={bendKey ?? ''}
             onChange={(e) => {
@@ -335,7 +371,7 @@ function PedalControls() {
           <output>{bendTimeMs} ms</output>
         </label>
       </div>
-      <p className="muted">
+      <p className="muted small" style={{ marginTop: 16 }}>
         Bends move the main sound. Hold the bend key, or scroll over the on-screen keys for a bend
         that springs back when you stop.
       </p>
@@ -343,27 +379,19 @@ function PedalControls() {
   )
 }
 
-export function SoundPanel() {
-  const status = useAudioStore((s) => s.status)
+/** The crate's sound cards: left sound (when split), main sound, pedal and bend. */
+export function SoundCrate() {
   const split = useAudioStore((s) => s.layout.split)
   const splitNote = useAudioStore((s) => s.layout.splitNote)
-
   return (
-    <section className="panel" aria-label="Sound">
-      <h2>Sound</h2>
-      <div data-testid="audio-status" data-status={status}>
-        <StatusLine />
-      </div>
-      <SplitControls />
+    <>
+      {split && <ZoneControls zone="left" title="Left sound" keys={`below ${name(splitNote)}`} />}
+      <ZoneControls
+        zone="main"
+        title="Main sound"
+        keys={split ? `${name(splitNote)} and up` : 'whole keyboard'}
+      />
       <PedalControls />
-      <div className="zones">
-        {split && <ZoneControls zone="left" title="Left sound" keys={`below ${name(splitNote)}`} />}
-        <ZoneControls
-          zone="main"
-          title="Main sound"
-          keys={split ? `${name(splitNote)} and up` : 'whole keyboard'}
-        />
-      </div>
-    </section>
+    </>
   )
 }

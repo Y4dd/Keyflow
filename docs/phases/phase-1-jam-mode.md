@@ -20,14 +20,14 @@ Coaching exercises and grading of solos (Phase 4), comping scoring (Phase 3), im
 
 ## Tasks
 
-### P1-T0: App redesign and design system
+### P1-T0: App redesign and design system [built 2026-11-25, manual check pending]
 Added 2026-11-25 (the user's request): the app is redesigned before the rest of Phase 1, so jam mode's new UI builds on the new look instead of being redone later.
 - **First, a defined design theme and a mood board**, so the app stays consistent: the mood (what playing in Keyflow should feel like), colours, type, spacing, shapes, motion and a mood board of reference images and swatches (original or properly licensed, kept in the repo, e.g. `docs/design/`). The user approves both before any screen changes.
 - Then use the `impeccable` skill to turn them into a design system (written down where the skill puts it, e.g. `DESIGN.md`) and redesign every current screen: MIDI onboarding and device panel, Sound panel (split, zones, presets, knobs, pedal and bends), Play panel with the canvas keyboard, Timing panel. Goal: friendlier for a learner (a first visit makes clear what to do next) and prettier. The dev inspector may stay plain.
 - **Design direction is the user's taste call:** when the skill needs a direction or a comp approved, ask the user in chat.
 - **No behaviour changes.** Every unit and e2e test still passes in both browsers; selectors may change with labels, assertions don't.
 - The hard rules hold: no notation, canvas draws only after a change, nothing new on the audio or input path, out-of-scale notes dimmed never red (for Phase 1 to follow).
-- Fonts, icons and images are self-hosted (no third-party requests at runtime, the app stays local-first), with each license in `assets/LICENSES.md`; anything not MIT, Apache-2.0, BSD or ISC (e.g. SIL OFL fonts) gets a decisions-log line.
+- Fonts, icons and images are self-hosted (no third-party requests at runtime, the app stays local-first), with each license in `src/assets/LICENSES.md`; anything not MIT, Apache-2.0, BSD or ISC (e.g. SIL OFL fonts) gets a decisions-log line.
 - **Manual:** the look on the deployed page (taste) and that playing still feels instant with the canvas keyboard lighting the right keys (must-pass).
 
 ### P1-T1: Groove data format
@@ -40,7 +40,7 @@ Added 2026-11-25 (the user's request): the app is redesigned before the rest of 
 - **Automated:** unit tests for `harmonyAt` across bar boundaries, transposition and swing math.
 
 ### P1-T2: Groove player
-- Tone Transport scheduling of drums (synthesized kit or small CC0 samples; record each sample's license in `assets/LICENSES.md`), bass (reuse the Wobble Bass or a funk bass preset) and chords (EP Keys).
+- Tone Transport scheduling of drums (synthesized kit or small CC0 samples; record each sample's license in `src/assets/LICENSES.md`), bass (reuse the Wobble Bass or a funk bass preset) and chords (EP Keys).
 - The Wobble Bass LFO now syncs to the transport (e.g. 8th or 16th notes, selectable).
 - Controls: play/stop, loop, key (12 keys), tempo (±30%), count-in.
 - **Automated:** the scheduler produces the expected event list for one bar (test it as data, without audio).

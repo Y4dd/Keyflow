@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react'
 import { detectBrowser } from '../input/midi/browser.ts'
 import { midi, useMidiStore } from '../state/midi.ts'
+import { useSetupSteps } from '../state/setup.ts'
+import { StepAction } from './SetupSteps.tsx'
 
 const browser = detectBrowser()
 const browserName =
@@ -18,92 +21,102 @@ const CLOSE_OTHER_APPS =
   'Close other music apps and other browsers first: on Windows, a keyboard may work with only ' +
   'one app at a time.'
 
+// The Keyboard card. Its tab is decorative: the region is named by aria-label, and the state's
+// h2 stays the region's only heading.
+function Panel({ children }: { children: ReactNode }) {
+  const state = useSetupSteps().keyboard
+  return (
+    <section className="card" id="keyboard" aria-label="Keyboard" data-state={state}>
+      <span className="tab" aria-hidden="true">
+        Keyboard
+      </span>
+      {children}
+    </section>
+  )
+}
+
 export function MidiPanel() {
   const { checking, status, inputs, selectedId, noInputYet, error } = useMidiStore()
   const connect = () => void midi.request()
 
   if (checking && status !== 'waitingForAddon') {
     return (
-      <section className="panel" aria-label="Keyboard">
+      <Panel>
         <p className="muted">Looking for MIDI access...</p>
-      </section>
+      </Panel>
     )
   }
 
   switch (status) {
     case 'unsupported':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>This browser can't use MIDI keyboards</h2>
+        <Panel>
+          <h2 className="title">This browser can't use MIDI keyboards</h2>
           <p>Open Keyflow in Firefox or Chrome on a computer.</p>
-        </section>
+        </Panel>
       )
 
     case 'needsPermission':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>Connect your keyboard</h2>
+        <Panel>
+          <h2 className="title">Connect your keyboard</h2>
           <p>Plug the keyboard in over USB and switch it on, then press Connect.</p>
           <p>{PERMISSION_COPY[browser]}</p>
-          <p className="muted">{CLOSE_OTHER_APPS}</p>
-          <button type="button" onClick={connect}>
-            Connect
-          </button>
-        </section>
+          <p className="muted small">{CLOSE_OTHER_APPS}</p>
+          <StepAction step="keyboard" label="Connect" onClick={connect} />
+        </Panel>
       )
 
     case 'waitingForAddon':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>Waiting for {browserName}</h2>
+        <Panel>
+          <h2 className="title">Waiting for {browserName}</h2>
           <p>
             {browser === 'firefox'
               ? 'Look for the prompt near the address bar and add the site permission.'
               : 'Look for the prompt near the address bar and allow MIDI access.'}
           </p>
-        </section>
+        </Panel>
       )
 
     case 'denied':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>MIDI access was refused</h2>
+        <Panel>
+          <h2 className="title">MIDI access was refused</h2>
           <p>
             Keyflow needs MIDI access to hear your keyboard. Press Try again. If no prompt appears,{' '}
             {browser === 'other' ? 'the browser' : browserName} may have remembered the refusal for
             this site; look for MIDI in its site settings.
           </p>
-          {error && <p className="muted">Details: {error}</p>}
-          <button type="button" onClick={connect}>
-            Try again
-          </button>
-        </section>
+          {error && <p className="muted small">Details: {error}</p>}
+          <StepAction step="keyboard" label="Try again" onClick={connect} />
+        </Panel>
       )
 
     case 'noDevices':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>No keyboard found</h2>
+        <Panel>
+          <h2 className="title">No keyboard found</h2>
           <p>
             MIDI access is on, but no MIDI input is connected. Plug the keyboard in and switch it
             on. Keyflow picks it up without a reload.
           </p>
-          <p className="muted">
+          <p className="muted small">
             If it's plugged in and still missing, another app may be using it: close music apps and
             other browsers, then unplug it and plug it back in.
           </p>
-        </section>
+        </Panel>
       )
 
     case 'granted':
       return (
-        <section className="panel" aria-label="Keyboard">
-          <h2>Keyboard connected</h2>
+        <Panel>
+          <h2 className="title">Keyboard connected</h2>
           {inputs.length === 1 ? (
-            <p>{inputs[0].name}</p>
+            <p className="muted">{inputs[0].name}</p>
           ) : (
-            <label>
-              Listen to{' '}
+            <label className="field">
+              Listen to
               <select
                 value={selectedId ?? ''}
                 onChange={(e) => midi.select(e.target.value === '' ? null : e.target.value)}
@@ -119,12 +132,12 @@ export function MidiPanel() {
           )}
           {noInputYet && (
             <p className="hint" role="status">
-              Nothing has arrived from the keyboard yet. Press a key. If nothing shows up below,
-              another app may be using the keyboard: close music apps and other browsers, then
-              unplug the keyboard and plug it back in.
+              Nothing has arrived from the keyboard yet. Press a key. If nothing shows up on the
+              keys below, another app may be using the keyboard: close music apps and other
+              browsers, then unplug the keyboard and plug it back in.
             </p>
           )}
-        </section>
+        </Panel>
       )
   }
 }

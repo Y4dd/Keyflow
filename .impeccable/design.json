@@ -1,0 +1,461 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-26T03:29:10.385Z",
+  "title": "Design System: Keyflow",
+  "extensions": {
+    "colorMeta": {
+      "bin": {
+        "role": "neutral",
+        "displayName": "Crate Wood",
+        "canonical": "oklch(20.3% 0.013 44)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#262524",
+          "#454140",
+          "#65605d",
+          "#88807d",
+          "#aca39f",
+          "#cec7c5",
+          "#f1edec"
+        ]
+      },
+      "well": {
+        "role": "neutral",
+        "displayName": "Keyboard Well",
+        "canonical": "oklch(16.5% 0.010 42)",
+        "tonalRamp": [
+          "#0c0b0b",
+          "#262524",
+          "#444140",
+          "#64605e",
+          "#87817f",
+          "#aaa3a1",
+          "#cdc8c6",
+          "#f1eeec"
+        ]
+      },
+      "card": {
+        "role": "neutral",
+        "displayName": "Divider Card",
+        "canonical": "oklch(25.3% 0.019 52)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#272523",
+          "#46413e",
+          "#675f5b",
+          "#8a807a",
+          "#afa29b",
+          "#d0c7c2",
+          "#f3edea"
+        ]
+      },
+      "card-raised": {
+        "role": "neutral",
+        "displayName": "Raised Card",
+        "canonical": "oklch(29.2% 0.024 58)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#272423",
+          "#46413d",
+          "#685f59",
+          "#8c8077",
+          "#b0a297",
+          "#d1c7bf",
+          "#f3ede9"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(31.8% 0.026 54)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#272423",
+          "#47413d",
+          "#695f59",
+          "#8d7f77",
+          "#b2a197",
+          "#d2c6bf",
+          "#f4ede8"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Control Line",
+        "canonical": "oklch(57.5% 0.038 61)",
+        "tonalRamp": [
+          "#0d0b09",
+          "#282421",
+          "#48403a",
+          "#6c5e54",
+          "#917e6f",
+          "#b6a08e",
+          "#d6c6b9",
+          "#f6ede5"
+        ]
+      },
+      "kraft": {
+        "role": "neutral",
+        "displayName": "Kraft",
+        "canonical": "oklch(73.5% 0.079 73)",
+        "tonalRamp": [
+          "#0e0a06",
+          "#2a241c",
+          "#4d3f2f",
+          "#735d42",
+          "#9b7c56",
+          "#c29e70",
+          "#dec5a4",
+          "#fbecd9"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "oklch(93.4% 0.021 79)",
+        "tonalRamp": [
+          "#0c0b0a",
+          "#262523",
+          "#44423d",
+          "#656059",
+          "#888177",
+          "#aca497",
+          "#cec8bf",
+          "#f1eee9"
+        ]
+      },
+      "bone-muted": {
+        "role": "neutral",
+        "displayName": "Faded Bone",
+        "canonical": "oklch(76.4% 0.033 75)",
+        "tonalRamp": [
+          "#0c0b09",
+          "#272521",
+          "#46413a",
+          "#686055",
+          "#8c8071",
+          "#b1a390",
+          "#d2c7ba",
+          "#f3ede6"
+        ]
+      },
+      "key-white": {
+        "role": "neutral",
+        "displayName": "Ivory Key",
+        "canonical": "oklch(92.8% 0.023 82)",
+        "tonalRamp": [
+          "#0c0b09",
+          "#262522",
+          "#45423c",
+          "#656158",
+          "#888175",
+          "#aca496",
+          "#cec8be",
+          "#f1eee8"
+        ]
+      },
+      "key-letter": {
+        "role": "neutral",
+        "displayName": "Key Letter",
+        "canonical": "oklch(48.0% 0.031 61)",
+        "tonalRamp": [
+          "#0d0b09",
+          "#272422",
+          "#47413b",
+          "#6a5f56",
+          "#8e7f73",
+          "#b3a193",
+          "#d3c6bc",
+          "#f5ede7"
+        ]
+      },
+      "funk": {
+        "role": "tertiary",
+        "displayName": "Funk Orange",
+        "canonical": "oklch(72.6% 0.182 46)",
+        "tonalRamp": [
+          "#140703",
+          "#341f15",
+          "#62341c",
+          "#944921",
+          "#c96023",
+          "#f97d37",
+          "#ffb085",
+          "#ffe1c8"
+        ]
+      },
+      "wobble": {
+        "role": "tertiary",
+        "displayName": "Wobble Pink",
+        "canonical": "oklch(75.5% 0.162 358)",
+        "tonalRamp": [
+          "#13070b",
+          "#331e25",
+          "#5e3241",
+          "#8e4660",
+          "#c15c81",
+          "#f078a4",
+          "#ffacc8",
+          "#ffdeee"
+        ]
+      },
+      "keys": {
+        "role": "tertiary",
+        "displayName": "EP Blue",
+        "canonical": "oklch(79.0% 0.098 237)",
+        "tonalRamp": [
+          "#060c11",
+          "#1c272e",
+          "#2d4555",
+          "#3f6680",
+          "#5189ad",
+          "#6baed8",
+          "#a2d0ef",
+          "#d9f3ff"
+        ]
+      },
+      "now": {
+        "role": "primary",
+        "displayName": "Price-Sticker Yellow",
+        "canonical": "oklch(88.1% 0.145 88)",
+        "tonalRamp": [
+          "#0f0b03",
+          "#2b2414",
+          "#4f4018",
+          "#765e18",
+          "#a07d10",
+          "#c89f26",
+          "#e3c67f",
+          "#fdedc6"
+        ]
+      },
+      "done": {
+        "role": "secondary",
+        "displayName": "Connected Green",
+        "canonical": "oklch(80.1% 0.116 153)",
+        "tonalRamp": [
+          "#060d08",
+          "#1c2920",
+          "#2d4a36",
+          "#3e6d4e",
+          "#509367",
+          "#6ab985",
+          "#a3d8b2",
+          "#d9f8e1"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Wordmark",
+        "purpose": "The KEYFLOW wordmark only."
+      },
+      "headline": {
+        "displayName": "Divider Tab",
+        "purpose": "Divider-tab names only."
+      },
+      "title": {
+        "displayName": "State Line",
+        "purpose": "A card's state line."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Everything else."
+      },
+      "label": {
+        "displayName": "Small",
+        "purpose": "Secondary notes, units, kbd keys; the DOM text floor."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sleeve-floor",
+        "value": "0 12px 16px -8px rgb(0 0 0 / 0.7)",
+        "purpose": "Under the chosen sleeve only; the one shadow in the system."
+      },
+      {
+        "name": "now-ring",
+        "value": "inset 0 0 0 2px #ffd25a",
+        "purpose": "State ring on the now card and the now step; an outline, not elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All transitions."
+      },
+      {
+        "name": "duration",
+        "value": "160ms",
+        "purpose": "Sleeve lift, ON sticker, control hover colours. None under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "720px"
+      },
+      {
+        "name": "timing-span",
+        "value": "1240px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default native button: an outlined pill.",
+      "html": "<button class=\"ds-btn\">Calibrate</button>",
+      "css": ".ds-btn{font:600 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;padding:8px 20px;border:2px solid var(--line,#8a7462);border-radius:999px;background:transparent;color:var(--bone,#f1e8da);cursor:pointer;transition:background-color 160ms var(--ease,ease-out),border-color 160ms var(--ease,ease-out)}.ds-btn:focus-visible{outline:2px solid var(--now,#ffd25a);outline-offset:2px}.ds-btn:disabled{opacity:.45;cursor:default}.ds-btn:hover:not(:disabled){border-color:var(--bone-muted,#bfb09c);background:var(--card-raised,#352920)}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one next-step action, only on the card whose setup step is now.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Turn sound on</button>",
+      "css": ".ds-btn{font:600 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;padding:8px 20px;border:2px solid var(--line,#8a7462);border-radius:999px;background:transparent;color:var(--bone,#f1e8da);cursor:pointer;transition:background-color 160ms var(--ease,ease-out),border-color 160ms var(--ease,ease-out)}.ds-btn:focus-visible{outline:2px solid var(--now,#ffd25a);outline-offset:2px}.ds-btn:disabled{opacity:.45;cursor:default}.ds-btn-primary{border-color:var(--now,#ffd25a);background:var(--now,#ffd25a);color:var(--bin,#1c1512);font-weight:700}.ds-btn-primary:hover:not(:disabled){border-color:color-mix(in srgb,var(--now,#ffd25a),var(--bone,#f1e8da) 35%);background:color-mix(in srgb,var(--now,#ffd25a),var(--bone,#f1e8da) 35%)}"
+    },
+    {
+      "name": "Divider Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Every panel: a flat card with a kraft tab on its top edge; ringed in yellow when its step is now.",
+      "html": "<section class=\"ds-card ds-card-now\"><span class=\"ds-tab\">Keyboard</span><p class=\"ds-title\">Connect your keyboard</p><p class=\"ds-muted\">Plug it in by USB, then connect.</p></section>",
+      "css": ".ds-card{position:relative;margin-top:24px;padding:36px 24px 24px;border-radius:4px;background:var(--card,#2a201a);color:var(--bone,#f1e8da);font:400 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif}.ds-card-now{box-shadow:inset 0 0 0 2px var(--now,#ffd25a)}.ds-tab{position:absolute;top:-20px;left:16px;padding:4px 14px 1px;border-radius:6px 6px 0 0;background:var(--kraft,#c8a271);color:var(--bin,#1c1512);font:800 22px/1.15 'Big Shoulders Display','Arial Narrow',sans-serif;text-transform:uppercase;letter-spacing:.02em}.ds-title{margin:0 0 8px;font-size:20px;font-weight:650;line-height:1.3}.ds-muted{margin:0;color:var(--bone-muted,#bfb09c)}"
+    },
+    {
+      "name": "Pedal Chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Native radios hidden under pill labels; the chosen one fills with bone.",
+      "html": "<div class=\"ds-chips\" role=\"radiogroup\"><label class=\"ds-chip\"><input type=\"radio\" name=\"ds-pedal\" checked>Sustain</label><label class=\"ds-chip\"><input type=\"radio\" name=\"ds-pedal\">Bend</label><label class=\"ds-chip\"><input type=\"radio\" name=\"ds-pedal\">Glide-hold</label></div>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:8px;font:400 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;color:var(--bone,#f1e8da)}.ds-chip{position:relative;padding:6px 16px;border:2px solid var(--line,#8a7462);border-radius:999px;cursor:pointer}.ds-chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}.ds-chip:has(input:checked){border-color:var(--bone,#f1e8da);background:var(--bone,#f1e8da);color:var(--bin,#1c1512);font-weight:650}.ds-chip:has(input:focus-visible){outline:2px solid var(--now,#ffd25a);outline-offset:2px}"
+    },
+    {
+      "name": "Select",
+      "kind": "input",
+      "refersTo": "select",
+      "description": "Native select in the palette.",
+      "html": "<select class=\"ds-select\"><option>Digital Keyboard-1</option></select>",
+      "css": ".ds-select{font:400 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;padding:6px 10px;border:1px solid var(--line,#8a7462);border-radius:6px;background:var(--card-raised,#352920);color:var(--bone,#f1e8da);color-scheme:dark;cursor:pointer}.ds-select:focus-visible{outline:2px solid var(--now,#ffd25a);outline-offset:2px}"
+    },
+    {
+      "name": "Setup Steps",
+      "kind": "nav",
+      "refersTo": "step",
+      "description": "Header stickers for Keyboard, Sound and Timing: done, now, to do.",
+      "html": "<ol class=\"ds-steps\"><li><a class=\"ds-step\" data-state=\"done\" href=\"#\"><span class=\"ds-sticker\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><path d=\"M3 8.5l3.2 3L13 4.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\"/></svg></span>Keyboard connected</a></li><li><a class=\"ds-step\" data-state=\"now\" href=\"#\"><span class=\"ds-sticker\">2</span>Turn sound on</a></li><li><a class=\"ds-step\" data-state=\"todo\" href=\"#\"><span class=\"ds-sticker\">3</span>Calibrate timing</a></li></ol>",
+      "css": ".ds-steps{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none;font:400 15px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif}.ds-step{display:flex;align-items:center;gap:10px;padding:5px 16px 5px 5px;border-radius:999px;background:var(--card-raised,#352920);color:var(--bone,#f1e8da);text-decoration:none}.ds-step:hover{background:color-mix(in srgb,var(--card-raised,#352920),var(--bone,#f1e8da) 8%)}.ds-step:focus-visible{outline:2px solid var(--now,#ffd25a);outline-offset:2px}.ds-step[data-state=now]{box-shadow:inset 0 0 0 2px var(--now,#ffd25a)}.ds-sticker{box-sizing:border-box;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font-weight:800;font-size:14px;color:var(--bin,#1c1512)}[data-state=done]>.ds-sticker{background:var(--done,#7fd49b)}[data-state=now]>.ds-sticker{background:var(--now,#ffd25a)}[data-state=todo]>.ds-sticker{border:2px dashed var(--line,#8a7462);color:var(--bone-muted,#bfb09c)}"
+    },
+    {
+      "name": "Sound Sleeve",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "The signature preset picker: sleeves over hidden radios; the chosen one lifts with an ON sticker.",
+      "html": "<div class=\"ds-sleeves\" role=\"radiogroup\"><label class=\"ds-sleeve\"><input type=\"radio\" name=\"ds-preset\" checked><svg class=\"ds-art\" viewBox=\"0 0 140 140\" aria-hidden=\"true\"><rect width=\"140\" height=\"140\" fill=\"#ff7b2e\"/><path d=\"M0 140 L140 30 L140 140 Z\" fill=\"#d95f17\"/><path d=\"M0 112 L140 2\" stroke=\"#f1e8da\" stroke-width=\"6\"/></svg><span class=\"ds-on\" aria-hidden=\"true\">ON</span><span class=\"ds-name\">Funk Lead</span></label><label class=\"ds-sleeve\"><input type=\"radio\" name=\"ds-preset\"><svg class=\"ds-art\" viewBox=\"0 0 140 140\" aria-hidden=\"true\"><rect width=\"140\" height=\"140\" fill=\"#7cc4f2\"/><circle cx=\"92\" cy=\"52\" r=\"44\" fill=\"#4f9fd4\"/><circle cx=\"92\" cy=\"52\" r=\"26\" fill=\"none\" stroke=\"#f1e8da\" stroke-width=\"5\"/><circle cx=\"92\" cy=\"52\" r=\"7\" fill=\"#1c1512\"/></svg><span class=\"ds-on\" aria-hidden=\"true\">ON</span><span class=\"ds-name\">EP Keys</span></label></div>",
+      "css": ".ds-sleeves{display:grid;grid-template-columns:repeat(2,120px);gap:14px;padding-top:26px;font:600 15px/1.3 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;color:var(--bone,#f1e8da)}.ds-sleeve{position:relative;display:grid;gap:8px;cursor:pointer}.ds-sleeve input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}.ds-art,.ds-on{pointer-events:none}.ds-art{display:block;width:100%;aspect-ratio:1;border-radius:3px;opacity:.5;transition:transform 160ms var(--ease,ease-out),opacity 160ms var(--ease,ease-out),box-shadow 160ms var(--ease,ease-out)}.ds-sleeve:hover .ds-art{opacity:.8}.ds-sleeve input:checked~.ds-art{opacity:1;transform:translateY(-12px);box-shadow:0 12px 16px -8px rgb(0 0 0/.7)}.ds-sleeve input:focus-visible~.ds-art{outline:2px solid var(--now,#ffd25a);outline-offset:3px}.ds-on{position:absolute;top:-24px;right:-8px;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--now,#ffd25a);color:var(--bin,#1c1512);font-size:12px;font-weight:800;opacity:0;transform:scale(.6);transition:opacity 160ms var(--ease,ease-out),transform 160ms var(--ease,ease-out)}.ds-sleeve input:checked~.ds-on{opacity:1;transform:none}.ds-sleeve input:not(:checked)~.ds-name{color:var(--bone-muted,#bfb09c)}@media (prefers-reduced-motion:reduce){.ds-art,.ds-on{transition:none}}"
+    },
+    {
+      "name": "Hint",
+      "kind": "custom",
+      "refersTo": "hint",
+      "description": "One next step, for guidance and for problems alike; never red.",
+      "html": "<p class=\"ds-hint\" role=\"status\">Sound did not start. Click Turn sound on again.</p>",
+      "css": ".ds-hint{margin:0;padding:10px 14px;border:1px solid color-mix(in srgb,var(--now,#ffd25a) 55%,transparent);border-radius:6px;background:color-mix(in srgb,var(--now,#ffd25a) 10%,var(--card,#2a201a));color:var(--bone,#f1e8da);font:400 16px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Crate Dig",
+    "overview": "A neighbourhood record shop after closing: warm dark wood bins, kraft divider cards lettered in condensed capitals, a few bright price stickers, and the record you are about to play pulled up out of the crate. The app is played in a dim room from a stand's distance, so it is dark only, roomy, and set in text large enough to read from there.\n\nThe world lends colour, type, density and one signature move (the lifted sleeve), and nothing else. Controls stay ordinary native web controls styled in the palette; the page stays a plain single column. There are no crate graphics, wood grain or paper textures, no gradients outside sleeve art, and no shadow except the lifted sleeve's floor. Nothing moves while you play except the canvas keyboard.\n\nIt must never read as childish or gamified (badges, mascots, confetti, scores), as intimidating pro gear (DAW, rack, bezel, VU meters), or as generic SaaS (floating cards, gradients, a blue button).",
+    "keyCharacteristics": [
+      "Flat walnut-black ground with flat brown cards, each topped by a kraft tab.",
+      "Each sound owns one colour everywhere: sleeve, zone strip, lit keys, its sliders.",
+      "Yellow marks the next thing to do (plus the ON sticker and focus); green marks done.",
+      "Round stickers carry state, and state always shows in shape as well as colour.",
+      "Native controls (buttons, selects, checkboxes, radios, ranges) restyled, never replaced.",
+      "The 61-key canvas keyboard sits full width in a dark well, in one fixed place."
+    ],
+    "rules": [
+      {
+        "name": "The No Red Rule",
+        "body": "There is no red anywhere. A problem (sound failed, MIDI refused) is a yellow hint with one clear next step. Out-of-scale notes are dimmed toward `well`, never red.",
+        "section": "colors"
+      },
+      {
+        "name": "The Next Step Rule",
+        "body": "Yellow means the next step. At most one yellow button and one yellow ring show at a time: a button gets the primary style only on the card whose setup step is \"now\", and loses it once that step is done. Yellow's only other jobs are the ON sticker, hints and the focus outline.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Colour Per Sound Rule",
+        "body": "A sound's colour belongs to that sound and follows it everywhere it appears in the UI. No other control or state borrows a sound colour, and a new sound gets a new colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Shape Too Rule",
+        "body": "Meaning never rides on colour alone: a done step shows a check mark, the current step a solid ring, a step to do a dashed outline; a chosen sleeve is raised and wears an ON sticker; a disabled control is dimmed to 45%.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Only Rule",
+        "body": "There is one theme, dark (`color-scheme: dark`). No light theme is planned.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tab-Only Display Rule",
+        "body": "Big Shoulders appears on the wordmark and the divider tabs and nowhere else.",
+        "section": "typography"
+      },
+      {
+        "name": "The Self-Hosted Fonts Rule",
+        "body": "Every font ships from `src/assets/fonts/` with its source and license listed in [`src/assets/LICENSES.md`](src/assets/LICENSES.md). No font CDN or runtime third-party request.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Shadow Rule",
+        "body": "The lifted sleeve's floor shadow is the only shadow in the system.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Native Controls Rule",
+        "body": "Every control is a native button, select, checkbox, radio or range, restyled with the tokens. Chips and sleeves are hidden native radios under a label; no custom widget, knob or fader replaces one.",
+        "section": "components"
+      },
+      {
+        "name": "The No Notation Rule",
+        "body": "No sheet music or notation anywhere. Prompts and labels use note names (spelled by key), chord symbols and Roman numerals.",
+        "section": "components"
+      },
+      {
+        "name": "The Redraw On Change Rule",
+        "body": "The canvas keyboard and the live readout redraw in one animation frame scheduled only after a change, never per note through React, and nothing else on screen moves while you play.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do give every new sound its own colour and use it on its sleeve, zone strip, lit keys and sliders.",
+      "Do keep exactly one yellow action on screen: the next step.",
+      "Do show state in shape as well as colour (check mark, solid ring, dashed outline, raised sleeve, dimming).",
+      "Do use native controls (button, select, checkbox, radio, range) restyled with the tokens.",
+      "Do redraw the canvas keyboard only in an animation frame after a change.",
+      "Do dim out-of-scale notes toward `well` in jam mode.",
+      "Do put text on stickers, tabs and the primary button in `bin`, never white.",
+      "Do self-host every font and list it in `src/assets/LICENSES.md`."
+    ],
+    "donts": [
+      "Don't use red anywhere, for errors, wrong notes or anything else.",
+      "Don't show sheet music or notation; use note names, chord symbols and Roman numerals.",
+      "Don't replace native controls with custom widgets, knobs or faders.",
+      "Don't use yellow for decoration, emphasis or a second action; its jobs are the next step, the ON sticker, hints and focus.",
+      "Don't add a light theme.",
+      "Don't add shadows, gradients, borders on cards, wood grain or paper textures.",
+      "Don't animate anything during play except the canvas keyboard.",
+      "Don't use Big Shoulders outside the wordmark and tabs, or set new DOM text below 14px.",
+      "Don't add badges, mascots, confetti or scores, or a DAW, rack or VU-meter look."
+    ]
+  }
+}

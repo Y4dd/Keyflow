@@ -56,7 +56,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 | # | Phase | Status | File |
 |---|---|---|---|
 | 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
-| 1 | Jam mode: grooves, highlighting, record and replay | Not started | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
+| 1 | Jam mode: grooves, highlighting, record and replay | In progress (P1-T0 built, manual check pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
 | 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
@@ -73,6 +73,7 @@ Checks only the user can do (hands, ears, the real YPT-380). Work carries on pas
 
 | Task | Must-pass steps | Taste steps | Blocks | Browsers | Minutes |
 |---|---|---|---|---|---|
+| [P1-T0](docs/manual-tests/P1-T0.md) | 1, 2 | 3, 4 | none | Chrome | 5 |
 
 ---
 
@@ -114,6 +115,10 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-25: **Glide-hold slides for at least 150 ms** (P0-T7 manual check 4). At Funk Lead's 60 ms default glide the user couldn't hear glide-hold until raising the Glide time knob. The minimum applies only while glide-hold is on; legato glide with the pedal up still uses the knob. So with the pedal down, Glide time settings under 150 ms change nothing, and Wobble Bass as the main sound slides for 150 ms instead of its fixed 30 ms. P0-T7 check 5 (laptop bend) wasn't reproduced and later passed; the probable cause is in Phase 0 Findings. Space stays the bend key. Taste step 3 went unanswered, so the bend defaults stay.
 - 2026-11-25: **Manual test scripts move to `docs/manual-tests/` and design work uses the `impeccable` skill (the user's request).** Each waiting check is one file there (`P1-T1.md`), linked from the queue, deleted when it passes; phase files keep the checks as spec. Any task that needs a component or screen designed runs `impeccable`, within the hard rules. The user also wants **the whole app redesigned** at some point to be friendlier and prettier; when is an open question.
 - 2026-11-25: **The redesign comes before the rest of Phase 1** (the user's answer). It's the new task P1-T0 at the top of the Phase 1 file: a defined design theme and mood board (approved by the user first, so the app stays consistent), a design system built from them, plus a redesign of every current screen with `impeccable`, no behaviour changes, design direction chosen by the user. Phase 1's new UI then builds on it.
+
+- 2026-11-25: **P1-T0 design theme: Crate Dig** (chosen by the user on the impeccable decision page, then the written theme and mood board approved in chat). A neighbourhood record shop after closing: walnut-black ground, flat cards with kraft divider tabs in Big Shoulders Display capitals, each sound in one colour everywhere (Funk Lead orange, Wobble Bass pink, EP Keys blue: its sleeve, zone strip, lit keys and sliders), yellow for the next step, green for done, no red anywhere. **Dark only**: the user practises in the evening in a dim room. Ruled out by the user: childish or gamified, intimidating pro gear, generic SaaS. The theme is `docs/design/theme.md` with `docs/design/mood-board.html`/`.png`; the design system the build shipped is `DESIGN.md`; product context for design work is `PRODUCT.md`. A change to the theme is the user's call.
+- 2026-11-25: **Big Shoulders Display (SIL OFL 1.1) is self-hosted** as one 15 KB Latin woff2 (the user approved the download). OFL is outside MIT/Apache/BSD/ISC, so it's logged here; it's a font file in the repo, not an npm dependency, so the license rule in `check:rules` doesn't see it. Asset licenses live in **`src/assets/LICENSES.md`** (Vite's assets folder), which is what the phase files' `assets/LICENSES.md` means.
+- 2026-11-25: **P1-T0 layout, no behaviour change.** Three setup stickers in the header (Keyboard, Sound, Timing: done ✓, now in yellow, to do dashed) link to their cards, and the card whose step is "now" is outlined in yellow and holds the only yellow button. The Sound card shows only the sound status; its Start audio button now sits **above** the status text, because the text changes length on "starting" and the larger type wrapped it, moving the button under the pointer between pointerdown (which starts audio) and the click (the e2e suite caught it). The split controls moved under the keys in the Play card; presets are sleeves (hidden native radios named by the preset alone, with the chosen preset's description shown below them); pedal modes are chips with the chosen mode's description below. The canvas keyboard lights held keys in the colour of the sound playing them (by zone, current layout) and drops key letters when keys are under 14 px wide.
 
 ---
 

@@ -1,24 +1,38 @@
-:root {
-  --bg: #f4f1ea;
-  --fg: #16131f;
-  --muted: #5d586b;
-  --accent: #d9481f;
-  color-scheme: light dark;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
-  line-height: 1.5;
+/* Crate Dig: the design system (docs/design/theme.md, DESIGN.md). Dark only: the app is played
+   in a dim room. */
+
+@font-face {
+  font-family: 'Big Shoulders Display';
+  src: url('./assets/fonts/big-shoulders-display-latin-800.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16131f;
-    --fg: #f4f1ea;
-    --muted: #a39eb3;
-    --accent: #ff6b3d;
-  }
+:root {
+  --bin: #1c1512;
+  --well: #120d0b;
+  --card: #2a201a;
+  --card-raised: #352920;
+  --rule: #3d2f26;
+  --line: #8a7462;
+  --kraft: #c8a271;
+  --bone: #f1e8da;
+  --bone-muted: #bfb09c;
+  --funk: #ff7b2e;
+  --wobble: #ff7fae;
+  --keys: #7cc4f2;
+  --now: #ffd25a;
+  --done: #7fd49b;
+
+  --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  --text: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+  font-family: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  accent-color: var(--bone);
 }
 
 * {
@@ -28,75 +42,485 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--bin);
+  color: var(--bone);
+  scrollbar-color: var(--line) var(--bin);
 }
 
-.shell {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 48px 16px;
+::selection {
+  background: var(--kraft);
+  color: var(--bin);
 }
 
-h1 {
-  color: var(--accent);
-  margin: 0 0 8px;
+:focus-visible {
+  outline: 2px solid var(--now);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+p,
+ul,
+dl {
+  margin: 0;
+}
+
+p + p,
+p + ul,
+ul + p {
+  margin-top: 12px;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+strong {
+  font-weight: 650;
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--bone-muted);
 }
 
+.small {
+  font-size: 14px;
+}
+
+/* Layout: one column on a 12-column grid. */
+
+.shell {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 48px 72px;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 20px 24px 56px;
+  }
+}
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wordmark {
+  font: 800 44px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--kraft);
+}
+
+.tagline {
+  color: var(--bone-muted);
+  max-width: 34ch;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 48px 24px;
+  margin-top: 48px;
+}
+
+.setup {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+}
+
+/* Setup steps: stickers that stay in view (done, now, to do). */
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 16px 5px 5px;
+  border-radius: 999px;
+  background: var(--card-raised);
+  color: var(--bone);
+  font-size: 15px;
+  text-decoration: none;
+  transition: box-shadow 160ms var(--ease);
+}
+
+.step:hover {
+  background: color-mix(in srgb, var(--card-raised), var(--bone) 8%);
+}
+
+.step[data-state='now'] {
+  box-shadow: inset 0 0 0 2px var(--now);
+}
+
+.sticker {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--bin);
+}
+
+.sticker svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-state='done'] > .sticker {
+  background: var(--done);
+}
+
+[data-state='now'] > .sticker {
+  background: var(--now);
+}
+
+[data-state='todo'] > .sticker {
+  border: 2px dashed var(--line);
+  color: var(--bone-muted);
+}
+
+/* Cards: divider cards in the crate, each with a kraft tab on its top edge. */
+
+.card,
 .panel {
-  margin-top: 32px;
-  padding: 16px 20px;
-  border: 1px solid color-mix(in srgb, var(--fg) 15%, transparent);
-  border-radius: 8px;
-}
-
-.panel h2 {
-  margin: 0 0 8px;
-  font-size: 1.25rem;
-}
-
-.panel button,
-.panel select {
-  font: inherit;
-  padding: 6px 14px;
-}
-
-.panel button {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: 36px 24px 24px;
   border: 0;
+  border-radius: 4px;
+  background: var(--card);
+  scroll-margin-top: 32px; /* room for the tab when a step link jumps here */
+}
+
+.card[data-state='now'] {
+  box-shadow: inset 0 0 0 2px var(--now);
+}
+
+.tab {
+  position: absolute;
+  top: -20px;
+  left: 16px;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 4px 14px 1px;
+  border-radius: 6px 6px 0 0;
+  background: var(--kraft);
+  color: var(--bin);
+  font: 800 22px/1.15 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab .range {
+  margin-left: 8px;
+  font: 600 14px/1 var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  color: color-mix(in srgb, var(--bin) 78%, var(--kraft));
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+
+.tab + div > .actions:first-child {
+  margin-top: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Controls: native inputs in the palette. */
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 20px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bone);
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease);
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--bone-muted);
+  background: var(--card-raised);
+}
+
+button.primary {
+  border-color: var(--now);
+  background: var(--now);
+  color: var(--bin);
+  font-weight: 700;
+}
+
+button.primary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--now), var(--bone) 35%);
+  background: color-mix(in srgb, var(--now), var(--bone) 35%);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+select {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
   border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--card-raised);
+  color: var(--bone);
+  cursor: pointer;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+}
+
+input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--sound, var(--bone-muted));
+  cursor: pointer;
+}
+
+.field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  margin-top: 16px;
+}
+
+.check {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
   cursor: pointer;
 }
 
 .hint {
-  padding: 8px 12px;
-  border-left: 3px solid var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--now) 55%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--now) 10%, var(--card));
 }
 
-.live {
+/* Sound colours: each sound owns one everywhere (sleeve, zone strip, lit keys, sliders). */
+
+[data-sound='funk-lead'] {
+  --sound: var(--funk);
+}
+
+[data-sound='wobble-bass'] {
+  --sound: var(--wobble);
+}
+
+[data-sound='ep-keys'] {
+  --sound: var(--keys);
+}
+
+/* Sleeves: the preset radios. The chosen one lifts out of the crate with an ON sticker. */
+
+.sleeves {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 4px 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 8px 0 0;
+  padding-top: 14px;
+}
+
+.sleeve {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sleeve input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.sleeve .art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  opacity: 0.5;
+  transition:
+    transform 160ms var(--ease),
+    opacity 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+
+/* Clicks go to the hidden radio under the art. */
+.sleeve .art,
+.sleeve .on {
+  pointer-events: none;
+}
+
+.sleeve:hover .art {
+  opacity: 0.8;
+}
+
+.sleeve input:checked ~ .art {
+  opacity: 1;
+  transform: translateY(-12px);
+  box-shadow: 0 12px 16px -8px rgb(0 0 0 / 0.7);
+}
+
+.sleeve input:focus-visible ~ .art {
+  outline: 2px solid var(--now);
+  outline-offset: 3px;
+}
+
+.sleeve .on {
+  position: absolute;
+  top: -24px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+  background: var(--now);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+
+.sleeve input:checked ~ .on {
+  opacity: 1;
+  transform: none;
+}
+
+.sleeve-name {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.sleeve input:not(:checked) ~ .sleeve-name {
+  color: var(--bone-muted);
+}
+
+.blurb {
+  margin-top: 4px;
+  min-height: 3em;
+  font-size: 14px;
+  color: var(--bone-muted);
+}
+
+/* Pedal modes as chips (radios). */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  position: relative;
+  padding: 6px 16px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.chip input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+.chip:has(input:checked) {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--bin);
+  font-weight: 650;
+}
+
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--now);
+  outline-offset: 2px;
+}
+
+/* Knobs: label, slider, value. */
+
+.knobs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) 5.5em;
+  gap: 14px 16px;
+  align-items: center;
+  margin-top: 20px;
   font-variant-numeric: tabular-nums;
 }
 
-.live dt {
-  color: var(--muted);
+.knob {
+  display: contents;
 }
 
-.live dd {
-  margin: 0;
-  overflow-wrap: anywhere;
+.knob output {
+  text-align: right;
 }
+
+/* Play: the keyboard well, the split, and the live readout. */
 
 .piano {
-  margin: 16px 0;
+  margin: 0 -8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--well);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -105,12 +529,62 @@ h1 {
 .piano-canvas {
   display: block;
   width: 100%;
-  height: 156px;
+  height: 180px;
   cursor: pointer;
 }
 
+.play-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-top: 20px;
+}
+
+.split {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.live {
+  display: grid;
+  grid-template-columns: max-content minmax(12ch, 1fr);
+  gap: 2px 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.live dt {
+  color: var(--bone-muted);
+}
+
+.live dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.keys-help {
+  margin-top: 16px;
+  max-width: 80ch;
+}
+
+kbd {
+  margin: 0 1px;
+  font: inherit;
+  font-size: 14px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card-raised);
+}
+
+/* Dev inspector (dev builds only): plain on purpose. */
+
 .dev {
-  border-style: dashed;
+  margin-top: 48px;
+  border: 1px dashed var(--line);
 }
 
 .dev-field input {
@@ -127,89 +601,66 @@ h1 {
   margin: 12px 0;
 }
 
-.panel button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .dev-log {
   max-height: 16em;
   overflow: auto;
   font-size: 0.8rem;
   padding: 8px;
-  background: color-mix(in srgb, var(--fg) 6%, transparent);
+  background: var(--well);
 }
 
-.split,
-.zone,
-.pedal {
-  margin: 16px 0 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
 }
 
-.split legend,
-.zone legend,
-.pedal legend {
-  font-weight: 600;
-  margin-bottom: 4px;
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.check {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  cursor: pointer;
+.play {
+  margin-top: 48px;
 }
 
-.split-point {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-  margin-top: 8px;
+/* Timing alone on the last crate row (split on) spans it, its tips in a second column. */
+@media (min-width: 1320px) {
+  .grid > #timing:nth-child(4) {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 48px;
+    align-content: start;
+  }
+
+  .grid > #timing:nth-child(4) > :not(.tab, ul) {
+    grid-column: 1;
+  }
+
+  .grid > #timing:nth-child(4) > ul {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+    margin-top: 0;
+  }
 }
 
-.zones {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: 0 24px;
+* + p.hint {
+  margin-top: 12px;
 }
 
-.presets {
-  margin: 4px 0 12px;
+.actions + * {
+  margin-top: 16px;
 }
 
-.octave {
-  display: block;
-  margin-bottom: 12px;
-}
-
-.preset {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 4px 0;
-  cursor: pointer;
-}
-
-.knobs {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr) 5.5em;
-  gap: 8px 12px;
-  align-items: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.knob {
-  display: contents;
-}
-
-.knob input {
-  width: 100%;
-}
-
-.knob output {
-  text-align: right;
+@media (forced-colors: active) {
+  .chip:has(input:checked) {
+    outline: 3px solid Highlight;
+  }
 }

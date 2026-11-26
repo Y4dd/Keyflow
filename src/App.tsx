@@ -2,7 +2,8 @@ import { lazy, Suspense } from 'react'
 import { CalibrationPanel } from './ui/CalibrationPanel.tsx'
 import { MidiPanel } from './ui/MidiPanel.tsx'
 import { PlayPanel } from './ui/PlayPanel.tsx'
-import { SoundPanel } from './ui/SoundPanel.tsx'
+import { SetupSteps } from './ui/SetupSteps.tsx'
+import { SoundCrate, SoundStatus } from './ui/SoundPanel.tsx'
 
 // A literal false in production builds, so the inspector isn't bundled there.
 const Inspector = __KEYFLOW_DEV_TOOLS__
@@ -12,12 +13,22 @@ const Inspector = __KEYFLOW_DEV_TOOLS__
 export function App() {
   return (
     <main className="shell">
-      <h1>Keyflow</h1>
-      <p>Learn piano for synth soloing and comping over grooves, with your MIDI keyboard.</p>
-      <MidiPanel />
-      <SoundPanel />
+      <header className="masthead">
+        <h1 className="wordmark">Keyflow</h1>
+        <p className="tagline">
+          Learn piano for synth soloing and comping over grooves, with your MIDI keyboard.
+        </p>
+        <SetupSteps />
+      </header>
+      <div className="grid setup">
+        <MidiPanel />
+        <SoundStatus />
+      </div>
       <PlayPanel />
-      <CalibrationPanel />
+      <div className="grid">
+        <SoundCrate />
+        <CalibrationPanel />
+      </div>
       {Inspector && (
         <Suspense fallback={null}>
           <Inspector />

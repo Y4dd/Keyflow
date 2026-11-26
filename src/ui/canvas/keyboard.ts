@@ -1,19 +1,28 @@
-// Draws the 61-key keyboard: held keys lit by velocity, a strip naming each zone's sound, and
-// a line at the split point. Called from an animation frame, never per note.
+// Draws the 61-key keyboard: held keys lit by velocity in the colour of the sound playing them, a
+// strip naming each zone's sound in its colour, and a line at the split point. Colours are the
+// theme's (docs/design/theme.md). Called from an animation frame, never per note.
 
 import { Note } from 'tonal'
 import { getPreset } from '../../audio/presets/index.ts'
-import type { KeyboardLayout, ZoneSound } from '../../audio/zones.ts'
+import type { PresetId } from '../../audio/presets/types.ts'
+import { zoneOf, type KeyboardLayout, type ZoneSound } from '../../audio/zones.ts'
 import { heldFill, HIGH_NOTE, LOW_NOTE, type KeyRect, type Rgb } from './keys.ts'
 
 /** Height of the zone strip above the keys, CSS px. */
-export const ZONE_STRIP = 16
+export const ZONE_STRIP = 20
 
-export const WHITE_KEY: Rgb = [251, 250, 247]
-export const BLACK_KEY: Rgb = [36, 32, 46]
-const ACCENT: Rgb = [217, 72, 31] // --accent (light theme); the keys are light in both themes
-const ZONE_COLORS = { left: '#5b4bb7', main: '#1f7a64' } as const
-const OUTLINE = 'rgba(22, 19, 31, 0.3)'
+export const WHITE_KEY: Rgb = [239, 230, 214]
+export const BLACK_KEY: Rgb = [42, 32, 26]
+/** Each sound's colour (--funk, --wobble, --keys in src/index.css). */
+const SOUND_COLORS: Record<PresetId, Rgb> = {
+  'funk-lead': [255, 123, 46],
+  'wobble-bass': [255, 127, 174],
+  'ep-keys': [124, 196, 242],
+}
+const BIN = '#1c1512'
+const BONE = '#f1e8da'
+const LETTER = '#6b5a4c'
+const OUTLINE = 'rgba(28, 21, 18, 0.5)'
 
 const css = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`
 
@@ -53,29 +62,35 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
 
   // Zone strip: the left sound below the split point, the main sound from it up.
   const x = layout.split ? splitX(view) : 0
-  ctx.font = '600 10px system-ui, sans-serif'
-  const zone = (from: number, to: number, color: string, label: string) => {
+  ctx.font = '700 11px system-ui, sans-serif'
+  const zone = (from: number, to: number, sound: ZoneSound) => {
     if (to - from < 1) return
-    ctx.fillStyle = color
+    ctx.fillStyle = css(SOUND_COLORS[sound.presetId])
     ctx.fillRect(from, 0, to - from, ZONE_STRIP - 2)
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = BIN
+    const label = zoneLabel(sound).toUpperCase()
     ctx.fillText(label, (from + to) / 2, ZONE_STRIP - 5, Math.max(0, to - from - 4))
   }
-  if (layout.split) zone(0, x, ZONE_COLORS.left, zoneLabel(layout.left))
-  zone(x, width, ZONE_COLORS.main, zoneLabel(layout.main))
+  if (layout.split) zone(0, x, layout.left)
+  zone(x, width, layout.main)
 
-  ctx.font = '10px system-ui, sans-serif'
+  ctx.font = '600 12px system-ui, sans-serif'
+  // Letters and octave names only where they fit; on a phone-width keyboard they smear.
+  const labels = (keys.find((k) => !k.black)?.w ?? 0) >= 14
   for (const k of keys) {
     const velocity = held.get(k.note)
     const base = k.black ? BLACK_KEY : WHITE_KEY
-    ctx.fillStyle = css(velocity === undefined ? base : heldFill(base, ACCENT, velocity))
+    const sound = SOUND_COLORS[layout[zoneOf(layout, k.note)].presetId]
+    ctx.fillStyle = css(velocity === undefined ? base : heldFill(base, sound, velocity))
     ctx.fillRect(k.x, k.y, k.w, k.h)
     if (!k.black) {
       ctx.strokeStyle = OUTLINE
       ctx.strokeRect(k.x + 0.5, k.y + 0.5, k.w - 1, k.h - 1)
     }
     const lit = velocity !== undefined
-    ctx.fillStyle = k.black || lit ? '#fff' : '#5d586b'
+    // Dark letters once the fill is light: every lit white key, and black keys played harder.
+    ctx.fillStyle = lit && (!k.black || velocity >= 0.4) ? BIN : k.black ? BONE : LETTER
+    if (!labels) continue
     const letter = letters.get(k.note)
     if (letter) ctx.fillText(letter, k.x + k.w / 2, k.y + k.h - (k.black ? 4 : 18))
     if (!k.black && k.note % 12 === 0)
@@ -83,7 +98,7 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
   }
 
   if (layout.split && x > 0 && x < width) {
-    ctx.fillStyle = ZONE_COLORS.left
+    ctx.fillStyle = BIN // dark, so it shows on the light keys
     ctx.fillRect(x - 1, 0, 2, height)
   }
 }

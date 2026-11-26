@@ -346,3 +346,24 @@ test('ep-keys: a pitch struck twice after the clock passed its time plays, witho
   })
   expect(r.windows[0].rmsDb).toBeGreaterThan(-40)
 })
+
+test('the setup steps mark sound done once it runs, and its card follows', async ({ page }) => {
+  await open(page)
+  const steps = page.getByRole('list', { name: 'Setup' })
+  await expect(steps.getByRole('link', { name: /^Turn sound on/ })).not.toHaveAttribute(
+    'data-state',
+    'done',
+  )
+  await page.getByRole('button', { name: 'Start audio' }).click()
+  await expect(steps.getByRole('link', { name: 'Sound on' })).toHaveAttribute('data-state', 'done')
+  await expect(page.locator('#sound')).toHaveAttribute('data-state', 'done')
+  // No MIDI keyboard in CI, so connecting stays the current step and timing waits behind it.
+  await expect(steps.getByRole('link', { name: /^Connect keyboard/ })).toHaveAttribute(
+    'data-state',
+    'now',
+  )
+  await expect(steps.getByRole('link', { name: /^Calibrate timing/ })).toHaveAttribute(
+    'data-state',
+    'todo',
+  )
+})

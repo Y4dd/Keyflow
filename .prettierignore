@@ -8,3 +8,5 @@ test-results
 *.md
 docs
 tests/fixtures
+# Impeccable working files (comps, decision pages, review captures)
+.impeccable
