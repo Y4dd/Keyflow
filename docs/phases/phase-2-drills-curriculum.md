@@ -16,7 +16,7 @@ Comping and voicing drills in time (Phase 3), ear training (Phase 4), licks (Pha
 
 ## Tasks
 
-Each task names the tasks it needs. Tasks whose dependencies are done can run at the same time (see "Parallel tasks" in `CLAUDE.md`): first P2-T1 and P2-T2, then P2-T3, P2-T5 and P2-T8, then P2-T4 and P2-T7, then P2-T6. **Model** is the session's: Sonnet for pure, spec-driven logic with table-driven tests; Opus for UI, storage, audio, grading and learning design.
+Each task names the tasks it needs. Tasks whose dependencies are done can run at the same time (see "Parallel tasks" in `CLAUDE.md`): first P2-T1 and P2-T2, then P2-T3, P2-T5 and P2-T8, then P2-T4 and P2-T7, then P2-T6. The follow-ups run P2-T12 alone, then P2-T9, P2-T11 and P2-T13, then P2-T10, then P2-T14. **Model** is the session's: Sonnet for pure, spec-driven logic with table-driven tests; Opus for UI, storage, audio, grading and learning design.
 
 ### P2-T1: Item model and FSRS [done 2026-11-27]
 **Depends on:** none. Adds the Dexie schema version for this phase; no other Phase 2 task changes the schema. **Model:** Opus.
@@ -105,7 +105,7 @@ _Manual check results (2026-11-27, Chrome): the idea and the grid pass. Look tas
 - **Built:** 2026-11-27. The "Your data" card (`src/ui/DataPanel.tsx`) has Export backup and Import backup; the format and its checks are in `src/storage/backup.ts` (see "Export and import (P2-T8)" in `docs/architecture.md`). The file carries the database version, and one from a newer version is refused. Every imported row is checked before anything is written, and one bad row rejects the whole file. The import asks before replacing, writes all four tables in one transaction, then reloads the page. Unit tests in `src/storage/backup.test.ts`; the round trip and the refused files in `tests/e2e/backup.spec.ts`. There is no manual check.
 
 ### P2-T9: Played-chord indicator, on by default
-**Depends on:** none. **Model:** Opus.
+**Depends on:** P2-T12 (the label lives in the readout line above the pinned keyboard). **Model:** Opus.
 
 Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, so the app names it for them.
 - Whatever is held (pedal-sustained notes included, as `createHeldNotes` counts them) is named live beside the keyboard: the chord symbol with its inversion as a slash chord (`Em/G`), or the note name for one note, or the interval for two. Spelled by key. When a groove key is set, the Roman numeral in that key shows too (`vi`).
@@ -115,19 +115,19 @@ Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, s
 - **Manual:** none (the label is checked by e2e).
 
 ### P2-T10: Chord and scale library
-**Depends on:** P2-T9; the layout task (navigation), which gives the library its place. **Model:** Opus.
+**Depends on:** P2-T9, P2-T12 (the library is the Learn view). **Model:** Opus.
 
 Added 2026-11-27 from the P2-T4 check: something to look a chord or scale up in, so drills can be worked out rather than known.
 - Pick a key and a chord type (the curriculum's triads and 7ths, plus sus and diminished) or a scale (the curriculum's soloing scales and modes). The keyboard shows it: chord tones labelled R, 3, 5 (b3, 7…) and note names, and for chords each inversion (root position, 1st, 2nd, and 3rd for 7ths), stepped with buttons or arrow keys.
 - Shows the formula in half-steps (the same words "Build it" uses) and, for a key, its diatonic chords as Roman numerals, each one clickable.
 - **Hear it:** plays the chord (block, then broken) or the scale up and down through the audio engine at a set tempo, using `Tone.immediate()` rules like every other trigger.
-- **Drill this:** opens the matching drill for the item shown.
+- **Drill this:** opens the matching drill for the item shown, in Practice. This is "practice by type" from now on: remove the drill-type chips (`pickDrill`) that P2-T12 kept.
 - No notation. Content is generated from `tonal` and the curriculum's vocabulary, not hand-typed tables.
 - **Automated:** for a sample of keys, types and inversions, the highlighted MIDI notes match `tonal`; Hear it schedules the right notes (dev inspector or the engine's test hook); Drill this opens the right item.
 - **Manual:** taste only, if the layout has real alternatives (Taste in one round).
 
 ### P2-T11: Take feedback on the piano roll
-**Depends on:** none. **Model:** Opus.
+**Depends on:** P2-T12 (it moves the Takes card; waiting avoids a conflict). **Model:** Opus.
 
 Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only as numbers.
 - Each note on the take's piano roll is marked by what the stats count: a chord tone on beat 1 or 3, in the scale, or out of the scale (dimmed, never red). The strong beats and bar lines are visible behind the notes, and the longest rest is shaded.
@@ -136,6 +136,40 @@ Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only
 - The categories come from `src/analysis/stats.ts` (pure), one source for the numbers and the marks.
 - **Automated:** unit tests that every note gets exactly the category the stats count it under; an e2e take recorded through the simulated source shows the expected count per category.
 - **Manual:** taste: the marking look (3 or 4 candidates, Taste in one round).
+
+### P2-T12: Views and navigation
+**Depends on:** none. Runs alone: it rearranges `src/App.tsx` and every card. **Model:** Opus.
+
+Added 2026-11-27 from the user's review and an Impeccable critique: one 4,700 px page of 11 cards, set-once settings among daily tools, drills fused to Play, and drill hints drawn on a keyboard scrolled off screen.
+- **Three views** in a slim top bar: **Jam · Practice · Learn**, plus a gear for **Setup** and a setup sticker that shows only while setup is unfinished. Hash routes (`#/jam`…), so the back button works without a router dependency. A view-switch shortcut, if any, must not use Space (the bend key) or the computer-piano letters.
+- **The keyboard is mounted once in the shell, pinned at the bottom of every view,** never remounted, still reading state each frame. One readout line above it (held notes, pedal; P2-T9 adds the chord name). Its zone strip opens that zone's sounds in a drawer.
+- **Jam:** a transport strip (Play, Record, groove, key, tempo) right above the readout; "Training wheels" and "Look" merged into one control named "Help on the keys"; Mix and Takes in drawers. The groove keeps playing across views, with a small stop button in the top bar.
+- **Practice:** a placeholder that holds today's Drills card as it is (P2-T13 designs it), with the hint-pace chips removed (Steady) and the drill-type chips tucked behind "Practice by type" until P2-T10's Drill this replaces them.
+- **Learn:** a placeholder for P2-T10.
+- **Setup (gear):** Keyboard, Sounds (the full sleeves and sliders), Pedal & bend, Timing, Your data, the split and the computer-key help (shown open only while no MIDI device is connected).
+- **First visit:** a short full-screen walk-through, Keyboard then Sound, one yellow action per screen, landing on Jam. Timing is offered before the first timed drill instead. Whether one gesture can both start audio and request MIDI in Firefox is unverified: check it, don't assume.
+- Progress's look chips go (Fill stays). Progress moves to Practice's start screen in P2-T13; until then it sits in Practice under the Drills card.
+- Design it with the `impeccable` skill in the current theme; the visual refresh is P2-T14, so no theme changes here.
+- **Automated:** update the e2e specs to navigate by view; one spec walks every view and checks the keyboard canvas is the same element throughout, and that a playing groove survives a view switch; the first-visit flow reaches Jam.
+- **Manual:** must-pass: on the user's laptop, in Jam and Practice, the whole keyboard and the controls in use fit on screen together without scrolling. Taste: none.
+
+### P2-T13: Practice screen
+**Depends on:** P2-T12. **Model:** Opus.
+
+- **Start screen:** the practice days, the progress grid (an empty state that invites a first session instead of 204 dashed squares) and one yellow "Start today's session".
+- **During a drill:** the prompt in large type directly above the pinned keyboard, the hint and result lines under it, Skip and Close, and the session's progress as dots. Only one yellow action on screen at a time: "Start today's session" hides while a drill is open.
+- Hints drawn on the keyboard are always visible while a drill is open (the reason this task exists).
+- After the session, the Jam offer from P2-T6 sits where the prompt was.
+- **Automated:** e2e: a session through the simulated source; the prompt and the keyboard are both in the viewport at 1280×720 and at the user's laptop size; hint marks appear on the visible keyboard.
+- **Manual:** taste only, if the layout has real alternatives (Taste in one round).
+
+### P2-T14: Visual refresh
+**Depends on:** P2-T10, P2-T11, P2-T13 (every screen exists). **Model:** Opus.
+
+- Taste in one round on the real screens: 3 directions, selectable in the app. (1) **Crate Dig pushed:** the keyboard as a full-width stage, the active sound's colour as a field behind it, the display face on the drill prompt and the chord name, Progress as a crate of sleeves. (2) **After hours:** full-bleed black, colour only as light. (3) **Liner notes:** large editorial type, sparse. All stay dark.
+- Rule changes in `DESIGN.md` (the display face beyond card tabs; new colours for progress states, since sound colours are reserved) are the user's call and are part of the pick.
+- The pick becomes the theme, `DESIGN.md` is updated, and the other directions are removed in the same task.
+- **Manual:** taste: the pick.
 
 ---
 
