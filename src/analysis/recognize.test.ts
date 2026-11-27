@@ -100,6 +100,10 @@ describe('checkChord, every quality in all 12 keys and every inversion', () => {
     expect(c).toEqual({ ok: false, missing: [], extra: [], bassOk: false })
   })
 
+  it('register mode fails when nothing is held', () => {
+    expect(checkChord([], [4, 7, 11], { kind: 'register', notes: [] }).ok).toBe(false)
+  })
+
   it('register mode fails on a doubled octave', () => {
     expect(
       checkChord([52, 55, 59, 64], [4, 7, 11], { kind: 'register', notes: [52, 55, 59] }).ok,
@@ -189,6 +193,13 @@ describe('held notes', () => {
     held.apply(ev.on(60))
     held.apply(ev.off(60))
     held.apply(ev.pedal(true))
+    expect(held.notes()).toEqual([])
+  })
+
+  it('a stray note-off under the pedal holds nothing', () => {
+    const { held } = make()
+    held.apply(ev.pedal(true))
+    held.apply(ev.off(61))
     expect(held.notes()).toEqual([])
   })
 
@@ -298,6 +309,12 @@ describe('checkScale', () => {
       const c = checkScale(run(target, gap / 2), target, { bpm: 70, noteBeats: 0.5 })
       expect(c.timing).toEqual({ bpm: 70, inTime: true })
       expect(c.ok).toBe(true)
+    })
+
+    it('notes sharing a timestamp give a finite tempo', () => {
+      const c = checkScale(run(target, 0), target, { bpm: 70 })
+      expect(Number.isFinite(c.timing?.bpm)).toBe(true)
+      expect(c.ok).toBe(false)
     })
 
     it('has no timing yet for fewer than two right notes, and a done run then fails', () => {

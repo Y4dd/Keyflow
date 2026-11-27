@@ -23,7 +23,10 @@ export interface HeldNotes {
 /**
  * The notes sounding now. The sustain pedal counts only while `pedalMode()` says 'sustain'
  * (in Bend and Glide-hold modes it does something else), read at each `notes()` call so a mode
- * change takes effect at once. The pedal is down if any MIDI channel's is (handled by the parser).
+ * change takes effect at once (notes released under the pedal in another mode then show as
+ * sustained, by design). The pedal is down if any MIDI channel's is (handled by the parser).
+ * shortcut: notes are keyed by number, not source, so one source's note-off frees the note for
+ * all; key by source if two sources are ever played at once in a drill.
  */
 export function createHeldNotes(pedalMode: () => PedalMode): HeldNotes {
   const down = new Set<number>()
@@ -35,8 +38,8 @@ export function createHeldNotes(pedalMode: () => PedalMode): HeldNotes {
         down.add(e.note)
         sustained.delete(e.note)
       } else if (e.kind === 'noteOff') {
-        down.delete(e.note)
-        if (pedal) sustained.add(e.note)
+        // a stray note-off (never down) must not become a held note
+        if (down.delete(e.note) && pedal) sustained.add(e.note)
       } else if (e.kind === 'pedal') {
         pedal = e.down
         if (!pedal) sustained.clear()
@@ -91,7 +94,10 @@ export function checkChord(
   if (mode.kind === 'register') {
     const want = sorted(mode.notes)
     const have = sorted(new Set(held))
-    const exact = have.length === want.length && have.every((n, i) => n === want[i])
+    // exact notes, so `ok` can be false with `missing` and `extra` both empty (right pitch classes,
+    // wrong octave); `bassOk` just mirrors `ok` here.
+    const exact =
+      have.length > 0 && have.length === want.length && have.every((n, i) => n === want[i])
     return { ok: exact, missing, extra, bassOk: exact }
   }
   const bassOk =
@@ -165,7 +171,9 @@ const median = (xs: number[]) => {
 
 /**
  * Checks the notes played, in order, against an ordered target (MIDI numbers). Call it again as
- * notes arrive: it judges the first target.length notes and ignores any after.
+ * notes arrive: it judges the first target.length notes and ignores any after. A wrong note stays
+ * wrong for the same `played`: the caller starts a new array to retry. A repeated key is a slip.
+ * An empty target is not a drill (callers don't pass one).
  */
 export function checkScale(
   played: readonly PlayedNote[],
@@ -194,7 +202,8 @@ export function checkScale(
     const gap = (60000 / opts.bpm) * (opts.noteBeats ?? 1)
     const gaps = played.slice(1, matched).map((p, i) => p.time - played[i]!.time)
     timing = {
-      bpm: Math.round((60000 * (opts.noteBeats ?? 1)) / median(gaps)),
+      // at least 1 ms, so notes sharing a timestamp give a huge tempo, not Infinity
+      bpm: Math.round((60000 * (opts.noteBeats ?? 1)) / Math.max(1, median(gaps))),
       inTime: gaps.every((g) => Math.abs(g - gap) <= gap * SCALE_TIMING.tolerance),
     }
   }
