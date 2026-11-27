@@ -37,7 +37,7 @@ The user's **Main Agent** session coordinates; each task runs in its own fresh s
   2. Build it with tests (pure logic test-first), and run the local checks.
   3. Review (above), fix, re-check.
   4. Mark your task's heading in the phase file and add its `Built:` line, write its `docs/manual-tests/` file if it has a manual check; commit, rebase and push (above); confirm CI and fix it if it fails.
-  5. Finish with a report whose first line is `<task ID>: done`, `<task ID>: built, manual check queued` or `<task ID>: blocked: <reason>`, then the commit hash, CI result, review findings dismissed, any `rules-allow` added, and a **PLAN.md** block: the queue row (if any) and each decisions-log line, written ready to paste.
+  5. Once CI has finished (wait for the background `gh run watch`; a report with CI still running sends the Main Agent to watch it instead), finish with a report whose first line is `<task ID>: done`, `<task ID>: built, manual check queued` or `<task ID>: blocked: <reason>`, then the commit hash, CI result, review findings dismissed, any `rules-allow` added, and a **PLAN.md** block: the queue row (if any) and each decisions-log line, written ready to paste.
 - A task session writes only its own phase-file section and its own `docs/manual-tests/` file, never `PLAN.md`, so parallel sessions don't collide.
 
 ## Manual checks
