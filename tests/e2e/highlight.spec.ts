@@ -37,9 +37,23 @@ const wheels = (page: Page, label: string) =>
     .getByLabel(label, { exact: true })
     .check()
 
-/** The canvas keyboard's pixels, to compare two drawings. */
+/**
+ * The canvas keyboard's pixels as a hash, to compare two drawings. Read with getImageData, not
+ * toDataURL: on CI's Chromium a toDataURL right after a redraw kept returning the previous drawing
+ * (5 s of polling, then the right one), while getImageData always saw the new one.
+ */
 const image = (page: Page) =>
-  page.evaluate(() => document.querySelector<HTMLCanvasElement>('canvas.piano-canvas')!.toDataURL())
+  page.evaluate(() => {
+    const c = document.querySelector<HTMLCanvasElement>('canvas.piano-canvas')!
+    const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data
+    let a = 0
+    let b = 0
+    for (let i = 0; i < d.length; i++) {
+      a = (a * 31 + d[i]!) | 0
+      b = (b * 17 + d[i]! + i) | 0
+    }
+    return a + ':' + b
+  })
 
 /** Waits until the key shows `tier`, drawn (not lit by a stale fill). */
 const shows = (page: Page, note: number, tier: Tier) =>
