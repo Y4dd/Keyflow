@@ -10,6 +10,7 @@
 import { Dexie, type EntityTable } from 'dexie'
 import { parseTake, type Take } from '../analysis/take.ts'
 import type { Item, ReviewLog } from '../practice/items.ts'
+import type { BackupData, Dump } from './backup.ts'
 
 interface SettingRow {
   key: string
@@ -103,4 +104,32 @@ export async function saveReview(
 /** An item's logged attempts, oldest first. */
 export async function loadReviewLogs(item: string): Promise<ReviewLog[]> {
   return db.reviewLogs.where('item').equals(item).sortBy('at')
+}
+
+/** The database version this app declares, which a backup file is checked against (P2-T8). */
+export const DB_VERSION = db.verno
+
+/** Every row of every table, as stored (backup.ts checks them). Takes are all of them. */
+export async function dumpAll(): Promise<Dump> {
+  return db.transaction('r', [db.settings, db.takes, db.items, db.reviewLogs], async () => ({
+    settings: await loadSettings(),
+    takes: await db.takes.toArray(),
+    items: await db.items.toArray(),
+    reviewLogs: await db.reviewLogs.toArray(),
+  }))
+}
+
+/**
+ * Replaces all user data with a checked backup, in one transaction: if any write fails, the
+ * transaction aborts and the data is left as it was.
+ */
+export async function replaceAll(data: BackupData): Promise<void> {
+  const tables = [db.settings, db.takes, db.items, db.reviewLogs]
+  await db.transaction('rw', tables, async () => {
+    for (const table of tables) await table.clear()
+    await db.settings.bulkAdd(Object.entries(data.settings).map(([key, value]) => ({ key, value })))
+    await db.takes.bulkAdd(data.takes as StoredTake[])
+    await db.items.bulkAdd(data.items)
+    await db.reviewLogs.bulkAdd(data.reviewLogs)
+  })
 }

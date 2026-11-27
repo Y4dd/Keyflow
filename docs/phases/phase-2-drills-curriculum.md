@@ -90,11 +90,12 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - Heatmap of keys × chord or scale types, colored by FSRS stability, showing what you know cold, what's shaky and what's new.
 - Streak and consistency shown gently (see the feedback tone in `learning-design.md`).
 
-### P2-T8: Data export and import
+### P2-T8: Data export and import [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Opus.
 
 - Export all user data (settings, items, logs, takes) as a single JSON file. Import with a schema-version check.
 - **Automated:** export → wipe → import round trip.
+- **Built:** 2026-11-27. The "Your data" card (`src/ui/DataPanel.tsx`) has Export backup and Import backup; the format and its checks are in `src/storage/backup.ts` (see "Export and import (P2-T8)" in `docs/architecture.md`). The file carries the database version, and one from a newer version is refused. Every imported row is checked before anything is written, and one bad row rejects the whole file. The import asks before replacing, writes all four tables in one transaction, then reloads the page. Unit tests in `src/storage/backup.test.ts`; the round trip and the refused files in `tests/e2e/backup.spec.ts`. There is no manual check.
 
 ---
 

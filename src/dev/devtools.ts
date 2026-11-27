@@ -10,7 +10,8 @@ import { calibration } from '../state/calibration.ts'
 import { drills } from '../state/drills.ts'
 import { drillOf, type DrillOptions } from '../practice/drills.ts'
 import type { AttemptResult, Item, ReviewLog } from '../practice/items.ts'
-import { loadItem, loadReviewLogs } from '../storage/db.ts'
+import { dumpAll, loadItem, loadReviewLogs } from '../storage/db.ts'
+import type { Dump } from '../storage/backup.ts'
 import type { Grade } from 'ts-fsrs'
 import { shownHarmony, useGrooveStore } from '../state/groove.ts'
 import { flushSettings } from '../state/settings.ts'
@@ -80,6 +81,8 @@ export interface KeyflowDevApi {
   renderGroove(spec: GrooveRenderSpec): Promise<{ peak: number; bars: number[]; dropouts: number }>
   /** The running tap test's clicks (performance ms, audio-clock s), or null (P0-T8). */
   calibrationClicks(): { perf: number[]; context: number[] } | null
+  /** Every row of every table, as stored (P2-T8). */
+  dump(): Promise<Dump>
   /** Writes pending settings to IndexedDB now, so a test can reload (P0-T9). */
   flushSettings(): Promise<void>
   /**
@@ -160,6 +163,7 @@ export function installDevTools() {
     render: (spec) => import('./render.ts').then((m) => m.renderPreset(spec)),
     renderGroove: (spec) => import('./render.ts').then((m) => m.renderGroove(spec)),
     calibrationClicks: () => calibration.clicks(),
+    dump: dumpAll,
     flushSettings,
     pianoKey,
   }
