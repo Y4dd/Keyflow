@@ -18,12 +18,13 @@ Comping and voicing drills in time (Phase 3), ear training (Phase 4), licks (Pha
 
 Each task names the tasks it needs. Tasks whose dependencies are done can run at the same time (see "Parallel tasks" in `CLAUDE.md`): first P2-T1 and P2-T2, then P2-T3, P2-T5 and P2-T8, then P2-T4 and P2-T7, then P2-T6. **Model** is the session's: Sonnet for pure, spec-driven logic with table-driven tests; Opus for UI, storage, audio, grading and learning design.
 
-### P2-T1: Item model and FSRS
+### P2-T1: Item model and FSRS [done 2026-11-27]
 **Depends on:** none. Adds the Dexie schema version for this phase; no other Phase 2 task changes the schema. **Model:** Opus.
 
 - Item IDs as defined in `learning-design.md`. Each item stores its FSRS card state (`ts-fsrs`) and creation and unlock dates.
 - Dexie tables `items` and `reviewLogs`. Every attempt is logged: item, rating, response time, hint level, wrong notes.
 - **Automated:** rating → schedule round trip; persistence survives reload.
+- **Built:** 2026-11-27. `src/practice/items.ts` (pure) and Dexie version 3 in `src/storage/db.ts` (see "Items and FSRS (P2-T1)" in `docs/architecture.md`). Cards are ts-fsrs 6's `DefaultScheduler` (FSRS-7, no fuzz), stored as returned. `items` is indexed by `card.dueAt` for the session builder, `reviewLogs` by `item` and `at` for the progress view. `recordAttempt(id, rating, attempt)` in `src/state/items.ts` is what P2-T4 calls once it grades; an item drilled before it has a row gets one, and a practised item counts as unlocked from then on. Unit tests in `src/practice/items.test.ts`; the reload and the version 2 → 3 upgrade in `tests/e2e/items.spec.ts`. There is no manual check.
 
 ### P2-T2: Chord and scale recognition from input [done 2026-11-27]
 **Depends on:** none. **Model:** Sonnet.

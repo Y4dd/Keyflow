@@ -3,9 +3,13 @@
 // just a new row and needs no migration. A setting left at its default has no row (toStored).
 // Version 2 (P1-T7) adds the `takes` table and changes nothing else, so it needs no upgrade
 // function: Dexie keeps version 1's settings as they are.
+// Version 3 (P2-T1) adds `items` (one FSRS card per skill item, indexed by when it's due) and
+// `reviewLogs` (every attempt, by item and time), the only Phase 2 schema change, and likewise
+// keeps the settings and takes as they are.
 
 import { Dexie, type EntityTable } from 'dexie'
 import { parseTake, type Take } from '../analysis/take.ts'
+import type { Item, ReviewLog } from '../practice/items.ts'
 
 interface SettingRow {
   key: string
@@ -18,9 +22,17 @@ export type StoredTake = Take & { id: number }
 const db = new Dexie('keyflow') as Dexie & {
   settings: EntityTable<SettingRow, 'key'>
   takes: EntityTable<StoredTake, 'id'>
+  items: EntityTable<Item, 'id'>
+  reviewLogs: EntityTable<ReviewLog, 'id'>
 }
 db.version(1).stores({ settings: 'key' })
 db.version(2).stores({ settings: 'key', takes: '++id' })
+db.version(3).stores({
+  settings: 'key',
+  takes: '++id',
+  items: 'id, card.dueAt',
+  reviewLogs: '++id, item, at',
+})
 
 /** Every stored setting as one object, unchecked: pass it to parseSettings. */
 export async function loadSettings(): Promise<Record<string, unknown>> {
@@ -51,4 +63,44 @@ export async function loadTakes(limit: number): Promise<StoredTake[]> {
     const take = parseTake(row)
     return take ? [{ ...take, id: row.id }] : []
   })
+}
+
+/**
+ * Every item, as stored.
+ * shortcut: rows aren't checked (only this app writes them, and the scheduler rejects a bad
+ * card on review); check them here like parseTake if anything else ever writes items.
+ */
+export async function loadItems(): Promise<Item[]> {
+  return db.items.toArray()
+}
+
+export async function loadItem(id: string): Promise<Item | undefined> {
+  return db.items.get(id)
+}
+
+/** Adds or replaces items (new or newly unlocked ones). */
+export async function putItems(items: Item[]): Promise<void> {
+  await db.items.bulkPut(items)
+}
+
+/**
+ * Reads an item, reviews it with `next` (synchronous, so the transaction stays open) and saves
+ * the item and the attempt's log, all in one transaction, so two overlapping reviews of one item
+ * can't lose one. Resolves to the saved item.
+ */
+export async function saveReview(
+  id: string,
+  next: (stored: Item | undefined) => { item: Item; log: ReviewLog },
+): Promise<Item> {
+  return db.transaction('rw', db.items, db.reviewLogs, async () => {
+    const { item, log } = next(await db.items.get(id))
+    await db.items.put(item)
+    await db.reviewLogs.add(log)
+    return item
+  })
+}
+
+/** An item's logged attempts, oldest first. */
+export async function loadReviewLogs(item: string): Promise<ReviewLog[]> {
+  return db.reviewLogs.where('item').equals(item).sortBy('at')
 }

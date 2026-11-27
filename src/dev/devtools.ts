@@ -9,6 +9,9 @@ import { audio } from '../state/audio.ts'
 import { calibration } from '../state/calibration.ts'
 import { drills } from '../state/drills.ts'
 import { drillOf, type DrillOptions } from '../practice/drills.ts'
+import type { AttemptResult, Item, ReviewLog } from '../practice/items.ts'
+import { loadItem, loadReviewLogs } from '../storage/db.ts'
+import type { Grade } from 'ts-fsrs'
 import { shownHarmony, useGrooveStore } from '../state/groove.ts'
 import { flushSettings } from '../state/settings.ts'
 import { tierOf, type Tier } from '../music/highlight.ts'
@@ -59,6 +62,12 @@ export interface KeyflowDevApi {
   }
   /** Opens a drill for an item ID (P2-T3), timed from now. */
   drill(item: string, opts?: DrillOptions): void
+  /** Stored items (P2-T1): rate an attempt (schedules and saves it), read an item and its log. */
+  items: {
+    record(id: string, rating: Grade, attempt: AttemptResult, now?: number): Promise<Item>
+    get(id: string): Promise<Item | undefined>
+    logs(id: string): Promise<ReviewLog[]>
+  }
   groove: {
     /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
     ticks(): number | null
@@ -134,6 +143,15 @@ export function installDevTools() {
       mixGains: () => audio.engine()?.mixGains() ?? null,
     },
     drill: (item, opts) => drills.start(drillOf(item, opts)),
+    items: {
+      // on demand, like render: the scheduler loads its model when the module is first imported
+      record: (id, rating, attempt, now) =>
+        import('../state/items.ts').then((m) =>
+          m.recordAttempt(id, rating, attempt, now === undefined ? undefined : new Date(now)),
+        ),
+      get: loadItem,
+      logs: loadReviewLogs,
+    },
     groove: {
       ticks: () => audio.engine()?.groove().ticks() ?? null,
       heldCount: () => audio.engine()?.groove().heldCount() ?? 0,
