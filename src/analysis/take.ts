@@ -41,11 +41,13 @@ export interface Take {
   /** Sorted by `at`; every note and the pedal end up released, and a bend back at 0. */
   events: TakeEvent[]
   /**
-   * The calibration offset in use when recorded (ms, positive = you land late), and the clock
-   * mapping's getOutputTimestamp lead then (src/audio/latency.ts), so grading (P1-T8 and later)
+   * The calibration offset in use when recorded (ms, positive = you land late) with the clock
+   * lead it was measured under, and the clock mapping's getOutputTimestamp lead when this take
+   * was recorded (src/audio/latency.ts; null = the fallback pair), so grading (P1-T8 and later)
    * can line notes up with the beat the way calibration measured it.
    */
   offsetMs: number | null
+  offsetLeadMs: number | null
   leadMs: number | null
 }
 
@@ -164,6 +166,7 @@ export function parseTake(raw: unknown): Take | null {
     t.lengthMs < 0 ||
     !Array.isArray(t.events) ||
     !nullableNum(t.offsetMs) ||
+    !nullableNum(t.offsetLeadMs ?? null) ||
     !nullableNum(t.leadMs)
   )
     return null
@@ -178,6 +181,8 @@ export function parseTake(raw: unknown): Take | null {
     lengthMs: t.lengthMs,
     events: t.events.map(parseEvent).filter((e) => e !== null),
     offsetMs: t.offsetMs as number | null,
+    // Takes recorded in the first P1-T7 build (2026-11-26) don't have it.
+    offsetLeadMs: (t.offsetLeadMs ?? null) as number | null,
     leadMs: t.leadMs as number | null,
   }
 }

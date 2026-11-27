@@ -177,7 +177,7 @@ export function GroovePanel() {
         </button>
         <button
           type="button"
-          className="transport-play"
+          className="transport-record"
           aria-pressed={recording}
           disabled={!running || replaying}
           onClick={recording ? groove.stop : takes.record}

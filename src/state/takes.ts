@@ -155,6 +155,7 @@ export const takes = {
         scale: g.scale,
         countIn: g.countIn,
         offsetMs: c.offsetMs,
+        offsetLeadMs: c.outputTimestampLeadMs,
         leadMs: started.lead,
       },
       unsubscribe: inputBus.subscribe(recorder.add),

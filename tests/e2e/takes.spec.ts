@@ -36,20 +36,20 @@ async function startSound(page: Page) {
 const storedTakes = (page: Page) =>
   page.evaluate(
     () =>
-      new Promise<{ events: (SimEvent & { at: number })[]; lengthMs: number }[]>(
-        (resolve, reject) => {
-          const req = indexedDB.open('keyflow')
-          req.onerror = () => reject(req.error)
-          req.onsuccess = () => {
-            const all = req.result.transaction('takes').objectStore('takes').getAll()
-            all.onsuccess = () => {
-              req.result.close()
-              resolve(all.result)
-            }
-            all.onerror = () => reject(all.error)
+      new Promise<
+        { events: (SimEvent & { at: number })[]; lengthMs: number; leadMs: number | null }[]
+      >((resolve, reject) => {
+        const req = indexedDB.open('keyflow')
+        req.onerror = () => reject(req.error)
+        req.onsuccess = () => {
+          const all = req.result.transaction('takes').objectStore('takes').getAll()
+          all.onsuccess = () => {
+            req.result.close()
+            resolve(all.result)
           }
-        },
-      ),
+          all.onerror = () => reject(all.error)
+        }
+      }),
   )
 
 const PLAYED: SimEvent[] = [
@@ -161,6 +161,54 @@ test('stopping a replay mid-take releases its notes, pedal and bend, and puts Lo
   expect((await dev()).expression).toMatchObject({ sustain: false, bend: 0 })
   // The groove's notes and yours release one look-ahead out.
   await expect.poll(async () => (await dev()).held).toBe(0)
+})
+
+test('notes land at their transport positions, in the count-in and after it', async ({ page }) => {
+  await open(page)
+  await startSound(page)
+  const groove = page.getByTestId('groove')
+  await expect(groove.getByLabel('Count-in')).toBeChecked()
+  await groove.getByRole('button', { name: 'Record', exact: true }).click()
+  /** Once the groove passes `ticks`, presses a key; returns the groove ticks as it does. */
+  const pressAfter = async (ticks: number, note: number) => {
+    await page.waitForFunction(
+      (min) => ((window as DevWindow).__keyflow!.groove.ticks() ?? -Infinity) > min,
+      ticks,
+    )
+    return page.evaluate(async (note) => {
+      const k = (window as DevWindow).__keyflow!
+      const now = k.groove.ticks()!
+      await k.inject([
+        { kind: 'noteOn', note, at: 0 },
+        { kind: 'noteOff', note, at: 50 },
+      ])
+      return now
+    }, note)
+  }
+  const inCountIn = await pressAfter(-400, 60) // half-way through the count-in bar
+  const inBar2 = await pressAfter(900, 64) // early in groove bar 2 (768 ticks a bar)
+  expect(inCountIn).toBeLessThan(0)
+  await groove.getByRole('button', { name: 'Save take' }).click()
+  await expect(page.getByTestId('takes').getByRole('radio')).toHaveCount(1)
+
+  const [take] = await storedTakes(page)
+  const ons = take!.events.filter((e) => e.kind === 'noteOn')
+  // Groove ticks from `at` at 108 BPM, the count-in bar (768 ticks) first.
+  const tick = (at: number) => (at / 60_000) * 108 * 192 - 768
+  // The take counts from the downbeat as heard (the calibration mapping), which comes after the
+  // audio clock's tick 0 by the output latency, so a note lands up to that much earlier than the
+  // audio clock's tick: 43 to 66 ms one test at a time here, more under load (Chromium reports it
+  // as the clock's lead; Firefox reports none but shows the same gap). An origin missing the
+  // look-ahead (about −50 ms) or off by the count-in bar (2.2 s) lands outside.
+  const ms = (ticks: number) => (ticks / 192 / 108) * 60_000
+  for (const [on, read] of [
+    [ons[0]!, inCountIn],
+    [ons[1]!, inBar2],
+  ] as const) {
+    const early = ms(read - tick(on.at))
+    expect(early).toBeGreaterThan(-10)
+    expect(early).toBeLessThan(300) // loose: Firefox under load reads its audio clock late
+  }
 })
 
 test('a take exports as a MIDI file of the notes played', async ({ page }) => {

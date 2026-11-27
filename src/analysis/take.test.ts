@@ -40,6 +40,7 @@ function take(events: Take['events'], extra: Partial<Take> = {}): Take {
     lengthMs: 4000,
     events,
     offsetMs: null,
+    offsetLeadMs: null,
     leadMs: null,
     ...extra,
   }
@@ -166,6 +167,8 @@ describe('parseTake', () => {
   it('keeps a valid take', () => {
     const t = take([{ kind: 'noteOn', note: 60, velocity: 0.5, at: 0 }])
     expect(parseTake(t)).toEqual(t)
+    const { offsetLeadMs: _, ...first } = t // recorded before the field existed
+    expect(parseTake(first)).toEqual(t)
   })
 
   it('rejects a take it cannot read and drops events it cannot', () => {

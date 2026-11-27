@@ -695,6 +695,26 @@ kbd {
   margin-top: 16px;
 }
 
+/* Record: an ordinary button beside the big Play, so the transport keeps to one row. */
+.transport-record {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 7.5em; /* Record and Save take take the same room */
+  justify-content: center;
+}
+
+.transport-record[aria-pressed='true'] {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--bin);
+}
+
+.transport-record[aria-pressed='true']:hover:not(:disabled) {
+  border-color: var(--bone-muted);
+  background: var(--bone-muted);
+}
+
 .transport select:disabled {
   opacity: 0.45;
   cursor: default;
