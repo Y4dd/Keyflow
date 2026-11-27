@@ -1,13 +1,16 @@
 import { expect, test, type Page } from '@playwright/test'
 
 // Drill types (P2-T3), each end to end through the simulated source: open a drill by item ID,
-// play a wrong answer, then the right one. The judging itself is unit-tested
-// (src/practice/drills.test.ts). No sound is needed: drills listen to the input bus.
+// play a wrong answer, then the right one. Then grading and the hint ladder (P2-T4): a stalled
+// answer's hints, the rating shown and saved. The judging, ratings and hint delays are
+// unit-tested (src/practice/drills.test.ts, grading.test.ts). No sound is needed: drills listen
+// to the input bus.
 
 type SimEvent = Record<string, unknown> & { kind: string; at?: number }
 interface DevApi {
   inject(events: SimEvent[]): Promise<void>
   drill(item: string, opts?: { build?: boolean; bpm?: number }): void
+  items: { logs(id: string): Promise<{ rating: number; hintLevel: number; ms: number | null }[]> }
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
@@ -94,4 +97,61 @@ test('pick a type, go to the next drill, close', async ({ page }) => {
   await card.getByRole('button', { name: 'Close drills' }).click()
   await expect(prompt(page)).toHaveCount(0)
   await expect(card.getByRole('radio', { name: 'Play the chord' })).not.toBeChecked()
+})
+
+const logs = (page: Page, item: string) =>
+  page.evaluate((item) => (window as DevWindow).__keyflow!.items.logs(item), item)
+
+/** Presses the notes and lets them go at once, with no timers (for a fake clock). */
+const tap = (page: Page, notes: number[]) =>
+  page.evaluate(
+    (events) => (window as DevWindow).__keyflow!.inject(events),
+    [
+      ...notes.map((note) => ({ kind: 'noteOn', note, velocity: 0.8 })),
+      ...notes.map((note) => ({ kind: 'noteOff', note })),
+    ],
+  )
+
+test('a stalled answer climbs the hint ladder, then is asked again unaided', async ({ page }) => {
+  await page.clock.install()
+  await open(page)
+  const hint = page.getByTestId('drill-hint')
+  await drill(page, 'chord:D:min:root')
+  await expect(hint).toHaveText('')
+  // the first hint waits for the item's card to load, so step the clock until it shows
+  await expect(async () => {
+    await page.clock.runFor(1000)
+    await expect(hint).toContainText('Start from D.', { timeout: 100 })
+  }).toPass()
+  await page.clock.runFor(6000)
+  await expect(hint).toContainText('From D: root, +3 half-steps, +4 half-steps.')
+  await page.clock.runFor(6000)
+  await expect(hint).toHaveAttribute('data-level', '3')
+  await expect(hint).toContainText('This is D minor.')
+  await tap(page, [62, 65, 69])
+  await expect(result(page)).toHaveText('Right. Now once more, on your own.')
+  await expect(hint).toHaveText('')
+  await tap(page, [50, 53, 57])
+  await expect(result(page)).toContainText('Right,')
+  await expect(page.getByTestId('drill-rating')).toHaveText('Again')
+  await expect
+    .poll(() => logs(page, 'chord:D:min:root'))
+    .toMatchObject([{ rating: 1, hintLevel: 3 }])
+})
+
+test('a quick answer is graded and saved; a skip after trying counts as Again', async ({
+  page,
+}) => {
+  await drill(page, 'geo:Eb')
+  await play(page, [63])
+  await expect(result(page)).toContainText('Right,')
+  await expect(page.getByTestId('drill-rating')).toHaveText(/Easy|Good/)
+  await expect.poll(async () => (await logs(page, 'geo:Eb')).length).toBe(1)
+  expect((await logs(page, 'geo:Eb'))[0]).toMatchObject({ hintLevel: 0 })
+
+  await drill(page, 'geo:Ab')
+  await play(page, [60])
+  await page.getByRole('button', { name: 'Skip' }).click()
+  await expect.poll(() => logs(page, 'geo:Ab')).toMatchObject([{ rating: 1, ms: null }])
+  expect(await logs(page, 'geo:Eb')).toHaveLength(1) // the finished drill isn't logged again
 })

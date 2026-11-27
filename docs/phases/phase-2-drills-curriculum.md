@@ -52,13 +52,14 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - **Automated:** each drill type end-to-end through the simulated source (Playwright).
 - **Built:** 2026-11-27. The drills live in `src/practice/drills.ts` and the card in `src/ui/DrillPanel.tsx` (see "Drills (P2-T3)" in `docs/architecture.md`). Chord in key uses the new item type `rn:<key>:<major|minor>:<numeral>`. Build it shows the formula under the prompt from the start. Scale drills pick 70 BPM, with no click track. Drills are picked at random until P2-T6. The keyboard's highlighting is off while a drill is open. Each attempt reports its time, wrong notes and one feedback line for P2-T4. The e2e spec is `tests/e2e/drills.spec.ts`. There is no manual check, since every drill is driven by the simulated source.
 
-### P2-T4: Grading and hint ladder
+### P2-T4: Grading and hint ladder [built 2026-11-27, manual check pending]
 **Depends on:** P2-T1, P2-T3. **Model:** Opus.
 
 - Implement the rating table and the hint ladder from `learning-design.md`. The delay before the first hint scales with FSRS stability.
 - Target times live in config.
 - **Automated:** grading unit tests; the hint delay increases with stability.
 - **Manual:** hints feel helpful, not naggy.
+- **Built:** 2026-11-27. `src/practice/grading.ts` (pure): `GRADING` holds the target times, the scale reaction allowance and three hint-pace profiles; `rate`, `targetOf`, `hintDelays` and `hintsFor`. The drill store (`src/state/drills.ts`) runs the hint timers from the item's stored stability, rates each finished or abandoned attempt and calls `recordAttempt` once. After the step-3 answer it asks once more, unaided and unrecorded. Hint keys are drawn on the canvas keyboard in place of the (drill-off) jam highlighting. The card shows the hint, the rating and one tip, with temporary **Hints: Quick / Steady / Patient** chips for the audition (Steady is the default until then). Unit tests in `src/practice/grading.test.ts`; e2e (the ladder under a fake clock, the retry, a saved rating, skip as Again) in `tests/e2e/drills.spec.ts`. Manual check: [`docs/manual-tests/P2-T4.md`](../manual-tests/P2-T4.md).
 
 ### P2-T5: Curriculum graph [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Sonnet.

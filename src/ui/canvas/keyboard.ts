@@ -2,7 +2,8 @@
 // strip naming each zone's sound in its colour, a line at the split point, and jam mode's
 // highlighting in the chosen look (keys.ts: idleFill and marksOf): Tags (a dark tag on each chord
 // tone holding its name) or Spotlight (brightness alone), other keys dimmed toward the well
-// (never red), and note names at training wheels 3. Colours are the theme's
+// (never red), and note names at training wheels 3. A drill hint (P2-T4) marks its own keys as
+// chord tones with its labels instead (Spotlight dims the rest as at training wheels 1). Colours are the theme's
 // (docs/design/theme.md). Called from an animation frame, never per note.
 
 import { Note } from 'tonal'
@@ -59,6 +60,8 @@ export interface KeyboardView {
   letters: ReadonlyMap<number, string>
   /** What to highlight: the shown harmony, the level, note names by pitch class, and the look. */
   jam: { harmony: HarmonyAt; wheels: Wheels; names: readonly string[]; look: Look }
+  /** A drill hint's keys and their labels, drawn in place of the jam highlighting; or null. */
+  hint: ReadonlyMap<number, string> | null
 }
 
 function zoneLabel({ presetId, octave }: ZoneSound) {
@@ -83,7 +86,7 @@ const markColor = (black: boolean, chord: boolean): string =>
   chord ? (black ? BONE : BIN) : black ? KRAFT : LETTER
 
 export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) {
-  const { width, height, keys, held, layout, letters, jam } = view
+  const { width, height, keys, held, layout, letters, jam, hint } = view
   ctx.clearRect(0, 0, width, height)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
@@ -104,16 +107,20 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
 
   // Letters and octave names only where they fit; on a phone-width keyboard they smear.
   const labels = (keys.find((k) => !k.black)?.w ?? 0) >= 14
-  const named = jam.wheels === 3
+  const named = hint !== null || jam.wheels === 3
   ctx.font = LABEL_FONT // set again only after a note name
   for (const k of keys) {
     const velocity = held.get(k.note)
     const sound = SOUND_COLORS[layout[zoneOf(layout, k.note)].presetId]
-    const tier = tierOf(k.note, jam.harmony, jam.wheels)
+    const tier = hint
+      ? hint.has(k.note)
+        ? 'chord'
+        : null
+      : tierOf(k.note, jam.harmony, jam.wheels)
     const lit = velocity !== undefined
     const fill = lit
       ? heldFill(k.black ? BLACK_KEY : WHITE_KEY, sound, velocity)
-      : idleFill(k.black, tier, jam.look, jam.wheels)
+      : idleFill(k.black, tier, jam.look, hint ? 1 : jam.wheels)
     ctx.fillStyle = css(fill)
     ctx.fillRect(k.x, k.y, k.w, k.h)
     if (!k.black) {
@@ -141,7 +148,8 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
           ? '700 13px system-ui, sans-serif'
           : `${chord ? 700 : 600} 12px system-ui, sans-serif`
       ctx.fillStyle = inTag ? (k.black ? BIN : BONE) : light ? BIN : BONE
-      ctx.fillText(jam.names[k.note % 12]!, k.x + k.w / 2, nameY(k, jam.look), nameWidth(k))
+      const text = hint ? hint.get(k.note)! : jam.names[k.note % 12]!
+      ctx.fillText(text, k.x + k.w / 2, nameY(k, jam.look), nameWidth(k))
       ctx.font = LABEL_FONT
     }
     // The brown letter on idle ivory; bin on other light fills (dimmed and lit keys).

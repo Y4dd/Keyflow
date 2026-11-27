@@ -1,7 +1,7 @@
 // Drill types (P2-T3). Pure: no DOM, no Tone, no React. A drill comes from an item ID
 // (docs/learning-design.md, "Skill items") and says what to prompt and what counts as correct;
 // an attempt watches input until the answer is right. Ratings, target times and the hint ladder
-// are P2-T4's: an attempt only reports how long it took and how many wrong notes it heard.
+// are in grading.ts (P2-T4): an attempt only reports how long it took and its wrong notes.
 //
 // Prompts use note names, chord symbols and Roman numerals only, never notation.
 
@@ -76,6 +76,8 @@ export type Drill =
       chordName: string
       /** One right answer as MIDI notes, bass first (for showing the shape, P2-T4). */
       answer: number[]
+      /** "root, +3 half-steps, +4 half-steps": the steps between the tones, root first. */
+      formula: string
     })
   | (Base & {
       kind: 'scale'
@@ -93,6 +95,8 @@ export interface DrillOptions {
 
 const pretty = (n: string) => n[0] + n.slice(1).replaceAll('b', '♭').replaceAll('#', '♯')
 const semis = (intervals: string[]) => intervals.map((i) => Interval.semitones(i)!)
+const formulaOf = (tones: number[]) =>
+  ['root', ...tones.slice(1).map((t, i) => `+${pc(t - tones[i]!)} half-steps`)].join(', ')
 
 /** Pitch-class names: these spelled notes first, then flats if any is flat, else sharps. */
 function namesFrom(spelled: string[]): string[] {
@@ -162,10 +166,7 @@ export function drillOf(item: string, opts: DrillOptions = {}): Drill {
     const tones = steps.map((s) => pc(r.pc + s))
     if (inversion !== null && inversion >= tones.length) throw bad()
     const name = chordLabel(pretty(r.name), q.tonal)
-    const formula = steps
-      .slice(1)
-      .map((s, i) => `+${s - steps[i]!} half-steps`)
-      .join(', ')
+    const formula = formulaOf(tones)
     return {
       kind: opts.build ? 'build' : 'chord',
       item,
@@ -174,13 +175,14 @@ export function drillOf(item: string, opts: DrillOptions = {}): Drill {
         : inversion === null
           ? name
           : `${name}, ${INVERSION_WORDS[inversion]}`,
-      detail: opts.build ? `${q.word}: root, ${formula}` : null,
+      detail: opts.build ? `${q.word}: ${formula}` : null,
       hintStart: opts.build ? 2 : 1,
       names: namesFrom(Chord.getChord(q.tonal, r.name).notes),
       tones,
       mode: inversion === null ? { kind: 'pcs' } : { kind: 'inversion', inversion },
       chordName: name,
       answer: stack(tones, inversion ?? 0),
+      formula,
     }
   }
 
@@ -226,6 +228,7 @@ export function drillOf(item: string, opts: DrillOptions = {}): Drill {
       mode: { kind: 'pcs' },
       chordName: chordLabel(names[chord.root]!, chord.quality),
       answer: stack(chord.tones, 0),
+      formula: formulaOf(chord.tones),
     }
   }
 

@@ -941,6 +941,34 @@ input[type='range']:disabled {
   color: var(--bone);
 }
 
+.drill-rating {
+  padding: 2px 10px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* The hint (P2-T4): one line held open so the card doesn't jump when it appears. */
+.drill-hint {
+  min-height: 1.5em;
+  margin-top: 8px;
+  font-size: 18px;
+  color: var(--kraft);
+}
+
+.drill-step {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.drill-pace {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
 @media (max-width: 720px) {
   .drill-prompt {
     font-size: 32px;

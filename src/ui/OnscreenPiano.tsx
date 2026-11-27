@@ -20,7 +20,7 @@ const KEY_LABELS: [code: string, label: string][] = Object.keys(KEY_OFFSETS).map
 /**
  * The 61-key canvas keyboard: lights every held note by velocity, whatever the source (MIDI,
  * computer keys, pointer, sim), shows the zones and the split point, highlights the groove's
- * chord and scale tones, and plays on click or touch. It redraws in an animation frame after a
+ * chord and scale tones (a drill's hint keys instead, P2-T4), and plays on click or touch. It redraws in an animation frame after a
  * change, reading state there, never through React (hot-path rule 4). While a groove plays it
  * checks each frame whether the shown chord moved on, and redraws only when it did.
  */
@@ -60,9 +60,11 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
         namesFor = `${tonic} ${key.mode} ${scale}`
       }
       // highlighting would give drill answers away, so it is off while a drill is open
-      const shown = useDrillStore.getState().drill ? 0 : wheels
+      const { drill, hint } = useDrillStore.getState()
+      const shown = drill ? 0 : wheels
       const jam = { harmony: harmonyAt(g, tick, scale), wheels: shown, names, look }
-      drawKeyboard(ctx, { ...size, keys: keysRef.current, held, layout, letters, jam })
+      const marks = hint ? new Map(hint.keys.map((k) => [k.note, k.label])) : null
+      drawKeyboard(ctx, { ...size, keys: keysRef.current, held, layout, letters, jam, hint: marks })
     }
     const redraw = () => {
       if (frame === 0) frame = requestAnimationFrame(draw)
@@ -110,7 +112,7 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
     })
     const unsubscribeView = useViewStore.subscribe(redraw)
     const unsubscribeDrill = useDrillStore.subscribe((s, prev) => {
-      if (!s.drill !== !prev.drill) redraw()
+      if (!s.drill !== !prev.drill || s.hint !== prev.hint) redraw()
     })
     const detachWheel = attachWheelBend(laptopBend, container) // scroll over the keys to bend
     return () => {
