@@ -46,6 +46,28 @@ describe('createSimPlayer', () => {
     expect(t.player.heldNotes()).toEqual([60, 64, 67])
   })
 
+  it('times events from a given start: none early, those already due at once', () => {
+    const t = setup()
+    const events = [
+      { kind: 'noteOn' as const, note: 60, at: 0 },
+      { kind: 'noteOn' as const, note: 62, at: 150 },
+    ]
+    void t.player.play(events, 1100) // starts 100 ms from now
+    expect(t.events).toEqual([])
+    t.advance(99)
+    expect(t.events).toEqual([])
+    t.advance(1)
+    expect(t.events.map((e) => e.time)).toEqual([1100])
+    t.advance(150)
+    expect(t.events.map((e) => e.time)).toEqual([1100, 1250])
+
+    const late = setup()
+    void late.player.play(events, 900) // started 100 ms ago: the first is already due
+    expect(late.events.map((e) => e.time)).toEqual([900])
+    late.advance(50)
+    expect(late.events.map((e) => e.time)).toEqual([900, 1050])
+  })
+
   it('emits later events on timers, stamped with their intended time', async () => {
     const t = setup()
     const done = t.player.play(chord([60, 64], { holdMs: 500 }))
@@ -84,23 +106,25 @@ describe('createSimPlayer', () => {
     expect(t.timers.size).toBe(0)
   })
 
-  it('stop() cancels pending events, releases held notes and the pedal, and resolves', async () => {
+  it('stop() cancels pending events, releases held notes, the pedal and a bend, and resolves', async () => {
     const t = setup()
     const done = t.player.play([
       ...chord([62, 60], { holdMs: 1000 }),
       { kind: 'pedal', down: true },
+      { kind: 'bend', semitones: 2 },
       { kind: 'noteOn', note: 72, at: 500 },
     ])
     t.advance(100)
     t.player.stop()
-    expect(t.events.slice(3)).toEqual([
+    expect(t.events.slice(4)).toEqual([
       { kind: 'noteOff', note: 60, time: 1100, source: 'sim' },
       { kind: 'noteOff', note: 62, time: 1100, source: 'sim' },
       { kind: 'pedal', down: false, time: 1100, source: 'sim' },
+      { kind: 'bend', semitones: 0, time: 1100, source: 'sim' },
     ])
     await expect(done).resolves.toBeUndefined()
     t.advance(2000)
-    expect(t.events).toHaveLength(6) // nothing fires after stop
+    expect(t.events).toHaveLength(8) // nothing fires after stop
     expect(t.timers.size).toBe(0)
   })
 

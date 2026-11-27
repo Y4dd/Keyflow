@@ -7,6 +7,7 @@ import type { ScaleId } from '../music/harmony.ts'
 import type { Wheels } from '../music/highlight.ts'
 import { keyName } from '../music/spelling.ts'
 import { groove, grooveOf, scalesOf, tempoRange, useGrooveStore } from '../state/groove.ts'
+import { takes, useTakesStore } from '../state/takes.ts'
 import { useViewStore, view } from '../state/view.ts'
 import type { Look } from './canvas/keys.ts'
 
@@ -58,6 +59,15 @@ function TransportIcon({ playing }: { playing: boolean }) {
       ) : (
         <path d="M4.5 2.5v11l9-5.5z" fill="currentColor" strokeLinejoin="round" />
       )}
+    </svg>
+  )
+}
+
+/** A filled dot: record (no red: the dot is the shape, bone like the other icons). */
+function RecordIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <circle cx="8" cy="8" r="5.5" fill="currentColor" />
     </svg>
   )
 }
@@ -144,6 +154,10 @@ export function GroovePanel() {
   const wheel = WHEELS.find((w) => w.level === wheels)!
   const look = useViewStore((s) => s.look)
   const lookChip = LOOK_CHIPS.find((l) => l.look === look)!
+  const recording = useTakesStore((s) => s.recording)
+  const replaying = useTakesStore((s) => s.replaying !== null)
+  // A take keeps one groove, key and tempo (src/analysis/take.ts), and a replay plays the take's.
+  const locked = recording || replaying
 
   return (
     <section className="card groove" aria-labelledby="groove-tab" data-testid="groove">
@@ -161,10 +175,21 @@ export function GroovePanel() {
           <TransportIcon playing={playing} />
           {playing ? 'Stop' : 'Play'}
         </button>
+        <button
+          type="button"
+          className="transport-play"
+          aria-pressed={recording}
+          disabled={!running || replaying}
+          onClick={recording ? groove.stop : takes.record}
+        >
+          <RecordIcon />
+          {recording ? 'Save take' : 'Record'}
+        </button>
         <label className="field">
           Groove
           <select
             value={grooveId}
+            disabled={locked}
             onChange={(e) => {
               groove.setGroove(e.target.value)
               blur(e)
@@ -181,6 +206,7 @@ export function GroovePanel() {
           Key
           <select
             value={tonic}
+            disabled={locked}
             onChange={(e) => {
               groove.setTonic(Number(e.target.value))
               blur(e)
@@ -201,6 +227,7 @@ export function GroovePanel() {
             max={max}
             step={1}
             value={bpm}
+            disabled={locked}
             onChange={(e) => groove.setBpm(Number(e.target.value))}
           />
           <output>{bpm} BPM</output>
@@ -278,9 +305,13 @@ export function GroovePanel() {
         {wheel.text} {wheels > 0 && lookChip.text}
       </p>
       <p className="muted small transport-note">
-        {running
-          ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
-          : 'Turn sound on to play the groove.'}
+        {recording
+          ? 'Recording: play over the groove, then Save take (or Stop) to keep it. The groove, key and tempo stay as they are until then.'
+          : replaying
+            ? 'Replaying a take over its groove, key and tempo. Stop ends it.'
+            : running
+              ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
+              : 'Turn sound on to play the groove.'}
       </p>
       <Mix />
     </section>

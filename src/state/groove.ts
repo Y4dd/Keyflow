@@ -98,12 +98,16 @@ export function shownGroove(): Groove {
 export const shownHarmony = (): HarmonyAt => harmonyAt(shownGroove(), shownTick(), get().scale)
 
 export const groove = {
-  /** Plays from the top; does nothing unless sound is running. */
-  play() {
+  /**
+   * Plays from the top; does nothing unless sound is running. Returns the audio-clock time the
+   * transport starts at (a take's origin), or null when it didn't start.
+   */
+  play(): number | null {
     const engine = audio.engine()
-    if (!engine || engine.state() !== 'running') return
-    engine.groove().play(settings(), () => set({ playing: false }))
+    if (!engine || engine.state() !== 'running') return null
+    const start = engine.groove().play(settings(), () => set({ playing: false }))
     set({ playing: true })
+    return start
   },
   stop() {
     audio.engine()?.groove().stop()

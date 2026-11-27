@@ -5,6 +5,7 @@ import { MidiPanel } from './ui/MidiPanel.tsx'
 import { PlayPanel } from './ui/PlayPanel.tsx'
 import { SetupSteps } from './ui/SetupSteps.tsx'
 import { SoundCrate, SoundStatus } from './ui/SoundPanel.tsx'
+import { TakesPanel } from './ui/TakesPanel.tsx'
 
 // A literal false in production builds, so the inspector isn't bundled there.
 const Inspector = __KEYFLOW_DEV_TOOLS__
@@ -27,6 +28,7 @@ export function App() {
       </div>
       <PlayPanel />
       <GroovePanel />
+      <TakesPanel />
       <div className="grid">
         <SoundCrate />
         <CalibrationPanel />

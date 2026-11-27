@@ -13,12 +13,13 @@ export interface SimClock {
 export interface SimPlayer {
   /**
    * Validates every event first (throws, emitting nothing, if any is invalid), then emits each
-   * at its `at` offset from now. Events at 0 are emitted before play() returns. Each event's
-   * `time` is the intended time (start + at), not when the timer happened to fire, so tests
-   * and grading see exact timing. Resolves after the last event, or when stop() is called.
+   * at its `at` offset from `start` (default now; a take replays from its transport start).
+   * Events already due are emitted before play() returns. Each event's `time` is the intended
+   * time (start + at), not when the timer happened to fire, so tests and grading see exact
+   * timing. Resolves after the last event, or when stop() is called.
    */
-  play(events: readonly SimEvent[]): Promise<void>
-  /** Cancels everything pending and releases every note and the pedal the sim is holding. */
+  play(events: readonly SimEvent[], start?: number): Promise<void>
+  /** Cancels everything pending and releases every note, the pedal and a bend the sim holds. */
   stop(): void
   /** Notes the sim is holding, ascending. */
   heldNotes(): number[]
@@ -27,25 +28,27 @@ export interface SimPlayer {
 export function createSimPlayer(clock: SimClock, emit: (event: InputEvent) => void): SimPlayer {
   const held = new Set<number>()
   let pedalDown = false
+  let bent = false
   const finishers = new Set<() => void>()
 
   function send(event: InputEvent) {
     if (event.kind === 'noteOn') held.add(event.note)
     else if (event.kind === 'noteOff') held.delete(event.note)
     else if (event.kind === 'pedal') pedalDown = event.down
+    else bent = event.semitones !== 0
     emit(event)
   }
 
   return {
-    play(events) {
-      const start = clock.now()
+    play(events, start = clock.now()) {
       // Stable sort keeps the given order for events at the same offset.
       const timed = events
         .map((e, i) => ({ event: toInputEvent(e, start), at: e.at ?? 0, i }))
         .sort((a, b) => a.at - b.at || a.i - b.i)
 
+      const delay = (at: number) => start + at - clock.now()
       let index = 0
-      while (index < timed.length && timed[index].at === 0) send(timed[index++].event)
+      while (index < timed.length && delay(timed[index].at) <= 0) send(timed[index++].event)
       if (index === timed.length) return Promise.resolve()
 
       // One timer per distinct offset; each emits its whole group in order.
@@ -69,7 +72,7 @@ export function createSimPlayer(clock: SimClock, emit: (event: InputEvent) => vo
             pending.delete(handle)
             for (const event of group) send(event)
             if (last) finish()
-          }, at)
+          }, delay(at))
           pending.add(handle)
         }
       })
@@ -82,6 +85,7 @@ export function createSimPlayer(clock: SimClock, emit: (event: InputEvent) => vo
         send({ kind: 'noteOff', note, time, source: 'sim' })
       }
       if (pedalDown) send({ kind: 'pedal', down: false, time, source: 'sim' })
+      if (bent) send({ kind: 'bend', semitones: 0, time, source: 'sim' })
     },
 
     heldNotes: () => [...held].sort((a, b) => a - b),

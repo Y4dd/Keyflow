@@ -28,8 +28,11 @@ export interface GrooveSettings {
 }
 
 export interface GroovePlayer {
-  /** Starts from the top (after a stop, if it was playing). Calls `onEnd` if it ends by itself. */
-  play(settings: GrooveSettings, onEnd: () => void): void
+  /**
+   * Starts from the top (after a stop, if it was playing). Calls `onEnd` if it ends by itself.
+   * Returns the audio-clock time (s) the transport starts at: tick 0, the count-in when on.
+   */
+  play(settings: GrooveSettings, onEnd: () => void): number
   /** Key, tempo and loop changes while playing; the count-in applies from the next play. */
   update(settings: GrooveSettings): void
   stop(): void
@@ -175,6 +178,7 @@ export function createGroovePlayer(options: {
       const start = Tone.immediate() + context.lookAhead
       transport.start(start)
       options.onStart(start)
+      return start
     },
     update(next) {
       if (settings) apply({ ...next, countIn: settings.countIn })

@@ -1,6 +1,6 @@
 import { Note } from 'tonal'
 import { describe, expect, it } from 'vitest'
-import { keyName, noteNames } from './spelling.ts'
+import { chordSymbol, keyName, noteNames } from './spelling.ts'
 
 const minor = (tonic: number) => ({ tonic, mode: 'minor' as const })
 const major = (tonic: number) => ({ tonic, mode: 'major' as const })
@@ -54,5 +54,24 @@ describe('noteNames', () => {
           const ascii = names.map((n) => n.replace('♭', 'b').replace('♯', '#'))
           expect(ascii.map((n) => Note.chroma(n))).toEqual([...Array(12).keys()])
         }
+  })
+})
+
+describe('chordSymbol', () => {
+  const names = noteNames(minor(5), 'minor pentatonic') // F minor: A♭, D♭, E♭
+  const h = (chordRoot: number, chordQuality: string) => ({
+    keyTonic: 5,
+    keyMode: 'minor' as const,
+    rn: '',
+    chordRoot,
+    chordQuality,
+    chordTones: [],
+    soloScale: [],
+  })
+  it('names the root by the key and writes the quality with real flats', () => {
+    expect(chordSymbol(h(5, 'm9'), names)).toBe('Fm9')
+    expect(chordSymbol(h(1, 'maj7'), names)).toBe('D♭maj7')
+    expect(chordSymbol(h(7, 'm7b5'), names)).toBe('Gm7♭5')
+    expect(chordSymbol(h(3, 'M'), names)).toBe('E♭')
   })
 })

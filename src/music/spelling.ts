@@ -2,7 +2,7 @@
 // everywhere else; this is the display boundary (CLAUDE.md).
 
 import { Key as TonalKey, Note, Scale } from 'tonal'
-import type { Key, ScaleId } from './harmony.ts'
+import type { HarmonyAt, Key, ScaleId } from './harmony.ts'
 
 // Each key as its key signature spells it (the fewest accidentals for the mode).
 // shortcut: fixed spellings; the flats-or-sharps question is open in the Phase 1 file.
@@ -32,3 +32,11 @@ export function noteNames(key: Key, scale: ScaleId): string[] {
     names[Note.chroma(n)!] = /bb|##/.test(n) ? Note.simplify(n) : n
   return names.map(pretty)
 }
+
+/**
+ * A chord symbol ("Fm9", "D♭maj7", "Bm7♭5") from a harmony, its root named from `names` (from
+ * noteNames). A plain major triad is the root alone.
+ */
+export const chordSymbol = (h: HarmonyAt, names: readonly string[]): string =>
+  names[h.chordRoot]! +
+  (h.chordQuality === 'M' ? '' : h.chordQuality.replaceAll('b', '♭').replaceAll('#', '♯'))

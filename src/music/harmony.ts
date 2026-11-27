@@ -13,8 +13,15 @@ export interface Key {
 }
 
 /** The solo scales a groove can offer (tonal's scale names), each rooted on the key tonic. */
-export type ScaleId =
-  'minor pentatonic' | 'minor blues' | 'dorian' | 'major pentatonic' | 'major' | 'mixolydian'
+export const SCALE_IDS = [
+  'minor pentatonic',
+  'minor blues',
+  'dorian',
+  'major pentatonic',
+  'major',
+  'mixolydian',
+] as const
+export type ScaleId = (typeof SCALE_IDS)[number]
 
 /** What's sounding at a moment in a groove (later, a song). Display strings come from tonal. */
 export interface HarmonyAt {

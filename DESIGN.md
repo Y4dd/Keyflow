@@ -292,6 +292,11 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Training wheels:** chips in the Groove card (Names, No names, Chord tones, Off), beside a Scale select that offers only the groove's own scales, with one 14px `bone-muted` line describing the chosen level and look.
 - **Redraw:** in an animation frame scheduled only after a change, never per note through React.
 
+### Takes (P1-T7)
+- **Record:** a transport button beside Play, the same size, with a filled `bone` dot (no red: the dot is the shape). While recording it reads "Save take", filled `bone` like Play's Stop, and the Groove, Key and Tempo controls dim to 45% (locked for the take, and during a replay).
+- **Takes card:** full width under the Groove card, its tab noting how many takes. Empty, one 16px `bone-muted` line says how to record. Otherwise a list of takes (visible native radios, groove name in 650 over a 14px `bone-muted` line of key, tempo, length and when, tabular figures) beside the chosen take's piano roll, then Replay (pressed: "Stop replay") and Export .mid as outlined pills. The chosen take sits on `card-raised` with a 2px inset `bone` outline; keyboard focus draws it in `now`.
+- **Piano roll (canvas):** 260px tall in a `well` like the keyboard. Rows follow the keys turned on their side (`bin` for white keys, `well` for black), a `rule` hairline under each C named in the gutter (11px `bone-muted`). Along the top a 24px strip of chord symbols (13px bold `bone`) on alternating `card` and `card-raised`, a `rule` line down at each chord change, and "Count-in" over the count-in bar. Notes are 2px-rounded bars: chord tones `bone`, scale tones `bone-muted`, others `line` (dimmed, never red), 55% to full opacity by velocity. Drawn on a take change or a resize only.
+
 ## Do's and Don'ts
 
 ### Do:

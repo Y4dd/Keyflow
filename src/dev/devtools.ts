@@ -1,7 +1,7 @@
 // Dev-only: loaded only when __KEYFLOW_DEV_TOOLS__ is true (dev server, Playwright build).
 // The production build doesn't contain this module; CI checks for "__keyflow" in dist.
 
-import { inputBus } from '../input/bus.ts'
+import { inputBus, type InputListener } from '../input/bus.ts'
 import { fixtureToSimEvents, parseFixture } from '../input/sim/fixture.ts'
 import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
@@ -36,6 +36,8 @@ export interface KeyflowDevApi {
   /** Cancels pending sim events and releases what the sim holds. */
   stop(): void
   heldNotes(): number[]
+  /** Hears every input event, replayed takes included (P1-T7); returns an unsubscribe. */
+  subscribe(listener: InputListener): () => void
   chord: typeof chord
   sequence: typeof sequence
   audio: {
@@ -109,6 +111,7 @@ export function installDevTools() {
     replay: (fixture) => simPlayer.play(fixtureToSimEvents(parseFixture(fixture))),
     stop: () => simPlayer.stop(),
     heldNotes: () => simPlayer.heldNotes(),
+    subscribe: inputBus.subscribe,
     chord,
     sequence,
     audio: {
