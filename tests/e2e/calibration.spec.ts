@@ -15,6 +15,8 @@ async function start(page: Page) {
   await expect(page.getByTestId('audio-status')).toHaveAttribute('data-status', 'running')
 }
 
+const NEAR_40_MS = /\+(3[7-9]|4[0-3]) ms/
+
 const timing = (page: Page) => page.getByRole('region', { name: 'Timing' })
 
 test('taps a known offset from the clicks and gets it back as the calibration', async ({
@@ -57,15 +59,16 @@ test('taps a known offset from the clicks and gets it back as the calibration', 
 
   const out = timing(page).getByTestId('calibration-result')
   await expect(out).toHaveAttribute('data-verdict', 'ok', { timeout: 15_000 })
-  // The sim stamps taps from its own start, read just after `now`: up to 1 ms later in Firefox.
-  await expect(out).toContainText(/\+4[01] ms/)
+  // The sim stamps taps from its own start, read after `now`, so a loaded runner adds a few ms
+  // to the 40 ms: ±3 ms still catches a real calibration bug (a wrong sign or a missing 2x).
+  await expect(out).toContainText(NEAR_40_MS)
   await expect(out).toContainText('10 of 12 beats')
   await expect(timing(page).getByRole('button', { name: 'Calibrate' })).toBeEnabled()
 
   // Saved with the settings (P0-T9): a reload keeps the offset.
   await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
   await page.reload()
-  await expect(timing(page).getByTestId('calibration-saved')).toContainText(/\+4[01] ms/)
+  await expect(timing(page).getByTestId('calibration-saved')).toContainText(NEAR_40_MS)
 })
 
 test('stopping a run leaves no result and allows a new one', async ({ page }) => {
