@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const PORT = 4173
+// One port per checkout, so task sessions running e2e in parallel worktrees never reuse each
+// other's server (reuseExistingServer would silently test the other build).
+// shortcut: two folders can hash to the same port (about 1 in 1000); give them different paths then.
+const PORT =
+  4173 + ([...process.cwd()].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 0) % 1000)
 
 // Both browsers are supported (see PLAN.md), so e2e runs in Chromium and Firefox.
 export default defineConfig({
