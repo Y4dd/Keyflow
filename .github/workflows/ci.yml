@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+    # Doc-only pushes (plan, phase files, manual-test scripts) change nothing the site serves or the checks
+    # read, and Prettier ignores Markdown. shortcut: a doc that code imports would need its path dropped here.
+    paths-ignore: ['docs/**', '*.md']
   pull_request:
   workflow_dispatch:
 

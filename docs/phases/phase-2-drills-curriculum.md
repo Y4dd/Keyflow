@@ -16,12 +16,18 @@ Comping and voicing drills in time (Phase 3), ear training (Phase 4), licks (Pha
 
 ## Tasks
 
+Each task names the tasks it needs. Tasks whose dependencies are done can run at the same time (see "Parallel tasks" in `CLAUDE.md`): first P2-T1 and P2-T2, then P2-T3, P2-T5 and P2-T8, then P2-T4 and P2-T7, then P2-T6.
+
 ### P2-T1: Item model and FSRS
+**Depends on:** none. Adds the Dexie schema version for this phase; no other Phase 2 task changes the schema.
+
 - Item IDs as defined in `learning-design.md`. Each item stores its FSRS card state (`ts-fsrs`) and creation and unlock dates.
 - Dexie tables `items` and `reviewLogs`. Every attempt is logged: item, rating, response time, hint level, wrong notes.
 - **Automated:** rating → schedule round trip; persistence survives reload.
 
 ### P2-T2: Chord and scale recognition from input
+**Depends on:** none.
+
 - From held notes (sustain counted when the pedal is in Sustain mode), produce the set of pitch classes being played, then check it against the target:
   - triad or chord match by pitch-class set, octave-agnostic by default
   - optional strict modes: exact inversion (lowest note), exact register
@@ -30,6 +36,8 @@ Comping and voicing drills in time (Phase 3), ear training (Phase 4), licks (Pha
 - **Automated:** table-driven tests covering every triad quality and inversion in all 12 keys, plus extra-note and missing-note cases.
 
 ### P2-T3: Drill types
+**Depends on:** P2-T2.
+
 | Drill | Prompt | Correct when |
 |---|---|---|
 | Find the note | "F♯" | Any F♯ pressed |
@@ -42,12 +50,16 @@ Comping and voicing drills in time (Phase 3), ear training (Phase 4), licks (Pha
 - **Automated:** each drill type end-to-end through the simulated source (Playwright).
 
 ### P2-T4: Grading and hint ladder
+**Depends on:** P2-T1, P2-T3.
+
 - Implement the rating table and the hint ladder from `learning-design.md`. The delay before the first hint scales with FSRS stability.
 - Target times live in config.
 - **Automated:** grading unit tests; the hint delay increases with stability.
 - **Manual:** hints feel helpful, not naggy.
 
 ### P2-T5: Curriculum graph
+**Depends on:** P2-T1.
+
 Tracks, each a sequence of units with prerequisites. Starting version, open to change:
 
 1. **Geography:** white keys, then black keys with sharp and flat names.
@@ -61,16 +73,22 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - **Automated:** graph validation (no cycles, every prerequisite exists).
 
 ### P2-T6: Session builder
+**Depends on:** P2-T1, P2-T3, P2-T5.
+
 - **Core session (about 5 min):** due items first, **interleaved** (no item twice in a row; mixed types and keys), then new items.
 - **Apply:** after the core, offer "jam with what you practiced", e.g. load a groove with today's scale selected.
 - Adaptive difficulty: if the rolling success rate is above about 90%, add new items or strict modes; below about 70%, slow down new items. Both thresholds are config.
 - **Automated:** session composition tests (interleaving, due-first, new-item cap).
 
 ### P2-T7: Progress view
+**Depends on:** P2-T1, P2-T5.
+
 - Heatmap of keys × chord or scale types, colored by FSRS stability, showing what you know cold, what's shaky and what's new.
 - Streak and consistency shown gently (see the feedback tone in `learning-design.md`).
 
 ### P2-T8: Data export and import
+**Depends on:** P2-T1.
+
 - Export all user data (settings, items, logs, takes) as a single JSON file. Import with a schema-version check.
 - **Automated:** export → wipe → import round trip.
 
