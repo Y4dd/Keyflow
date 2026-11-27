@@ -56,7 +56,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 | # | Phase | Status | File |
 |---|---|---|---|
 | 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
-| 1 | Jam mode: grooves, highlighting, record and replay | In progress (P1-T0 to P1-T4b done; P1-T5 to P1-T7 built, manual checks pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
+| 1 | Jam mode: grooves, highlighting, record and replay | In progress (P1-T0 to P1-T7 done; P1-T8 next) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
 | 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
@@ -73,9 +73,6 @@ Checks only the user can do (hands, ears, the real YPT-380). Work carries on pas
 
 | Task | Must-pass steps | Taste steps | Blocks | Browsers | Minutes |
 |---|---|---|---|---|---|
-| [P1-T5](docs/manual-tests/P1-T5.md) | 1, 2 | 3, 4 | none | Chrome | 6 |
-| [P1-T6](docs/manual-tests/P1-T6.md) | 1, 2, 3 | 4 | none | Chrome | 5 |
-| [P1-T7](docs/manual-tests/P1-T7.md) | 1, 2, 3 | 4, 5 | none | Chrome, Firefox | 7 |
 
 ---
 
@@ -137,6 +134,8 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-26: **P1-T3c: Neo-soul drift replaces Boogie** (the user's pick). F minor, 80 BPM, swing 0.5, i9–iv9–bVImaj7–bVII9. The Groove menu is now Electro-funk vamp, Soul groove, Slow jam and Neo-soul drift. The other candidates are removed. R&B bounce's `maj9` chord-scale entry went with it, so add it back when a groove uses Imaj9.
 - 2026-11-26: **P1-T6 mixer.** A **Mix** section at the bottom of the Groove card (not a new card, so the crate's layout stays), built from the knob rows: a level (−24 to +6 dB, default 0) and a Mute box for Drums, Bass, Chords and Your synth (both zones), with the bass and chords sliders in Round Bass and EP Keys colours. **You play bass** mutes the groove bass **only while the split is on**: the split is on by default with Round Bass in the left hand, so it defaults off, and turning the split off brings the groove bass back without unticking it. Muting the drums keeps the **count-in click**, which goes to the groove level past the drums bus. Levels ramp over 20 ms so a mute doesn't click. The mixer is **saved** as a settings row like the knobs (no schema change). The groove's fixed −3 dB stays under the channel levels.
 - 2026-11-26: **P1-T7 takes.** "Transport positions" are stored as **ms from the transport's start as heard** (each event's input `time` minus the transport start mapped with `contextToPerfMs`, the calibration mapping), on a 0.001 ms grid, so replaying through the simulated source and recording again gives identical events; the tick is `tickAt(take, at)` from the take's tempo. That holds because **the Groove, Key and Tempo controls are locked while recording** (and while replaying); the scale isn't (it only changes highlighting, and the take keeps the one it started with). Each take also stores the calibration offset in use with the clock lead it was measured under, and the clock's output-timestamp lead when recorded, so P1-T8's strong-beat stat needs no migration. In e2e (headless, this laptop) a take's notes land 43 to 66 ms before the audio clock's tick in both browsers: Chromium reports that gap as the clock's lead, Firefox reports no lead yet shows the same gap; whether real Firefox playing lines up is the manual check's step 3. **Record** plays the groove from the top (count-in included) and the take ends when the groove stops, however it stops; a take with no events isn't saved. **Replay** takes over the Groove card (it picks the take's groove, key, tempo, scale and count-in, and turns Loop on until it ends, then puts it back; stopping it releases the take's notes, pedal and bend) and plays the take through **the sounds, split, pedal mode and bend amount set now**, not the ones recorded with; its events fire on window timers, so the replay-timing manual check listens for jitter. The **.mid export** holds the keys pressed (zone octave shifts aren't applied), notes only (no pedal or bends, since the take doesn't record the pedal mode), with time 0 at the take's start, so with a count-in the file's first bar is the count-in and a pickup keeps its place. Takes are a new Dexie **version 2** table (`takes`, auto-increment id); version 1's settings carry over untouched (e2e checks the upgrade). A key pressed twice before its release (the YPT-380 can send one key on two channels) is recorded as one press and one release, as the zone router hears it. A take is saved only when the groove stops, so a reload mid-take loses it. The list shows the latest 20 and has no delete yet. If a take can't be saved it stays in the list for the visit, with a hint to export it.
+
+- 2026-11-26: **Manual checks: P1-T5, P1-T6 and P1-T7 pass.** Taste: the default bend amount becomes **To next scale tone** (was 2 semitones), and the 3-semitone bends stay. The mixer's default balance and the piano roll stay as built. Replay timing sits on the groove in Firefox too. The .mid export wasn't opened in another program, since there was no MIDI player on hand.
 
 ---
 
