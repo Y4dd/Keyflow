@@ -7,6 +7,8 @@ import { createSimPlayer } from '../input/sim/player.ts'
 import { chord, sequence, type SimEvent } from '../input/sim/script.ts'
 import { audio } from '../state/audio.ts'
 import { calibration } from '../state/calibration.ts'
+import { drills } from '../state/drills.ts'
+import { drillOf, type DrillOptions } from '../practice/drills.ts'
 import { shownHarmony, useGrooveStore } from '../state/groove.ts'
 import { flushSettings } from '../state/settings.ts'
 import { tierOf, type Tier } from '../music/highlight.ts'
@@ -55,6 +57,8 @@ export interface KeyflowDevApi {
     /** Each mixer channel's bus gain once its ramp is done (P1-T6); null before audio. */
     mixGains(): Record<Channel, number> | null
   }
+  /** Opens a drill for an item ID (P2-T3), timed from now. */
+  drill(item: string, opts?: DrillOptions): void
   groove: {
     /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
     ticks(): number | null
@@ -129,6 +133,7 @@ export function installDevTools() {
       bendScale: () => audio.engine()?.bendScale() ?? null,
       mixGains: () => audio.engine()?.mixGains() ?? null,
     },
+    drill: (item, opts) => drills.start(drillOf(item, opts)),
     groove: {
       ticks: () => audio.engine()?.groove().ticks() ?? null,
       heldCount: () => audio.engine()?.groove().heldCount() ?? 0,

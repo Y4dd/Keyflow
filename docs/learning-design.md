@@ -39,6 +39,7 @@ Examples:
 - `chord:E:min:inv1`: E minor triad, 1st inversion
 - `chord:F:m7:any`: Fm7, any voicing
 - `scale:A:minPent:asc1`: A minor pentatonic, ascending one octave
+- `rn:G:major:vi`: the vi chord in G (chord in key; a minor key writes `rn:A:minor:bVII`)
 - `prog:ii-V-I:Bb`: ii–V–I in B♭
 - `ear:degree:5`: hear scale degree 5 in a key
 - `lick:<lickId>:<key>`: an original lick in a key (Phase 6)

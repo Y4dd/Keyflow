@@ -5,6 +5,7 @@ import { KEY_OFFSETS } from '../input/computer/keyboard.ts'
 import { harmonyAt, stepIndexAt } from '../grooves/groove.ts'
 import { noteNames } from '../music/spelling.ts'
 import { useAudioStore } from '../state/audio.ts'
+import { useDrillStore } from '../state/drills.ts'
 import { shownGroove, shownTick, useGrooveStore } from '../state/groove.ts'
 import { laptopBend, pointerPiano } from '../state/input.ts'
 import { useViewStore } from '../state/view.ts'
@@ -58,7 +59,9 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
         names = noteNames(key, scale)
         namesFor = `${tonic} ${key.mode} ${scale}`
       }
-      const jam = { harmony: harmonyAt(g, tick, scale), wheels, names, look }
+      // highlighting would give drill answers away, so it is off while a drill is open
+      const shown = useDrillStore.getState().drill ? 0 : wheels
+      const jam = { harmony: harmonyAt(g, tick, scale), wheels: shown, names, look }
       drawKeyboard(ctx, { ...size, keys: keysRef.current, held, layout, letters, jam })
     }
     const redraw = () => {
@@ -106,12 +109,16 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
       if (s.playing && watch === 0) watch = requestAnimationFrame(follow)
     })
     const unsubscribeView = useViewStore.subscribe(redraw)
+    const unsubscribeDrill = useDrillStore.subscribe((s, prev) => {
+      if (!s.drill !== !prev.drill) redraw()
+    })
     const detachWheel = attachWheelBend(laptopBend, container) // scroll over the keys to bend
     return () => {
       unsubscribe()
       unsubscribeLayout()
       unsubscribeGroove()
       unsubscribeView()
+      unsubscribeDrill()
       observer.disconnect()
       detachWheel()
       cancelAnimationFrame(frame)

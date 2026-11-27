@@ -298,6 +298,12 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Piano roll (canvas):** 260px tall in a `well` like the keyboard. Rows follow the keys turned on their side (`bin` for white keys, `well` for black), a `rule` hairline under each C named in the gutter (11px `bone-muted`). Along the top a 24px strip of chord symbols (13px bold `bone`) on alternating `card` and `card-raised`, a `rule` line down at each chord change, and "Count-in" over the count-in bar. Notes are 2px-rounded bars: chord tones `bone`, scale tones `bone-muted`, others `line` (dimmed, never red), 55% to full opacity by velocity. Drawn on a take change or a resize only.
 - **Take stats (P1-T8):** under the roll, label-over-value pairs in a wrapping row (14px `bone-muted` label over a 16px 650 `bone` value, tabular figures, 32px apart): Notes, Range, In the scale, Chord tones on 1 and 3, Longest rest. No big numbers, no score and no colour for good or bad. Under them, the one suggestion as a plain 16px `bone` sentence (not a yellow hint: it isn't a setup step).
 
+### Drills (P2-T3)
+- **Drills card:** full width under the Play card, so the prompt sits next to the keys. It holds chips for the five drill types. With none chosen, one 14px `bone-muted` line explains them.
+- **Prompt:** the largest DOM text (650, 40px, 32px under 720px, balanced, 30ch), in the body face, because it is read from the stand. A formula line (18px `bone`) sits under it for Build it.
+- **Result line:** always one line high (18px), so nothing shifts while you play. A wrong try shows one `bone-muted` sentence ("You played G6."). A right answer shows a 30px sticker ringed in `bone` with the drawn check, then "**Right**, in 1.4 s". There is no red and no score, and yellow and green keep their setup jobs.
+- **Actions:** Skip, which reads Next once the answer is right, and Close drills, both outlined pills.
+
 ## Do's and Don'ts
 
 ### Do:

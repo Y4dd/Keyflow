@@ -36,7 +36,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - **Automated:** table-driven tests covering every triad quality and inversion in all 12 keys, plus extra-note and missing-note cases.
 - **Built:** 2026-11-27, `src/analysis/recognize.ts` (see "Recognition (P2-T2)" in `docs/architecture.md`). The table covers triads, sus2/sus4, aug, dim and four 7th qualities, every inversion, 12 roots, in all three chord modes. Scale drills take MIDI targets and compare in any octave by default; timing is per gap, with the tolerance in `SCALE_TIMING`.
 
-### P2-T3: Drill types
+### P2-T3: Drill types [done 2026-11-27]
 **Depends on:** P2-T2. **Model:** Opus.
 
 | Drill | Prompt | Correct when |
@@ -49,6 +49,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 
 - Prompts show **names and Roman numerals only**, never notation.
 - **Automated:** each drill type end-to-end through the simulated source (Playwright).
+- **Built:** 2026-11-27. The drills live in `src/practice/drills.ts` and the card in `src/ui/DrillPanel.tsx` (see "Drills (P2-T3)" in `docs/architecture.md`). Chord in key uses the new item type `rn:<key>:<major|minor>:<numeral>`. Build it shows the formula under the prompt from the start. Scale drills pick 70 BPM, with no click track. Drills are picked at random until P2-T6. The keyboard's highlighting is off while a drill is open. Each attempt reports its time, wrong notes and one feedback line for P2-T4. The e2e spec is `tests/e2e/drills.spec.ts`. There is no manual check, since every drill is driven by the simulated source.
 
 ### P2-T4: Grading and hint ladder
 **Depends on:** P2-T1, P2-T3. **Model:** Opus.

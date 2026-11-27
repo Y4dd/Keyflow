@@ -900,3 +900,49 @@ input[type='range']:disabled {
     outline: 3px solid Highlight;
   }
 }
+
+/* Drills (P2-T3): the prompt is the one thing read from the stand, so it is the largest DOM text. */
+
+.drill-empty {
+  margin-top: 16px;
+  min-height: 0;
+  max-width: 80ch;
+}
+
+.drill {
+  margin-top: 24px;
+}
+
+.drill-prompt {
+  max-width: 30ch;
+  font-size: 40px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.drill-detail {
+  margin-top: 8px;
+  font-size: 18px;
+}
+
+/* One line high whether empty, feedback or done, so nothing shifts while you play. */
+.drill-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  margin-top: 16px;
+  font-size: 18px;
+}
+
+.drill-check {
+  border: 2px solid var(--bone);
+  color: var(--bone);
+}
+
+@media (max-width: 720px) {
+  .drill-prompt {
+    font-size: 32px;
+  }
+}
