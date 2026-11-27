@@ -695,6 +695,26 @@ kbd {
   margin-top: 16px;
 }
 
+/* Mix (P1-T6): the knob rows plus a mute per row, kept to a readable width in the wide card. */
+
+.mix {
+  margin-top: 32px;
+  max-width: 720px;
+}
+
+.mix-label {
+  font-weight: 650;
+}
+
+.mix-rows {
+  grid-template-columns: max-content minmax(0, 1fr) 4.5em max-content;
+  margin-top: 12px;
+}
+
+.mix-bass {
+  margin-top: 16px;
+}
+
 .knob-chips {
   grid-column: span 2;
 }

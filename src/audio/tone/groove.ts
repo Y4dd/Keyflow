@@ -41,7 +41,10 @@ export interface GroovePlayer {
 export function createGroovePlayer(options: {
   bass: Instrument
   chords: Instrument
+  /** Where the drums go. */
   destination: Tone.InputNode
+  /** Where the count-in click goes; the drums' destination when unset. */
+  click?: Tone.InputNode
   /** The transport starts at `time`: line tempo-synced LFOs up with it. */
   onStart(time: number): void
 }): GroovePlayer {
@@ -50,7 +53,7 @@ export function createGroovePlayer(options: {
   if (transport.PPQ !== PPQ) throw new Error(`Transport PPQ is ${transport.PPQ}, not ${PPQ}`)
   transport.swing = 0 // swing is in the schedule (stepTick)
   const context = Tone.getContext()
-  const drums = createDrumKit(options.destination)
+  const drums = createDrumKit(options.destination, options.click)
   const parts = { bass: options.bass, chords: options.chords }
   // The pitch each sounding note started at, by event id, so its off ends that pitch even after
   // a key change.

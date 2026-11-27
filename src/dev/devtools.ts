@@ -16,6 +16,7 @@ import { useViewStore } from '../state/view.ts'
 import type { ExpressionTargets } from '../audio/expression.ts'
 import type { LatencyReadout } from '../audio/latency.ts'
 import type { ZoneId } from '../audio/zones.ts'
+import type { Channel } from '../audio/mixer.ts'
 import type { GrooveRenderSpec, RenderResult, RenderSpec } from './render.ts'
 
 export const simPlayer = createSimPlayer(
@@ -49,6 +50,8 @@ export interface KeyflowDevApi {
     expression(): ExpressionTargets | null
     /** Pitch classes the main sound's bends count steps of; null in semitones or before audio. */
     bendScale(): readonly number[] | null
+    /** Each mixer channel's bus gain once its ramp is done (P1-T6); null before audio. */
+    mixGains(): Record<Channel, number> | null
   }
   groove: {
     /** Groove ticks at the audio clock now (negative in the count-in); null when stopped. */
@@ -121,6 +124,7 @@ export function installDevTools() {
       latency: () => audio.engine()?.latency() ?? null,
       expression: () => audio.engine()?.expression() ?? null,
       bendScale: () => audio.engine()?.bendScale() ?? null,
+      mixGains: () => audio.engine()?.mixGains() ?? null,
     },
     groove: {
       ticks: () => audio.engine()?.groove().ticks() ?? null,

@@ -19,6 +19,13 @@ import {
   type KeyboardLayout,
   type ZoneId,
 } from '../audio/zones.ts'
+import {
+  clampLevel,
+  DEFAULT_MIXER,
+  type Channel,
+  type ChannelLevel,
+  type MixerSettings,
+} from '../audio/mixer.ts'
 import type { InputEvent } from '../input/types.ts'
 
 export type AudioStatus = 'off' | 'starting' | 'running' | 'suspended' | 'failed' | 'unsupported'
@@ -32,6 +39,8 @@ export interface AudioState {
   knobs: Record<PresetId, KnobValues>
   /** Pedal mode and bend settings. */
   expression: ExpressionSettings
+  /** Levels and mutes for the groove's parts and your synth (P1-T6). */
+  mixer: MixerSettings
   /** A note arrived while audio was off: tell the user to click. */
   notesWaiting: boolean
   latency: LatencyReadout | null
@@ -41,7 +50,10 @@ export interface AudioState {
 }
 
 /** What saved settings restore (src/state/settings.ts). */
-export type RestoredSound = Pick<AudioState, 'layout' | 'knobs' | 'expression' | 'startedBefore'>
+export type RestoredSound = Pick<
+  AudioState,
+  'layout' | 'knobs' | 'expression' | 'mixer' | 'startedBefore'
+>
 
 const hasWebAudio = () =>
   typeof window !== 'undefined' &&
@@ -58,6 +70,7 @@ export const useAudioStore = create<AudioState>(() => ({
     KnobValues
   >,
   expression: DEFAULT_EXPRESSION,
+  mixer: DEFAULT_MIXER,
   notesWaiting: false,
   latency: null,
   latencyHint: null,
@@ -123,8 +136,8 @@ export const audio = {
     set({ status: 'starting', error: null })
     loading = import('../audio/tone/engine.ts')
       .then(({ createEngine }) => {
-        const { layout, knobs, expression } = get()
-        engine = createEngine({ layout, knobs, expression, onStateChange: onContextState })
+        const { layout, knobs, expression, mixer } = get()
+        engine = createEngine({ layout, knobs, expression, mixer, onStateChange: onContextState })
         loading = null
         onContextState(engine.state())
       })
@@ -194,12 +207,27 @@ export const audio = {
     engine?.setExpression(expression)
   },
 
+  setChannel(channel: Channel, patch: Partial<ChannelLevel>) {
+    const { mixer } = get()
+    const next = { ...mixer.channels[channel], ...patch }
+    setMixer({
+      ...mixer,
+      channels: { ...mixer.channels, [channel]: { ...next, db: clampLevel(next.db) } },
+    })
+  },
+
+  /** Mutes the groove bass while the split is on. */
+  setYouPlayBass(youPlayBass: boolean) {
+    setMixer({ ...get().mixer, youPlayBass })
+  },
+
   /** Applies saved settings, to the engine too if sound already started. */
   restore(saved: RestoredSound) {
     set(saved)
     if (!engine) return
     engine.setLayout(saved.layout)
     engine.setExpression(saved.expression)
+    engine.setMixer(saved.mixer)
     for (const [presetId, values] of Object.entries(saved.knobs)) {
       for (const [id, value] of Object.entries(values))
         engine.setKnob(presetId as PresetId, id, value)
@@ -210,6 +238,11 @@ export const audio = {
 
   /** Dev tools only. */
   engine: () => engine,
+}
+
+function setMixer(mixer: MixerSettings) {
+  set({ mixer })
+  engine?.setMixer(mixer)
 }
 
 function setLayout(layout: KeyboardLayout) {

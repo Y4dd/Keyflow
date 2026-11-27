@@ -56,7 +56,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 | # | Phase | Status | File |
 |---|---|---|---|
 | 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
-| 1 | Jam mode: grooves, highlighting, record and replay | In progress (P1-T0 to P1-T4b done; P1-T5 built, manual check pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
+| 1 | Jam mode: grooves, highlighting, record and replay | In progress (P1-T0 to P1-T4b done; P1-T5 and P1-T6 built, manual checks pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
 | 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
 | 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
@@ -74,6 +74,7 @@ Checks only the user can do (hands, ears, the real YPT-380). Work carries on pas
 | Task | Must-pass steps | Taste steps | Blocks | Browsers | Minutes |
 |---|---|---|---|---|---|
 | [P1-T5](docs/manual-tests/P1-T5.md) | 1, 2 | 3, 4 | none | Chrome | 6 |
+| [P1-T6](docs/manual-tests/P1-T6.md) | 1, 2, 3 | 4 | none | Chrome | 5 |
 
 ---
 
@@ -133,6 +134,7 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.`
 - 2026-11-26: **Manual checks: P1-T3, P1-T3b and P1-T4b pass.** The Electro-funk vamp, Soul groove and Slow jam are kept; **Boogie is replaced** (the user: "horrible, replace it with something funky"), as new task **P1-T3c**: 2 or 3 original funk candidates auditioned by the user, the pick taking Boogie's place in the menu. Warm Tines is kept as built. Tags stays the default highlighting look (taste, already the default).
 - 2026-11-26: **P1-T3c candidates are R&B, soul R&B or neo-soul, not funk** (the user's answer to the first audition). The first round (Ghost-note pocket, Slap and pop, Dominant strut) was turned down, and the second round is Neo-soul drift (F minor, 80), R&B bounce (A♭ major, 96) and Sunday shuffle (B♭ major, 88). The bass chord-scale table gains `maj9` (major) for Imaj9.
 - 2026-11-26: **P1-T3c: Neo-soul drift replaces Boogie** (the user's pick). F minor, 80 BPM, swing 0.5, i9–iv9–bVImaj7–bVII9. The Groove menu is now Electro-funk vamp, Soul groove, Slow jam and Neo-soul drift. The other candidates are removed. R&B bounce's `maj9` chord-scale entry went with it, so add it back when a groove uses Imaj9.
+- 2026-11-26: **P1-T6 mixer.** A **Mix** section at the bottom of the Groove card (not a new card, so the crate's layout stays), built from the knob rows: a level (−24 to +6 dB, default 0) and a Mute box for Drums, Bass, Chords and Your synth (both zones), with the bass and chords sliders in Round Bass and EP Keys colours. **You play bass** mutes the groove bass **only while the split is on**: the split is on by default with Round Bass in the left hand, so it defaults off, and turning the split off brings the groove bass back without unticking it. Muting the drums keeps the **count-in click**, which goes to the groove level past the drums bus. Levels ramp over 20 ms so a mute doesn't click. The mixer is **saved** as a settings row like the knobs (no schema change). The groove's fixed −3 dB stays under the channel levels.
 ---
 
 ## Open questions

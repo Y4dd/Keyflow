@@ -1,5 +1,7 @@
-import type { ChangeEvent } from 'react'
-import { useAudioStore } from '../state/audio.ts'
+import { Fragment, type ChangeEvent } from 'react'
+import { MAX_LEVEL_DB, MIN_LEVEL_DB, type Channel } from '../audio/mixer.ts'
+import type { PresetId } from '../audio/presets/types.ts'
+import { audio, useAudioStore } from '../state/audio.ts'
 import { GROOVES } from '../grooves/library.ts'
 import type { ScaleId } from '../music/harmony.ts'
 import type { Wheels } from '../music/highlight.ts'
@@ -57,6 +59,79 @@ function TransportIcon({ playing }: { playing: boolean }) {
         <path d="M4.5 2.5v11l9-5.5z" fill="currentColor" strokeLinejoin="round" />
       )}
     </svg>
+  )
+}
+
+// The groove's bass and chords keep their sounds' colours on their sliders (One Colour Per Sound),
+// Round Bass (GROOVE_BASS) and EP Keys, as the transport note names them.
+const MIX_ROWS: { channel: Channel; label: string; sound?: PresetId }[] = [
+  { channel: 'drums', label: 'Drums' },
+  { channel: 'bass', label: 'Bass', sound: 'round-bass' },
+  { channel: 'chords', label: 'Chords', sound: 'ep-keys' },
+  { channel: 'you', label: 'Your synth' },
+]
+
+const signedDb = (db: number) => `${db > 0 ? '+' : db < 0 ? '−' : ''}${Math.abs(db)} dB`
+
+/** Levels and mutes for the groove's parts and your synth, and "you play bass" (P1-T6). */
+function Mix() {
+  const { channels, youPlayBass } = useAudioStore((s) => s.mixer)
+  const split = useAudioStore((s) => s.layout.split)
+  const bassYours = youPlayBass && split
+  return (
+    <div className="mix" role="group" aria-labelledby="mix-label">
+      <span id="mix-label" className="mix-label">
+        Mix
+      </span>
+      <div className="knobs mix-rows">
+        {MIX_ROWS.map(({ channel, label, sound }) => {
+          const { db, muted } = channels[channel]
+          const silent = muted || (channel === 'bass' && bassYours)
+          return (
+            <Fragment key={channel}>
+              <label className="knob" data-sound={sound}>
+                <span>{label}</span>
+                <input
+                  type="range"
+                  min={MIN_LEVEL_DB}
+                  max={MAX_LEVEL_DB}
+                  step={1}
+                  value={db}
+                  onChange={(e) => audio.setChannel(channel, { db: Number(e.target.value) })}
+                />
+                <output className={silent ? 'muted' : undefined}>
+                  {silent ? (muted ? 'Muted' : 'Yours') : signedDb(db)}
+                </output>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  aria-label={`Mute ${label.toLowerCase()}`}
+                  checked={muted}
+                  onChange={(e) => audio.setChannel(channel, { muted: e.target.checked })}
+                />
+                Mute
+              </label>
+            </Fragment>
+          )
+        })}
+      </div>
+      <label className="check mix-bass">
+        <input
+          type="checkbox"
+          checked={youPlayBass}
+          onChange={(e) => audio.setYouPlayBass(e.target.checked)}
+        />
+        <span>
+          You play bass{' '}
+          <span className="muted small">
+            {split
+              ? '(mutes the groove’s bass while the split is on, so your left hand is the bass)'
+              : '(mutes the groove’s bass once you turn on Split in the Play card)'}
+          </span>
+        </span>
+      </label>
+    </div>
   )
 }
 
@@ -207,6 +282,7 @@ export function GroovePanel() {
           ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
           : 'Turn sound on to play the groove.'}
       </p>
+      <Mix />
     </section>
   )
 }

@@ -11,7 +11,11 @@ export interface DrumKit {
   click(accent: boolean, time: number): void
 }
 
-export function createDrumKit(destination: Tone.InputNode): DrumKit {
+/** `clickDestination` takes the count-in click, so it can stay when the drums are muted. */
+export function createDrumKit(
+  destination: Tone.InputNode,
+  clickDestination: Tone.InputNode = destination,
+): DrumKit {
   // Its own context: inside an offline render the global one is the live context again.
   const context = Tone.getContext()
   const membrane = (
@@ -70,7 +74,7 @@ export function createDrumKit(destination: Tone.InputNode): DrumKit {
     oscillator: { type: 'sine' },
     envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 },
     volume: -10,
-  }).connect(destination)
+  }).connect(clickDestination)
 
   return {
     hit: (voice, velocity, time) => at(voice, time, (t) => voices[voice](velocity, t)),

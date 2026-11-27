@@ -269,6 +269,7 @@ Ordinary native buttons, outlined pills.
 - **Select:** `card-raised` fill, 1px `line` border, 6px corners, 6px 10px.
 - **Checkbox and radio:** native, 18px, tinted by `accent-color: bone`.
 - **Range (knobs):** native, full width, accent in the card's sound colour (`bone-muted` outside a sound). Knobs lay out as label, slider, right-aligned tabular value.
+- **Mix rows (Groove card, P1-T6):** the knob layout plus a Mute checkbox per row, at most 720px wide under a 650-weight "Mix" label. The groove bass and chords rows take Round Bass and EP Keys colours; Drums and Your synth stay `bone-muted`. A silent row says "Muted" (or "Yours" when you play bass) in `bone-muted` in place of its level.
 - **Hint:** a `now`-edged box (55% yellow border, 10% yellow tint over `card`) holding one next step; used for problems as well as guidance.
 
 ### Navigation (setup steps)

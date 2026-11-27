@@ -21,6 +21,15 @@ const CHANGED: Settings = {
     'ep-keys': { brightness: 0.2 },
   },
   expression: { pedalMode: 'bend', bendSemitones: 1, bendTimeMs: 250 },
+  mixer: {
+    channels: {
+      drums: { db: -6, muted: false },
+      bass: { db: 0, muted: true },
+      chords: { db: 3, muted: false },
+      you: { db: -12, muted: false },
+    },
+    youPlayBass: true,
+  },
   invertPedal: true,
   bendKey: null,
   deviceId: 'input-1',
@@ -89,6 +98,10 @@ describe('parseSettings', () => {
       },
       knobs: { 'funk-lead': { cutoff: 1e9, glide: 0.1, extra: 3 }, 'ep-keys': 'x' },
       expression: { pedalMode: 'wah', bendSemitones: 3, bendTimeMs: 9999 },
+      mixer: {
+        channels: { drums: { db: -99, muted: 'x' }, bass: 'loud', you: { db: 2 } },
+        youPlayBass: 1,
+      },
       invertPedal: 1,
       bendKey: 'KeyQ',
       deviceId: 42,
@@ -105,6 +118,15 @@ describe('parseSettings', () => {
     expect(s.knobs['funk-lead']).toEqual({ cutoff: 6000, glide: 0.1 })
     expect(s.knobs['ep-keys']).toEqual(DEFAULT_SETTINGS.knobs['ep-keys'])
     expect(s.expression).toEqual({ pedalMode: 'sustain', bendSemitones: 2, bendTimeMs: 400 })
+    expect(s.mixer).toEqual({
+      channels: {
+        drums: { db: -24, muted: false },
+        bass: { db: 0, muted: false },
+        chords: { db: 0, muted: false },
+        you: { db: 2, muted: false },
+      },
+      youPlayBass: false,
+    })
     expect(s).toMatchObject({
       invertPedal: false,
       bendKey: 'Space',

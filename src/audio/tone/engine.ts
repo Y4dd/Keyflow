@@ -19,7 +19,6 @@ import {
   type ExpressionSettings,
   type ExpressionTargets,
 } from '../expression.ts'
-import { dbToGain } from '../curves.ts'
 import { readClock, readLatency, type ClockPair, type LatencyReadout } from '../latency.ts'
 import { getPreset } from '../presets/index.ts'
 import type { KnobValues, PresetId } from '../presets/types.ts'
@@ -27,6 +26,8 @@ import { createZoneRouter, ZONE_IDS, type KeyboardLayout, type ZoneId } from '..
 import { createGroovePlayer, GROOVE_BASS, type GroovePlayer } from './groove.ts'
 import { createInstrument, type Instrument } from './instrument.ts'
 import { createMaster } from './master.ts'
+import { createMixBuses, MIX_RAMP_S, setMixGains } from './mixer.ts'
+import { channelGains, CHANNELS, type Channel, type MixerSettings } from '../mixer.ts'
 
 export type ContextState = 'running' | 'suspended' | 'closed'
 
@@ -34,6 +35,7 @@ export interface EngineOptions {
   layout: KeyboardLayout
   knobs: Record<PresetId, KnobValues>
   expression: ExpressionSettings
+  mixer: MixerSettings
   onStateChange(state: ContextState): void
 }
 
@@ -42,6 +44,10 @@ export interface Engine {
   state(): ContextState
   resume(): Promise<void>
   setLayout(layout: KeyboardLayout): void
+  /** Levels and mutes (src/audio/mixer.ts); "you play bass" applies while the split is on. */
+  setMixer(mixer: MixerSettings): void
+  /** Dev tools: each channel bus's gain once its ramp is done. */
+  mixGains(): Record<Channel, number>
   setKnob(presetId: PresetId, id: string, value: number): void
   setExpression(settings: ExpressionSettings): void
   /** Dev tools: what the pedal and bends are doing now. */
@@ -69,9 +75,6 @@ export interface Engine {
   setTempo(bpm: number): void
 }
 
-// shortcut: one fixed level for the whole groove until the mixer (P1-T6).
-export const GROOVE_LEVEL_DB = -3
-
 function toState(s: string): ContextState {
   // "interrupted" (Safari) and anything else not running counts as suspended.
   return s === 'running' ? 'running' : s === 'closed' ? 'closed' : 'suspended'
@@ -81,6 +84,10 @@ export function createEngine(options: EngineOptions): Engine {
   const context = Tone.getContext()
   const knobs = { ...options.knobs } // knob values for instruments not built yet
   const master = createMaster()
+  let layout = options.layout
+  let mixer = options.mixer
+  const buses = createMixBuses(master.input, channelGains(mixer, layout.split))
+  const applyMix = () => setMixGains(buses, channelGains(mixer, layout.split), Tone.immediate())
   // One instance per zone and preset, so both zones can play the same preset without sharing
   // voices. Kept once built, so switching back doesn't rebuild. Built on layout changes, never
   // on a note.
@@ -89,12 +96,11 @@ export function createEngine(options: EngineOptions): Engine {
     const key = `${zone}:${id}`
     let instrument = instruments.get(key)
     if (!instrument) {
-      instrument = createInstrument(getPreset(id), knobs[id], master.input)
+      instrument = createInstrument(getPreset(id), knobs[id], buses.channels.you)
       instruments.set(key, instrument)
     }
     return instrument
   }
-  let layout = options.layout
   // Both zones are built up front, so turning the split on doesn't build anything.
   const current: Record<ZoneId, Instrument> = {
     main: instrumentFor('main', layout.main.presetId),
@@ -143,16 +149,16 @@ export function createEngine(options: EngineOptions): Engine {
   let groovePlayer: GroovePlayer | null = null
   function groove() {
     if (groovePlayer) return groovePlayer
-    const bus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
-    const build = (id: PresetId) => {
-      const instrument = createInstrument(getPreset(id), knobs[id], bus)
+    const build = (id: PresetId, channel: Channel) => {
+      const instrument = createInstrument(getPreset(id), knobs[id], buses.channels[channel])
       instruments.set(`groove:${id}`, instrument)
       return instrument
     }
     groovePlayer = createGroovePlayer({
-      bass: build(GROOVE_BASS),
-      chords: build('ep-keys'),
-      destination: bus,
+      bass: build(GROOVE_BASS, 'bass'),
+      chords: build('ep-keys', 'chords'),
+      destination: buses.channels.drums,
+      click: buses.groove,
       onStart(time) {
         for (const instrument of instruments.values()) instrument.restartLfo(time)
       },
@@ -221,7 +227,19 @@ export function createEngine(options: EngineOptions): Engine {
         adopt(zone, current[zone])
       }
       // A new split point or octave applies to the next note-on; held notes keep their routes.
+      const splitChanged = next.split !== layout.split
       layout = next
+      if (splitChanged) applyMix() // "you play bass" follows the split
+    },
+    setMixer(next) {
+      mixer = next
+      applyMix()
+    },
+    mixGains() {
+      const at = Tone.immediate() + 2 * MIX_RAMP_S
+      return Object.fromEntries(
+        CHANNELS.map((c) => [c, buses.channels[c].gain.getValueAtTime(at)]),
+      ) as Record<Channel, number>
     },
     setKnob(presetId, id, value) {
       knobs[presetId] = { ...knobs[presetId], [id]: value }

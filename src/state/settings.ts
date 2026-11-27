@@ -28,6 +28,7 @@ function collect(): Settings {
     layout: a.layout,
     knobs: a.knobs,
     expression: a.expression,
+    mixer: a.mixer,
     invertPedal: m.invertPedal,
     bendKey: laptopBend.getKey(),
     deviceId: m.preferredId,
@@ -46,6 +47,7 @@ function apply(s: Settings) {
     layout: s.layout,
     knobs: s.knobs,
     expression: s.expression,
+    mixer: s.mixer,
     startedBefore: s.audioStarted,
   })
   midi.setInvertPedal(s.invertPedal)

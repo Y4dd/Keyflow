@@ -5,8 +5,8 @@
 import * as Tone from 'tone'
 import { defaultKnobs, getPreset } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
-import { dbToGain } from '../audio/curves.ts'
-import { GROOVE_LEVEL_DB } from '../audio/tone/engine.ts'
+import { channelGains, DEFAULT_MIXER, type MixerSettings } from '../audio/mixer.ts'
+import { createMixBuses } from '../audio/tone/mixer.ts'
 import { createGroovePlayer, GROOVE_BASS } from '../audio/tone/groove.ts'
 import { createInstrument } from '../audio/tone/instrument.ts'
 import { BEATS_PER_BAR } from '../grooves/groove.ts'
@@ -115,9 +115,13 @@ export interface GrooveRenderSpec {
   groove: string
   /** One window per bar, in order. */
   bars: number
+  /** The mixer, with the split on (so "you play bass" applies); all channels flat when unset. */
+  mixer?: MixerSettings
+  /** Starts with the count-in bar (window 0) when true. */
+  countIn?: boolean
 }
 
-/** Renders a groove offline through the engine's groove bus and master; peak per bar, and its dropouts. */
+/** Renders a groove offline through the engine's mixer buses and master; peak per bar, and its dropouts. */
 export async function renderGroove(
   spec: GrooveRenderSpec,
 ): Promise<{ peak: number; bars: number[]; dropouts: number }> {
@@ -127,16 +131,23 @@ export async function renderGroove(
   const buffer = await Tone.Offline(
     () => {
       const master = createMaster()
-      const bus = new Tone.Gain(dbToGain(GROOVE_LEVEL_DB)).connect(master.input)
-      const build = (id: PresetId) =>
+      const buses = createMixBuses(master.input, channelGains(spec.mixer ?? DEFAULT_MIXER, true))
+      const build = (id: PresetId, bus: Tone.Gain) =>
         createInstrument(getPreset(id), defaultKnobs(getPreset(id)), bus)
       createGroovePlayer({
-        bass: build(GROOVE_BASS),
-        chords: build('ep-keys'),
-        destination: bus,
+        bass: build(GROOVE_BASS, buses.channels.bass),
+        chords: build('ep-keys', buses.channels.chords),
+        destination: buses.channels.drums,
+        click: buses.groove,
         onStart() {},
       }).play(
-        { groove, tonic: groove.key.tonic, bpm: groove.tempo, loop: true, countIn: false },
+        {
+          groove,
+          tonic: groove.key.tonic,
+          bpm: groove.tempo,
+          loop: true,
+          countIn: spec.countIn ?? false,
+        },
         () => {},
       )
     },

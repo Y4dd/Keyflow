@@ -7,6 +7,7 @@ import {
   MAX_BEND_TIME_MS,
   type ExpressionSettings,
 } from '../audio/expression.ts'
+import { CHANNELS, clampLevel, DEFAULT_MIXER, type MixerSettings } from '../audio/mixer.ts'
 import { defaultKnobs, PRESETS } from '../audio/presets/index.ts'
 import type { KnobValues, PresetId } from '../audio/presets/types.ts'
 import {
@@ -23,6 +24,8 @@ export interface Settings {
   layout: KeyboardLayout
   knobs: Record<PresetId, KnobValues>
   expression: ExpressionSettings
+  /** Mixer levels, mutes and "you play bass" (P1-T6). */
+  mixer: MixerSettings
   invertPedal: boolean
   /** KeyboardEvent.code, or null when the bend key is off. */
   bendKey: string | null
@@ -47,6 +50,7 @@ export const DEFAULT_SETTINGS: Settings = {
   layout: DEFAULT_LAYOUT,
   knobs: DEFAULT_KNOBS,
   expression: DEFAULT_EXPRESSION,
+  mixer: DEFAULT_MIXER,
   invertPedal: false,
   bendKey: DEFAULT_BEND_KEY,
   deviceId: null,
@@ -143,6 +147,25 @@ function expression(v: unknown): ExpressionSettings {
   }
 }
 
+function mixer(v: unknown): MixerSettings {
+  const d = DEFAULT_MIXER
+  if (!isObj(v)) return d
+  const saved = isObj(v.channels) ? v.channels : {}
+  const channels = Object.fromEntries(
+    CHANNELS.map((c) => {
+      const x = isObj(saved[c]) ? saved[c] : {}
+      return [
+        c,
+        {
+          db: num(x.db) ? clampLevel(x.db) : d.channels[c].db,
+          muted: bool(x.muted, d.channels[c].muted),
+        },
+      ]
+    }),
+  ) as MixerSettings['channels']
+  return { channels, youPlayBass: bool(v.youPlayBass, d.youPlayBass) }
+}
+
 function calibration(v: unknown): Settings['calibration'] {
   if (!isObj(v) || !num(v.offsetMs)) return null
   return {
@@ -172,6 +195,7 @@ export function parseSettings(raw: unknown): Settings {
     layout: layout(v.layout),
     knobs: knobs(v.knobs),
     expression: expression(v.expression),
+    mixer: mixer(v.mixer),
     invertPedal: bool(v.invertPedal, d.invertPedal),
     // null is a choice (the bend key is off), so only a missing or unknown key falls back.
     bendKey:
