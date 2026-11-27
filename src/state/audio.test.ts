@@ -188,7 +188,7 @@ describe('audio controller', () => {
     expect(useAudioStore.getState().expression.pedalMode).toBe('sustain')
     audio.setExpression({ pedalMode: 'bend' })
     await audio.start()
-    expect(fake.expression).toMatchObject({ pedalMode: 'bend', bendSemitones: 2 })
+    expect(fake.expression).toMatchObject({ pedalMode: 'bend', bendSemitones: 'scale' })
     audio.setExpression({ bendSemitones: 1 })
     expect(fake.expressions).toEqual([{ ...useAudioStore.getState().expression }])
     expect(useAudioStore.getState().expression).toMatchObject({

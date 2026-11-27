@@ -72,8 +72,8 @@ describe('parseSettings', () => {
   it('round-trips every setting through JSON (what IndexedDB stores)', () => {
     expect(parseSettings(JSON.parse(JSON.stringify(CHANGED)))).toEqual(CHANGED)
     expect(parseSettings(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)))).toEqual(DEFAULT_SETTINGS)
-    const scale = { ...CHANGED, expression: { ...CHANGED.expression, bendSemitones: 'scale' } }
-    expect(parseSettings(JSON.parse(JSON.stringify(scale)))).toEqual(scale)
+    const two = { ...CHANGED, expression: { ...CHANGED.expression, bendSemitones: 2 } }
+    expect(parseSettings(JSON.parse(JSON.stringify(two)))).toEqual(two)
   })
 
   it('nothing stored, or not an object: defaults', () => {
@@ -117,7 +117,7 @@ describe('parseSettings', () => {
     })
     expect(s.knobs['funk-lead']).toEqual({ cutoff: 6000, glide: 0.1 })
     expect(s.knobs['ep-keys']).toEqual(DEFAULT_SETTINGS.knobs['ep-keys'])
-    expect(s.expression).toEqual({ pedalMode: 'sustain', bendSemitones: 2, bendTimeMs: 400 })
+    expect(s.expression).toEqual({ pedalMode: 'sustain', bendSemitones: 'scale', bendTimeMs: 400 })
     expect(s.mixer).toEqual({
       channels: {
         drums: { db: -24, muted: false },

@@ -94,8 +94,10 @@ test('bend and glide-hold modes: the pedal bends or forces glide instead of sust
     { kind: 'pedal', down: true },
     { kind: 'noteOff', note: 72 },
   ])
-  expect(await targets(page)).toEqual({ sustain: false, glideHold: false, bend: 2 })
+  expect(await targets(page)).toEqual({ sustain: false, glideHold: false, bend: 1 }) // default: one scale step
   expect(await heldByZone(page)).toEqual({ left: 0, main: 0 }) // no sustain in this mode
+  await page.getByLabel('Bend amount').selectOption('2')
+  expect((await targets(page))?.bend).toBe(2)
   await page.getByLabel('Bend amount').selectOption('1')
   expect((await targets(page))?.bend).toBe(1)
   await inject(page, [{ kind: 'pedal', down: false }])
@@ -119,7 +121,7 @@ test('the bend key bends while held, and Space still works on a control reached 
   await invert.click() // focused by a click: Space bends instead of toggling it
   await expect(invert).toBeChecked()
   await page.keyboard.down('Space')
-  expect((await targets(page))?.bend).toBe(2)
+  expect((await targets(page))?.bend).toBe(1)
   await page.keyboard.up('Space')
   expect((await targets(page))?.bend).toBe(0)
   await expect(invert).toBeChecked()
@@ -138,7 +140,7 @@ test('the bend key bends while held, and Space still works on a control reached 
   await page.getByRole('heading', { name: 'Keyflow' }).click()
   await page.getByLabel('Bend key').selectOption({ label: '\\' })
   await page.keyboard.down('Backslash')
-  expect((await targets(page))?.bend).toBe(2)
+  expect((await targets(page))?.bend).toBe(1)
   await page.keyboard.up('Backslash')
   await page.getByLabel('Bend key').selectOption({ label: 'Off' })
   await page.keyboard.down('Backslash')
@@ -190,7 +192,7 @@ test('to next scale tone: the main sound bends in steps of the shown solo scale'
   await start(page)
   await pedal(page).getByLabel(/Bend/).check()
   const amount = page.getByLabel('Bend amount')
-  await amount.selectOption({ label: 'To next scale tone' })
+  await expect(amount).toHaveValue('scale') // the default
   // The vamp opens in D minor over D minor pentatonic: D F G A C.
   expect(await bendScale(page)).toEqual([2, 5, 7, 9, 0])
   await inject(page, [

@@ -48,7 +48,7 @@ describe('pedal and bend targets per mode', () => {
     expect(x.setSettings(settings({ pedalMode: 'bend' }))).toEqual({
       sustain: false,
       glideHold: false,
-      bend: 2,
+      bend: 1, // the default amount is one scale step
     })
     expect(x.setSettings(settings({ pedalMode: 'glideHold' }))).toEqual({
       sustain: false,

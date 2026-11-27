@@ -24,7 +24,7 @@ export interface ExpressionSettings {
 
 export const DEFAULT_EXPRESSION: ExpressionSettings = {
   pedalMode: 'sustain',
-  bendSemitones: 2,
+  bendSemitones: 'scale',
   bendTimeMs: 100,
 }
 

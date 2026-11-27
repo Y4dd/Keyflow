@@ -133,11 +133,11 @@ test('stopping a replay mid-take releases its notes, pedal and bend, and puts Lo
   await startSound(page)
   const groove = page.getByTestId('groove')
   await groove.getByLabel('Loop').uncheck()
-  // A note, the pedal and a full bend, all held for 2 s.
+  // A note, the pedal and a full bend (one scale step), all held for 2 s.
   await recordTake(page, [
     { kind: 'noteOn', note: 64, velocity: 0.7, at: 0 },
     { kind: 'pedal', down: true, at: 50 },
-    { kind: 'bend', semitones: 2, at: 100 },
+    { kind: 'bend', semitones: 1, at: 100 },
     { kind: 'bend', semitones: 0, at: 2000 },
     { kind: 'pedal', down: false, at: 2000 },
     { kind: 'noteOff', note: 64, at: 2000 },
@@ -152,7 +152,7 @@ test('stopping a replay mid-take releases its notes, pedal and bend, and puts Lo
   await expect(groove.getByLabel('Loop')).toBeChecked() // so the groove outlasts the take
   await expect
     .poll(dev, { timeout: 5000 })
-    .toMatchObject({ expression: { sustain: true, bend: 2 } })
+    .toMatchObject({ expression: { sustain: true, bend: 1 } })
   expect((await dev()).held).toBeGreaterThan(0)
 
   await takes.getByRole('button', { name: 'Stop replay' }).click()
