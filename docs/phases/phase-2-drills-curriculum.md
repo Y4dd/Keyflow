@@ -85,11 +85,12 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - Adaptive difficulty: if the rolling success rate is above about 90%, add new items or strict modes; below about 70%, slow down new items. Both thresholds are config.
 - **Automated:** session composition tests (interleaving, due-first, new-item cap).
 
-### P2-T7: Progress view
+### P2-T7: Progress view [built 2026-11-27, manual check pending]
 **Depends on:** P2-T1, P2-T5. **Model:** Opus.
 
 - Heatmap of keys × chord or scale types, colored by FSRS stability, showing what you know cold, what's shaky and what's new.
 - Streak and consistency shown gently (see the feedback tone in `learning-design.md`).
+- **Built:** 2026-11-27. The Progress card (`src/ui/ProgressPanel.tsx`) over `src/practice/progress.ts` (see "Progress view (P2-T7)" in `docs/architecture.md`, and "Progress (P2-T7)" in `DESIGN.md`). The heatmap is the curriculum's chord and scale items: 17 rows (type and inversion) under three tracks, 12 key columns. A cell is not open yet, new, shaky or known cold, and known cold is the curriculum's own stable line (`UNLOCK.stableDays`), so what reads as known is what unlocks the next unit. Every level is a shape as well as a tone of `bone`. Geography and chords in key have no keys × types grid, so they aren't shown. Practice days are the last 14 local days as dots and one line ("You practised on 5 of the last 14 days, 3 days in a row."), with no streak to lose. The card updates after each recorded attempt through Dexie's `liveQuery`. Three cell looks (Fill, Stickers, Tint) wait for one taste pick in [`docs/manual-tests/P2-T7.md`](../manual-tests/P2-T7.md). Unit tests in `src/practice/progress.test.ts`, the live update in `tests/e2e/progress.spec.ts`.
 
 ### P2-T8: Data export and import [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Opus.

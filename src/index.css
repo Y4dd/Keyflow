@@ -974,3 +974,180 @@ input[type='range']:disabled {
     font-size: 32px;
   }
 }
+
+/* Progress (P2-T7): practice days, then the keys × types heatmap. Bone ramp only, every state
+   also a shape: dashed = not open yet, outline = new, part filled = shaky, solid = known cold. */
+
+.progress,
+.progress + .card {
+  margin-top: 48px;
+}
+
+.progress-days p {
+  color: var(--bone-muted);
+}
+
+.days {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.days li {
+  width: 14px;
+  height: 14px;
+  border: 2px dashed var(--line);
+  border-radius: 50%;
+}
+
+.days li[data-on='true'] {
+  border: 0;
+  background: var(--bone);
+}
+
+.progress-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-top: 24px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--bone-muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend .count {
+  color: var(--bone);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap-scroll {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.heatmap {
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.heatmap thead th {
+  padding: 0 0 8px;
+  color: var(--bone-muted);
+  font-weight: 650;
+}
+
+.heatmap th[scope='row'] {
+  position: sticky;
+  left: 0;
+  padding-right: 16px;
+  background: var(--card);
+  font-weight: 400;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.heatmap th.group {
+  padding: 16px 0 6px;
+  color: var(--bone-muted);
+  font-weight: 650;
+  text-align: left;
+}
+
+.heatmap td {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  text-align: center;
+}
+
+/* The mark: Fill (a square filling up), Stickers (a ring growing a dot), Tint (a tile's tone). */
+/* Known cold also wears a drawn check in every look, so it never differs from shaky by tone alone. */
+
+.mark {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  vertical-align: middle;
+  border: 2px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  color: var(--bin);
+}
+
+.mark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mark[data-level='locked'] {
+  border-style: dashed;
+  opacity: 0.45;
+}
+
+.mark[data-level='shaky'] {
+  border-color: var(--bone-muted);
+}
+
+.mark[data-level='shaky']::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(max(var(--fill), 0.15) * 100%);
+  background: var(--bone-muted);
+}
+
+.mark[data-level='cold'] {
+  border-color: var(--bone);
+  background: var(--bone);
+}
+
+[data-look='stickers'] .mark {
+  border-radius: 50%;
+}
+
+[data-look='stickers'] .mark[data-level='shaky']::after {
+  inset: 50% auto auto 50%;
+  width: calc((0.3 + 0.5 * var(--fill)) * 100%);
+  height: calc((0.3 + 0.5 * var(--fill)) * 100%);
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+[data-look='tint'] .mark {
+  width: 36px;
+  height: 36px;
+}
+
+[data-look='tint'] .mark[data-level='new'] {
+  background: var(--card-raised);
+}
+
+[data-look='tint'] .mark[data-level='shaky'] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--bone) calc(15% + 45% * var(--fill)), var(--card));
+}
+
+[data-look='tint'] .mark[data-level='shaky']::after {
+  content: none;
+}

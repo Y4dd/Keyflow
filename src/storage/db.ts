@@ -7,7 +7,7 @@
 // `reviewLogs` (every attempt, by item and time), the only Phase 2 schema change, and likewise
 // keeps the settings and takes as they are.
 
-import { Dexie, type EntityTable } from 'dexie'
+import { Dexie, liveQuery, type EntityTable } from 'dexie'
 import { parseTake, type Take } from '../analysis/take.ts'
 import type { Item, ReviewLog } from '../practice/items.ts'
 import type { BackupData, Dump } from './backup.ts'
@@ -104,6 +104,21 @@ export async function saveReview(
 /** An item's logged attempts, oldest first. */
 export async function loadReviewLogs(item: string): Promise<ReviewLog[]> {
   return db.reviewLogs.where('item').equals(item).sortBy('at')
+}
+
+/**
+ * Calls `onChange` with every item and the time of each attempt since `since`, now and after
+ * any write to either table (Dexie's liveQuery), until the returned function is called.
+ */
+export function watchProgress(
+  since: Date,
+  onChange: (p: { items: Item[]; times: Date[] }) => void,
+): () => void {
+  const sub = liveQuery(async () => ({
+    items: await db.items.toArray(),
+    times: (await db.reviewLogs.where('at').aboveOrEqual(since).keys()) as Date[],
+  })).subscribe({ next: onChange, error: () => {} }) // a failed read leaves the view as it was
+  return () => sub.unsubscribe()
 }
 
 /** The database version this app declares, which a backup file is checked against (P2-T8). */

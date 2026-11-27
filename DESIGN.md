@@ -304,6 +304,12 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Result line:** always one line high (18px), so nothing shifts while you play. A wrong try shows one `bone-muted` sentence ("You played G6."). A right answer shows a 30px sticker ringed in `bone` with the drawn check, then "**Right**, in 1.4 s". There is no red and no score, and yellow and green keep their setup jobs.
 - **Actions:** Skip, which reads Next once the answer is right, and Close drills, both outlined pills.
 
+### Progress (P2-T7)
+- **Progress card:** full width above "Your data". First one 16px `bone-muted` line ("You practised on 5 of the last 14 days, 3 days in a row."; before any practice, where the days will show), then 14 dots for the last 14 days, oldest first: a practised day is a solid `bone` 14px dot, any other a dashed `line` ring. There is no streak to lose: a missed day is an empty ring, "days in a row" shows only from two, and a day not yet played doesn't end it.
+- **Legend:** the four marks with their names and counts (14px `bone-muted` names, 650 `bone` tabular counts), wrapping beside the temporary look chips.
+- **Heatmap:** a native table: 12 key columns (650 `bone-muted` names, flats and sharps as ♭ and ♯) and one row per chord or scale type (16px `bone` names, sticky on the left when the table scrolls sideways under narrow widths), grouped under 650 `bone-muted` track names. Cells are 40px. Bone ramp only (no red, yellow, green or sound colour), and every level is a shape too: not open yet = dashed `line` outline at 45%; new = solid `line` outline; shaky = a `bone-muted` outline partly filled by stability; known cold = solid `bone` with a drawn `bin` check. Each cell also carries its level as hidden text. Nothing animates.
+- **Looks (being auditioned, P2-T7's taste step):** Fill (28px squares filling from the bottom), Stickers (28px rings growing a centre dot, solid when cold), Tint (36px tiles whose tone rises with stability). The pick becomes the only look.
+
 ## Do's and Don'ts
 
 ### Do:

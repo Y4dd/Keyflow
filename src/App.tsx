@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ComponentType } from 'react'
 import { CalibrationPanel } from './ui/CalibrationPanel.tsx'
 import { DataPanel } from './ui/DataPanel.tsx'
 import { DrillPanel } from './ui/DrillPanel.tsx'
@@ -13,6 +13,15 @@ import { TakesPanel } from './ui/TakesPanel.tsx'
 const Inspector = __KEYFLOW_DEV_TOOLS__
   ? lazy(() => import('./dev/Inspector.tsx').then((m) => ({ default: m.Inspector })))
   : null
+
+// On demand: progress reads the curriculum, which loads the FSRS scheduler (like backup.ts).
+const ProgressPanel = lazy<ComponentType>(() =>
+  // a chunk that fails to load hides only this card, not the app
+  import('./ui/ProgressPanel.tsx').then(
+    (m) => ({ default: m.ProgressPanel }),
+    () => ({ default: () => null }),
+  ),
+)
 
 export function App() {
   return (
@@ -36,6 +45,9 @@ export function App() {
         <SoundCrate />
         <CalibrationPanel />
       </div>
+      <Suspense fallback={null}>
+        <ProgressPanel />
+      </Suspense>
       <DataPanel />
       {Inspector && (
         <Suspense fallback={null}>

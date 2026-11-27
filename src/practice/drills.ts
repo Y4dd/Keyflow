@@ -46,6 +46,9 @@ const SCALES = {
 
 export const CHORD_QUALITIES = Object.keys(CHORDS) as (keyof typeof CHORDS)[]
 export const SCALE_QUALITIES = Object.keys(SCALES) as (keyof typeof SCALES)[]
+/** A quality's name in prompts ("Minor 7th", "minor pentatonic"), or undefined if unknown. */
+export const qualityWord = (type: 'chord' | 'scale', quality: string): string | undefined =>
+  (type === 'chord' ? CHORDS : SCALES)[quality as never]?.['word']
 
 const INVERSIONS: Record<string, number | null> = { any: null, root: 0, inv1: 1, inv2: 2, inv3: 3 }
 const INVERSION_WORDS = ['root position', '1st inversion', '2nd inversion', '3rd inversion']
