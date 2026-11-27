@@ -79,6 +79,6 @@ export const session = {
     groove.setTonic(jam.tonic)
     groove.setScale(jam.scale)
     session.leave()
-    document.querySelector('[data-testid="groove"]')?.scrollIntoView({ behavior: 'smooth' })
+    location.hash = '#/jam' // the transport sits over the keys there
   },
 }

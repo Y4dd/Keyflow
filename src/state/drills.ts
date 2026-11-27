@@ -23,7 +23,6 @@ import {
   RATING,
   targetOf,
   type Hint,
-  type PacingId,
 } from '../practice/grading.ts'
 import { loadItem } from '../storage/db.ts'
 import { useAudioStore } from './audio.ts'
@@ -42,8 +41,6 @@ export interface DrillState {
   rating: Grade | null
   /** Asked again unaided after the answer was shown (step 3); this answer isn't recorded. */
   retry: boolean
-  /** Hint pace. shortcut: temporary chips until P2-T4's audition picks one. */
-  pacing: PacingId
 }
 
 export const useDrillStore = create<DrillState>(() => ({
@@ -54,7 +51,6 @@ export const useDrillStore = create<DrillState>(() => ({
   hint: null,
   rating: null,
   retry: false,
-  pacing: 'steady',
 }))
 
 // Tracked from load, so a drill knows which keys were already down when it started.
@@ -75,11 +71,7 @@ let said: string | null = null
 function schedule() {
   clearTimeout(timer)
   if (graded || stability === null || next >= ladder.length) return
-  const delays = hintDelays(
-    stability,
-    GRADING.pacing[useDrillStore.getState().pacing],
-    ladder.length,
-  )
+  const delays = hintDelays(stability, GRADING.pacing.steady, ladder.length) // the P2-T4 pick
   timer = window.setTimeout(() => {
     useDrillStore.setState({ hint: ladder[next++]! })
     schedule()
@@ -188,11 +180,6 @@ export const drills = {
   /** A new drill of a kind, never the item just shown. */
   pick(kind: DrillKind) {
     drills.start(pickDrill(kind, useDrillStore.getState().drill?.item ?? null))
-  },
-  /** Changes the hint pace; a waiting hint is rescheduled from now. */
-  pace(pacing: PacingId) {
-    useDrillStore.setState({ pacing })
-    schedule()
   },
   stop() {
     giveUp()

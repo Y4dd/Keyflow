@@ -8,6 +8,7 @@ import { attachAudioUnlock, audio } from './state/audio.ts'
 import { drills } from './state/drills.ts'
 import { computerKeyboard, laptopBend } from './state/input.ts'
 import { midi } from './state/midi.ts'
+import { startRoute } from './state/route.ts'
 import { startSettings } from './state/settings.ts'
 import { takes } from './state/takes.ts'
 
@@ -16,7 +17,7 @@ import { takes } from './state/takes.ts'
 inputBus.subscribe(audio.handle)
 inputBus.subscribe(drills.handle)
 attachAudioUnlock(window)
-void startSettings()
+void startSettings().then(startRoute) // an empty hash waits for the saved settings
 void takes.load()
 void midi.start()
 attachComputerKeyboard(computerKeyboard, window, laptopBend)

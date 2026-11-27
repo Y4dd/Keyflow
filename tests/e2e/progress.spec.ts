@@ -29,7 +29,7 @@ async function record(page: Page, id: string, now?: number) {
 }
 
 test('attempts fill the heatmap and the practice days as they are recorded', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/practice')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   const progress = page.getByTestId('progress')
   const mark = (id: string) => progress.locator(`td[data-item="${id}"] .mark`)

@@ -50,8 +50,9 @@ interface DevApi {
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
+// Setup holds the Sound card and the sound crate (P2-T12); the keyboard is in every view.
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 }
 
@@ -418,21 +419,11 @@ test('ep-keys: a pitch struck twice after the clock passed its time plays, witho
 
 test('the setup steps mark sound done once it runs, and its card follows', async ({ page }) => {
   await open(page)
-  const steps = page.getByRole('list', { name: 'Setup' })
-  await expect(steps.getByRole('link', { name: /^Turn sound on/ })).not.toHaveAttribute(
-    'data-state',
-    'done',
-  )
+  // No MIDI keyboard in CI, so connecting stays the next step, in the top bar and in Setup.
+  await expect(page.getByRole('link', { name: 'Setup: Connect keyboard' })).toBeVisible()
+  await expect(page.locator('#sound')).not.toHaveAttribute('data-state', 'done')
   await page.getByRole('button', { name: 'Start audio' }).click()
-  await expect(steps.getByRole('link', { name: 'Sound on' })).toHaveAttribute('data-state', 'done')
   await expect(page.locator('#sound')).toHaveAttribute('data-state', 'done')
-  // No MIDI keyboard in CI, so connecting stays the current step and timing waits behind it.
-  await expect(steps.getByRole('link', { name: /^Connect keyboard/ })).toHaveAttribute(
-    'data-state',
-    'now',
-  )
-  await expect(steps.getByRole('link', { name: /^Calibrate timing/ })).toHaveAttribute(
-    'data-state',
-    'todo',
-  )
+  await expect(page.locator('#keyboard')).toHaveAttribute('data-state', 'now')
+  await expect(page.locator('#timing')).toHaveAttribute('data-state', 'todo')
 })

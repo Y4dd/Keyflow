@@ -137,7 +137,7 @@ Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only
 - **Automated:** unit tests that every note gets exactly the category the stats count it under; an e2e take recorded through the simulated source shows the expected count per category.
 - **Manual:** taste: the marking look (3 or 4 candidates, Taste in one round).
 
-### P2-T12: Views and navigation
+### P2-T12: Views and navigation [built 2026-11-27, manual check pending]
 **Depends on:** none. Runs alone: it rearranges `src/App.tsx` and every card. **Model:** Opus.
 
 Added 2026-11-27 from the user's review and an Impeccable critique: one 4,700 px page of 11 cards, set-once settings among daily tools, drills fused to Play, and drill hints drawn on a keyboard scrolled off screen.
@@ -152,6 +152,7 @@ Added 2026-11-27 from the user's review and an Impeccable critique: one 4,700 px
 - Design it with the `impeccable` skill in the current theme; the visual refresh is P2-T14, so no theme changes here.
 - **Automated:** update the e2e specs to navigate by view; one spec walks every view and checks the keyboard canvas is the same element throughout, and that a playing groove survives a view switch; the first-visit flow reaches Jam.
 - **Manual:** must-pass: on the user's laptop, in Jam and Practice, the whole keyboard and the controls in use fit on screen together without scrolling. Taste: none.
+- **Built:** 2026-11-27. Hash routes in `src/state/route.ts` (an empty hash opens the walk-through until sound has run here, else Jam; leaving Practice closes an open drill, leaving Setup cancels split learning and a tap test). The shell (`src/App.tsx`): top bar, the view, and the dock (`src/ui/Dock.tsx`: Jam's transport, the readout line, the one keyboard, the sound drawer). Walk-through in `src/ui/Welcome.tsx`: the press on Connect also starts audio (the page-wide unlock); whether Firefox allows both from that one press is manual step 4, and the Sound screen's Start audio covers it if not. Help on the keys is one select over the saved wheels and look. Pace and Progress look chips removed; drill-type chips behind Practice by type; a timed scale drill opened before calibration offers Timing. No view-switch shortcut. e2e: `tests/e2e/views.spec.ts` plus every spec navigating by view. Manual check: [`docs/manual-tests/P2-T12.md`](../manual-tests/P2-T12.md).
 
 ### P2-T13: Practice screen
 **Depends on:** P2-T12. **Model:** Opus.

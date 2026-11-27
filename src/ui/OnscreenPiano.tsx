@@ -8,6 +8,7 @@ import { useAudioStore } from '../state/audio.ts'
 import { useDrillStore } from '../state/drills.ts'
 import { shownGroove, shownTick, useGrooveStore } from '../state/groove.ts'
 import { laptopBend, pointerPiano } from '../state/input.ts'
+import { toggleDrawer } from '../state/route.ts'
 import { useViewStore } from '../state/view.ts'
 import { drawKeyboard, ZONE_STRIP } from './canvas/keyboard.ts'
 import { keyRects, noteAt, type KeyRect } from './canvas/keys.ts'
@@ -139,10 +140,22 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
     const rect = canvasRef.current!.getBoundingClientRect()
     return noteAt(keysRef.current, e.clientX - rect.left, e.clientY - rect.top)
   }
+  // The zone strip over the keys opens that zone's sounds in the drawer.
+  const zoneUnder = (e: PointerEvent<HTMLDivElement>) => {
+    const rect = canvasRef.current!.getBoundingClientRect()
+    if (e.clientY - rect.top >= ZONE_STRIP) return null
+    const { split, splitNote } = useAudioStore.getState().layout
+    const at = keysRef.current.find((k) => k.note === splitNote)
+    return split && at && e.clientX - rect.left < at.x ? 'left' : 'main'
+  }
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return
     const note = noteUnder(e)
-    if (note === null) return
+    if (note === null) {
+      const zone = zoneUnder(e)
+      if (zone) toggleDrawer(zone)
+      return
+    }
     e.preventDefault() // no text selection or focus change
     e.currentTarget.setPointerCapture(e.pointerId)
     pointerPiano.down(e.pointerId, note, e.timeStamp)

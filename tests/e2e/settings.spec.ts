@@ -16,9 +16,16 @@ const status = (page: Page) => page.getByTestId('audio-status')
 const zone = (page: Page, title: 'Main sound' | 'Left sound') =>
   page.getByRole('group', { name: new RegExp(`^${title}`) })
 const pedal = (page: Page) => page.getByRole('radiogroup', { name: 'Pedal' })
+// Settings live in Setup, the help on the keys in Jam (P2-T12).
+async function go(page: Page, view: 'Jam' | 'Setup') {
+  const link = page.getByRole('link', { name: view, exact: true })
+  await link.click()
+  await expect(link).toHaveAttribute('aria-current', 'page') // the old view is gone
+}
+const help = (page: Page) => page.getByRole('combobox', { name: 'Help on the keys' })
 
 test('settings survive a reload and reach the sound', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await open(page)
   await expect(status(page)).toContainText('Browsers start sound only after a click')
   await page.getByRole('button', { name: 'Start audio' }).click()
@@ -40,7 +47,9 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
   await page.getByLabel('Bend key').selectOption({ label: 'Off' })
   await page.getByLabel(/Invert pedal/).check()
   await page.getByLabel('Show the computer-key letters on the keys').uncheck()
-  await page.getByRole('radiogroup', { name: 'Look' }).getByLabel('Spotlight').check()
+  await go(page, 'Jam')
+  await help(page).selectOption({ label: 'Spotlight with names' })
+  await go(page, 'Setup')
   await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
   // Only what differs from the defaults is stored: no device or calibration row, and the layout
   // row holds just the changed fields, so later default changes still reach this user.
@@ -90,7 +99,6 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
   await expect(page.getByLabel('Bend key')).toHaveValue('')
   await expect(page.getByLabel(/Invert pedal/)).toBeChecked()
   await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
-  await expect(page.getByRole('radiogroup', { name: 'Look' }).getByLabel('Spotlight')).toBeChecked()
   // Sound ran last time: the page says a click brings it back (it can't start by itself).
   await expect(status(page)).toHaveAttribute('data-status', 'off')
   await expect(status(page)).toContainText('Your sound settings are back')
@@ -107,10 +115,12 @@ test('settings survive a reload and reach the sound', async ({ page }) => {
   await expect
     .poll(() => page.evaluate(() => (window as DevWindow).__keyflow!.audio.heldByZone()))
     .toEqual({ left: 1, main: 1 })
+  await go(page, 'Jam') // a click: so only once sound is on
+  await expect(help(page).locator('option:checked')).toHaveText('Spotlight with names')
 })
 
 test('damaged stored settings fall back to defaults, and the app still works', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await open(page)
   await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
   // Write junk straight into the settings table, as an older or broken version might.

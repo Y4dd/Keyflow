@@ -1,7 +1,7 @@
 import { GROOVES } from '../grooves/library.ts'
 import { pretty } from '../music/spelling.ts'
 import type { DrillKind } from '../practice/drills.ts'
-import type { PacingId } from '../practice/grading.ts'
+import { useCalibrationStore } from '../state/calibration.ts'
 import { drills, useDrillStore } from '../state/drills.ts'
 import { session, useSessionStore } from '../state/session.ts'
 
@@ -13,13 +13,6 @@ const KINDS: { kind: DrillKind; label: string }[] = [
   { kind: 'build', label: 'Build it' },
 ]
 
-// shortcut: temporary pace chips until P2-T4's audition picks a default, then removed.
-const PACES: { id: PacingId; label: string }[] = [
-  { id: 'quick', label: 'Quick' },
-  { id: 'steady', label: 'Steady' },
-  { id: 'patient', label: 'Patient' },
-]
-
 const RATINGS = ['', 'Again', 'Hard', 'Good', 'Easy']
 
 const check = (
@@ -29,12 +22,14 @@ const check = (
 )
 
 /**
- * Drills: today's session (P2-T6), or one type at a time. Pick a type, answer the prompt on the keys. A stalled answer gets hints in steps (the
+ * Drills: today's session (P2-T6), or one type at a time (behind "Practice by type" until the
+ * library's Drill this replaces it, P2-T10). Answer the prompt on the keys. A stalled answer gets hints in steps (the
  * keys they mark are on the canvas keyboard), and the right one its rating. Re-renders on a new
  * drill, a new feedback line, a hint or the right answer, never per note.
  */
 export function DrillPanel() {
-  const { drill, done, ms, say, hint, rating, pacing } = useDrillStore()
+  const { drill, done, ms, say, hint, rating } = useDrillStore()
+  const calibrated = useCalibrationStore((s) => s.offsetMs != null)
   const { status, at, total, jam } = useSessionStore()
   const inSession = status === 'on'
   const kind = inSession ? null : (drill?.kind ?? null)
@@ -60,23 +55,26 @@ export function DrillPanel() {
           </button>
         )}
       </div>
-      <div className="chips" role="radiogroup" aria-label="Drill type">
-        {KINDS.map((k) => (
-          <label key={k.kind} className="chip">
-            <input
-              type="radio"
-              name="drill-kind"
-              value={k.kind}
-              checked={k.kind === kind}
-              onChange={() => {
-                session.leave()
-                drills.pick(k.kind)
-              }}
-            />
-            {k.label}
-          </label>
-        ))}
-      </div>
+      <details className="by-type" open={kind !== null}>
+        <summary>Practice by type</summary>
+        <div className="chips" role="radiogroup" aria-label="Drill type">
+          {KINDS.map((k) => (
+            <label key={k.kind} className="chip">
+              <input
+                type="radio"
+                name="drill-kind"
+                value={k.kind}
+                checked={k.kind === kind}
+                onChange={() => {
+                  session.leave()
+                  drills.pick(k.kind)
+                }}
+              />
+              {k.label}
+            </label>
+          ))}
+        </div>
+      </details>
       {!drill && status === 'done' ? (
         <div className="drill" data-testid="session-done">
           <p className="blurb">
@@ -95,9 +93,9 @@ export function DrillPanel() {
         </div>
       ) : !drill ? (
         <p className="blurb drill-empty">
-          Today’s session mixes what’s due with a few new things, about five minutes. Or pick one
-          type. Answer on the keys. Any octave counts unless the prompt names an inversion. The
-          keyboard’s highlighting stays off while a drill is open.
+          Today’s session mixes what’s due with a few new things, about five minutes. Answer on the
+          keys. Any octave counts unless the prompt names an inversion. The keyboard’s highlighting
+          stays off while a drill is open.
         </p>
       ) : (
         <div className="drill" data-state={done ? 'done' : 'now'} data-item={drill.item}>
@@ -105,6 +103,12 @@ export function DrillPanel() {
             {drill.prompt}
           </p>
           {drill.detail && <p className="drill-detail">{drill.detail}</p>}
+          {drill.kind === 'scale' && drill.bpm !== null && !calibrated && (
+            <p className="hint" data-testid="timing-offer">
+              This one is in time. For fair timing, <a href="#/setup">calibrate Timing in Setup</a>{' '}
+              first; it takes one short tap test.
+            </p>
+          )}
           <div className="drill-result" aria-live="polite" data-testid="drill-result">
             {done ? (
               <>
@@ -147,20 +151,6 @@ export function DrillPanel() {
             >
               Close drills
             </button>
-          </div>
-          <div className="chips drill-pace" role="radiogroup" aria-label="Hint pace">
-            {PACES.map((p) => (
-              <label key={p.id} className="chip">
-                <input
-                  type="radio"
-                  name="hint-pace"
-                  value={p.id}
-                  checked={p.id === pacing}
-                  onChange={() => drills.pace(p.id)}
-                />
-                Hints: {p.label}
-              </label>
-            ))}
           </div>
         </div>
       )}

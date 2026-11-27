@@ -93,7 +93,7 @@ async function importFile(page: Page, json: string) {
 }
 
 test('export, wipe and import bring every table back', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await ready(page)
   await seed(page)
   const json = await exportFile(page)
@@ -126,6 +126,7 @@ test('export, wipe and import bring every table back', async ({ page }) => {
   await ready(page)
   await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
   expect(withoutIds(await dump(page))).toEqual(withoutIds(before))
+  await page.getByRole('link', { name: 'Jam', exact: true }).click() // the takes are in Jam
   await expect(page.getByTestId('takes')).toContainText('1 take')
 
   // an imported card still schedules
@@ -142,7 +143,7 @@ test('export, wipe and import bring every table back', async ({ page }) => {
 })
 
 test('a file that can’t be imported leaves the data as it was', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await ready(page)
   await seed(page)
   const good = JSON.parse(await exportFile(page)) as Record<string, unknown>

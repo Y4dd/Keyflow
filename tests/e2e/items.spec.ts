@@ -20,7 +20,7 @@ interface DevApi {
 type DevWindow = Window & { __keyflow?: DevApi }
 
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 }
 
@@ -105,6 +105,7 @@ test('the database upgrade to version 3 keeps settings and takes', async ({ page
       }),
   )
   await page.reload()
+  await page.getByRole('link', { name: 'Setup', exact: true }).click()
   await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   expect(

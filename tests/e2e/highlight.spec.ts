@@ -21,7 +21,7 @@ const B = 71
 const PPQ = 192
 
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 }
 
@@ -29,13 +29,17 @@ const key = (page: Page, note: number) =>
   page.evaluate((n) => (window as DevWindow).__keyflow!.pianoKey(n)!, note)
 const card = (page: Page) => page.getByTestId('groove')
 const LOOKS = ['Tags', 'Spotlight']
-const lookIs = (page: Page, label: string) =>
-  card(page).getByRole('radiogroup', { name: /^Look/ }).getByLabel(label).check()
-const wheels = (page: Page, label: string) =>
-  card(page)
-    .getByRole('radiogroup', { name: 'Training wheels' })
-    .getByLabel(label, { exact: true })
-    .check()
+// "Help on the keys" (P2-T12) sets the training-wheels level and the look in one menu.
+const help = (page: Page, label: string) =>
+  card(page).getByRole('combobox', { name: 'Help on the keys' }).selectOption({ label })
+const lookIs = (page: Page, look: string) => help(page, `${look} with names`)
+const WHEELS: Record<string, (look: string) => string> = {
+  Names: (look) => `${look} with names`,
+  'No names': (look) => look,
+  'Chord tones': () => 'Chord tones only',
+  Off: () => 'Off',
+}
+const wheels = (page: Page, level: string, look = 'Tags') => help(page, WHEELS[level]!(look))
 
 /**
  * The canvas keyboard's pixels as a hash, to compare two drawings. Read with getImageData, not
@@ -73,16 +77,16 @@ for (const look of LOOKS) {
     const withNames = await image(page)
 
     // Names and No names differ only in the note names, so the drawings must differ.
-    await wheels(page, 'No names')
+    await wheels(page, 'No names', look)
     await shows(page, E, 'other')
     await expect.poll(() => image(page)).not.toBe(withNames)
-    await wheels(page, 'Chord tones')
+    await wheels(page, 'Chord tones', look)
     await shows(page, D, 'chord')
     await shows(page, G, null)
     await shows(page, E, null)
-    await wheels(page, 'Off')
+    await wheels(page, 'Off', look)
     await shows(page, D, null)
-    await wheels(page, 'Names')
+    await wheels(page, 'Names', look)
     await shows(page, E, 'other')
     await expect.poll(() => image(page)).toBe(withNames)
   })
@@ -106,7 +110,7 @@ for (const look of LOOKS) {
     await shows(page, D, 'chord')
     await shows(page, E, 'other')
 
-    await card(page).getByLabel('Key').selectOption({ label: 'F major' })
+    await card(page).getByRole('combobox', { name: /^Key/ }).selectOption({ label: 'F major' })
     // Fmaj7: F A C E.
     await shows(page, F, 'chord')
     await shows(page, E, 'chord')
@@ -155,6 +159,7 @@ test('the computer-key letters can be hidden, and only they leave the drawing', 
   await expect(page.getByTestId('audio-status')).toHaveAttribute('data-status', 'running')
   await wheels(page, 'Off')
   await shows(page, E, null) // E was dimmed: now redrawn without highlighting
+  await page.getByRole('link', { name: 'Setup', exact: true }).click() // the letters are a setting
   const toggle = page.getByLabel('Show the computer-key letters on the keys')
   // Two drawings in a row that match: nothing else is still changing the canvas.
   let withLetters = ''

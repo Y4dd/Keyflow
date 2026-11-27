@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('app shell loads', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await expect(page).toHaveTitle('Keyflow')
   await expect(page.getByRole('heading', { name: 'Keyflow' })).toBeVisible()
 })
@@ -9,7 +9,7 @@ test('app shell loads', async ({ page }) => {
 // Headless browsers differ in MIDI support and permission state, so this only checks that
 // onboarding settles in one of its states and shows that state's heading.
 test('MIDI onboarding settles in a known state', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/setup')
   const panel = page.getByRole('region', { name: 'Keyboard' })
   await expect(panel).toBeVisible()
   await expect(panel.getByRole('heading')).toHaveText(
@@ -24,7 +24,7 @@ test('MIDI permission already granted: requests silently, no Connect button', as
 }) => {
   test.skip(browserName !== 'chromium', 'Only Chromium lets Playwright grant the midi permission')
   await context.grantPermissions(['midi'])
-  await page.goto('/')
+  await page.goto('/#/setup')
   const panel = page.getByRole('region', { name: 'Keyboard' })
   await expect(panel.getByRole('heading')).toHaveText(
     /No keyboard found|Keyboard connected|MIDI access was refused/,

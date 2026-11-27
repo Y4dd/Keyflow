@@ -9,7 +9,7 @@ interface DevApi {
 type DevWindow = Window & { __keyflow?: DevApi }
 
 async function start(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   await page.getByRole('button', { name: 'Start audio' }).click()
   await expect(page.getByTestId('audio-status')).toHaveAttribute('data-status', 'running')

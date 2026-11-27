@@ -1,4 +1,5 @@
-import { useSetupSteps, type StepId } from '../state/setup.ts'
+import { useContext } from 'react'
+import { NowStep, useSetupSteps, type StepId } from '../state/setup.ts'
 
 /**
  * A card's action button: yellow (primary) only while its step is the next one, so there's one
@@ -11,7 +12,11 @@ export function StepAction(props: {
   onClick: () => void
   disabled?: boolean
 }) {
-  const now = useSetupSteps()[props.step] === 'now'
+  const states = useSetupSteps()
+  const forced = useContext(NowStep)
+  const now = forced
+    ? forced === props.step && states[props.step] !== 'done'
+    : states[props.step] === 'now'
   return (
     <div className="actions">
       <button
@@ -38,25 +43,39 @@ const check = (
   </svg>
 )
 
-/** The three setup steps as stickers in the header; each links to its card. */
-export function SetupSteps() {
-  const states = useSetupSteps()
+/** One setup step as a sticker pill: a check when done, its number otherwise. */
+export function Step({ id, current }: { id: StepId; current?: boolean }) {
+  const state = useSetupSteps()[id]
+  const i = STEPS.findIndex((s) => s.id === id)
+  const { done, todo } = STEPS[i]!
+  // In the walk-through the screen shown is the current step, whatever comes first.
+  const shown = state === 'done' ? 'done' : current === undefined ? state : current ? 'now' : 'todo'
   return (
-    <ol className="steps" aria-label="Setup">
-      {STEPS.map(({ id, done, todo }, i) => {
-        const state = states[id]
-        return (
-          <li key={id}>
-            <a className="step" href={`#${id}`} data-state={state}>
-              <span className="sticker" aria-hidden="true">
-                {state === 'done' ? check : i + 1}
-              </span>
-              {state === 'done' ? done : todo}
-              {state === 'now' && <span className="visually-hidden"> (next step)</span>}
-            </a>
-          </li>
-        )
-      })}
-    </ol>
+    <span className="step" data-state={shown}>
+      <span className="sticker" aria-hidden="true">
+        {state === 'done' ? check : i + 1}
+      </span>
+      {state === 'done' ? done : todo}
+      {shown === 'now' && <span className="visually-hidden"> (next step)</span>}
+    </span>
+  )
+}
+
+/**
+ * The top bar's setup sticker: the next of Keyboard and Sound, linking to Setup, shown only
+ * while one of them isn't done. Timing is offered before the first timed drill instead.
+ */
+export function SetupSticker() {
+  const states = useSetupSteps()
+  const next = (['keyboard', 'sound'] as const).find((id) => states[id] !== 'done')
+  if (!next) return null
+  return (
+    <a
+      className="step-link"
+      href="#/setup"
+      aria-label={`Setup: ${STEPS.find((s) => s.id === next)!.todo}`}
+    >
+      <Step id={next} />
+    </a>
   )
 }

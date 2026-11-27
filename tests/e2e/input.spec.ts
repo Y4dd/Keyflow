@@ -11,7 +11,7 @@ interface DevApi {
 type DevWindow = Window & { __keyflow?: DevApi }
 
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   return page.getByRole('group', { name: 'On-screen piano' })
 }

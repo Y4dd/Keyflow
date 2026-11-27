@@ -1,3 +1,4 @@
+import { createContext } from 'react'
 import { useAudioStore } from './audio.ts'
 import { useCalibrationStore } from './calibration.ts'
 import { useMidiStore } from './midi.ts'
@@ -25,3 +26,9 @@ export function stepStates(done: Record<StepId, boolean>): Record<StepId, StepSt
   const state = (id: StepId): StepState => (done[id] ? 'done' : id === now ? 'now' : 'todo')
   return { keyboard: state('keyboard'), sound: state('sound'), timing: state('timing') }
 }
+
+/**
+ * The step a screen is about, when it isn't the first one not done: the walk-through's Sound
+ * screen keeps Start audio yellow after the keyboard was skipped (StepAction).
+ */
+export const NowStep = createContext<StepId | null>(null)

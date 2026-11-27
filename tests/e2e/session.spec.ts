@@ -20,7 +20,7 @@ interface DevApi {
 type DevWindow = Window & { __keyflow?: DevApi }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/practice')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 })
 
@@ -84,7 +84,7 @@ test('due reviews come first; after the session, jam with its scale', async ({ p
     .click()
   const groove = page.getByTestId('groove')
   await expect(groove.getByRole('combobox', { name: 'Groove' })).toHaveValue('electro-funk-vamp')
-  await expect(groove.getByLabel('Key')).toHaveValue('2')
+  await expect(groove.getByRole('combobox', { name: /^Key/ })).toHaveValue('2')
   await expect(groove.getByRole('combobox', { name: 'Scale' })).toHaveValue('minor pentatonic')
   await expect(page.getByTestId('session-done')).toHaveCount(0)
 })

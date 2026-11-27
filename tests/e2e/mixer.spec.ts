@@ -18,9 +18,28 @@ interface DevApi {
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
+// The Mix is a drawer in Jam, the split a setting in Setup (P2-T12).
+async function go(page: Page, view: 'Jam' | 'Setup') {
+  const link = page.getByRole('link', { name: view, exact: true })
+  await link.click()
+  await expect(link).toHaveAttribute('aria-current', 'page') // the old view is gone
+}
+// Opened without a pointer: a click on the page would start sound (attachAudioUnlock).
+const openMix = (page: Page) =>
+  page
+    .locator('details', { has: page.locator('summary', { hasText: 'Mix' }) })
+    .evaluate((d) => ((d as HTMLDetailsElement).open = true))
+async function setSplit(page: Page, on: boolean) {
+  await go(page, 'Setup')
+  await page.getByLabel('Split keyboard').setChecked(on)
+  await go(page, 'Jam')
+  await openMix(page)
+}
+
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  await openMix(page)
 }
 
 async function startSound(page: Page) {
@@ -29,7 +48,7 @@ async function startSound(page: Page) {
 }
 
 const gains = (page: Page) => page.evaluate(() => (window as DevWindow).__keyflow!.audio.mixGains())
-const mix = (page: Page) => page.getByRole('group', { name: 'Mix' })
+const mix = (page: Page) => page.getByTestId('mix')
 
 test('levels, mutes and "you play bass" reach the engine and survive a reload', async ({
   page,
@@ -53,20 +72,21 @@ test('levels, mutes and "you play bass" reach the engine and survive a reload', 
   expect(g.bass).toBe(1)
 
   // "You play bass" mutes the groove bass only while the split is on (on by default).
-  await page.getByLabel('Split keyboard').uncheck()
+  await setSplit(page, false)
   await mix(page)
     .getByLabel(/You play bass/)
     .check()
   expect((await gains(page))!.bass).toBe(1)
-  await page.getByLabel('Split keyboard').check()
+  await setSplit(page, true)
   await expect.poll(async () => (await gains(page))!.bass).toBe(0)
   await expect(mix(page).getByText('Yours')).toBeVisible()
-  await page.getByLabel('Split keyboard').uncheck()
+  await setSplit(page, false)
   await expect.poll(async () => (await gains(page))!.bass).toBe(1)
 
   await page.evaluate(() => (window as DevWindow).__keyflow!.flushSettings())
   await page.reload()
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  await openMix(page)
   await expect(mix(page).getByLabel(/^Drums/)).toHaveValue('-6')
   await expect(mix(page).getByLabel('Mute chords')).toBeChecked()
   await expect(mix(page).getByLabel(/You play bass/)).toBeChecked()

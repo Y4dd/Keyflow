@@ -26,10 +26,6 @@ const LEVELS: { level: Level; word: string }[] = [
 ]
 const WORD = Object.fromEntries(LEVELS.map((l) => [l.level, l.word])) as Record<Level, string>
 
-// Temporary, for the one taste round (docs/manual-tests/P2-T7.md): the pick becomes the only look.
-const LOOKS = ['fill', 'stickers', 'tint'] as const
-type Look = (typeof LOOKS)[number]
-
 const pretty = (k: string) => k.replace('b', '♭').replace('#', '♯')
 
 const check = (
@@ -51,7 +47,6 @@ const Mark = ({ level, fill }: { level: Level; fill: number }) => (
 export function ProgressPanel() {
   const [items, setItems] = useState<Item[]>([])
   const [times, setTimes] = useState<Date[]>([])
-  const [look, setLook] = useState<Look>('fill')
   // shortcut: the 14-day window is fixed at mount, so a tab left open past midnight shows
   // yesterday's window until a reload; recompute on visibility change if that's ever noticed.
   const [now] = useState(() => new Date())
@@ -78,12 +73,7 @@ export function ProgressPanel() {
   const run = daysRunning(days)
 
   return (
-    <section
-      className="card progress"
-      data-look={look}
-      aria-labelledby="progress-tab"
-      data-testid="progress"
-    >
+    <section className="card progress" aria-labelledby="progress-tab" data-testid="progress">
       <h2 className="tab" id="progress-tab">
         Progress
       </h2>
@@ -118,20 +108,6 @@ export function ProgressPanel() {
             </li>
           ))}
         </ul>
-        <div className="chips" role="radiogroup" aria-label="Heatmap look (audition)">
-          {LOOKS.map((l) => (
-            <label key={l} className="chip">
-              <input
-                type="radio"
-                name="progress-look"
-                value={l}
-                checked={l === look}
-                onChange={() => setLook(l)}
-              />
-              {l[0]!.toUpperCase() + l.slice(1)}
-            </label>
-          ))}
-        </div>
       </div>
 
       <div className="heatmap-scroll">

@@ -22,9 +22,16 @@ interface DevApi {
 }
 type DevWindow = Window & { __keyflow?: DevApi; __heard?: Heard[] }
 
+// Opened without a pointer: a click on the page would start sound (attachAudioUnlock).
+const openTakes = (page: Page) =>
+  page
+    .locator('details', { has: page.locator('summary', { hasText: 'Takes' }) })
+    .evaluate((d) => ((d as HTMLDetailsElement).open = true))
+
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
+  await openTakes(page) // Jam's Takes drawer (P2-T12)
 }
 
 async function startSound(page: Page) {
@@ -73,7 +80,7 @@ async function recordTake(page: Page, played = PLAYED) {
   await groove.getByRole('button', { name: 'Record', exact: true }).click()
   // A take keeps one groove, key and tempo.
   await expect(groove.getByRole('combobox', { name: 'Groove' })).toBeDisabled()
-  await expect(groove.getByLabel('Key')).toBeDisabled()
+  await expect(groove.getByRole('combobox', { name: /^Key/ })).toBeDisabled()
   // A beat past the transport's start, so no press lands before the downbeat as heard (the
   // origin includes the output latency): those are clamped to 0.
   await page.waitForFunction(() => ((window as DevWindow).__keyflow!.groove.ticks() ?? -1) > 192)
@@ -131,6 +138,7 @@ test('a take is saved, and replays over its groove with identical events', async
 
   // Saved: it's still listed after a reload.
   await page.reload()
+  await openTakes(page)
   await expect(page.getByTestId('takes').getByRole('radio')).toHaveCount(1)
 })
 
@@ -259,7 +267,9 @@ test('the database upgrade to version 2 keeps version 1 settings', async ({ page
       }),
   )
   await page.reload()
-  await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
+  await openTakes(page)
   await expect(page.getByTestId('takes')).toContainText('No takes yet')
   expect(await storedTakes(page)).toEqual([])
+  await page.getByRole('link', { name: 'Setup', exact: true }).click()
+  await expect(page.getByLabel('Show the computer-key letters on the keys')).not.toBeChecked()
 })

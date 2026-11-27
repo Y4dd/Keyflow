@@ -23,8 +23,9 @@ interface DevApi {
 }
 type DevWindow = Window & { __keyflow?: DevApi }
 
+// Setup holds the pedal and sound controls (P2-T12).
 async function start(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/setup')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   await page.getByRole('button', { name: 'Start audio' }).click()
   await expect(page.getByTestId('audio-status')).toHaveAttribute('data-status', 'running')
@@ -160,7 +161,7 @@ test('scrolling over the on-screen keys bends, then springs back to center', asy
 
 for (const preset of ['funk-lead', 'ep-keys'] as const) {
   test(`${preset}: a bend moves a held note's pitch up by the bend and back`, async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/#/jam')
     await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
     // A3 (220 Hz) bent up 2 semitones (246.9 Hz) at 0.4 s, back at 0.9 s, each over 0.1 s.
     const r = await page.evaluate((spec) => (window as DevWindow).__keyflow!.render(spec), {
@@ -200,8 +201,13 @@ test('to next scale tone: the main sound bends in steps of the shown solo scale'
     { kind: 'pedal', down: true },
   ])
   expect((await targets(page))?.bend).toBe(1) // one step
-  await page.getByTestId('groove').getByLabel('Key').selectOption({ label: 'F minor' })
+  await page.getByRole('link', { name: 'Jam', exact: true }).click()
+  await page
+    .getByTestId('groove')
+    .getByRole('combobox', { name: /^Key/ })
+    .selectOption({ label: 'F minor' })
   expect(await bendScale(page)).toEqual([5, 8, 10, 0, 3])
+  await page.getByRole('link', { name: 'Setup', exact: true }).click()
   await amount.selectOption('2')
   expect(await bendScale(page)).toBeNull()
   expect((await targets(page))?.bend).toBe(2)
@@ -219,7 +225,7 @@ const D_MINOR_PENT = [2, 5, 7, 9, 0]
 test('funk-lead: a scale bend lands on the next scale tone, and follows a legato move', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   // D4 bent a step (to F, 3 semitones), F4 slurred in under the bend (to G, 2 semitones), then
   // lifted, back to the D still held (to F again).
@@ -248,7 +254,7 @@ test('funk-lead: a scale bend lands on the next scale tone, and follows a legato
 test('ep-keys: a note played under a scale bend starts at its own next scale tone', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   // A4 played under a held step bend sounds C5 (3 semitones up).
   const r = await page.evaluate((spec) => (window as DevWindow).__keyflow!.render(spec), {
@@ -264,7 +270,7 @@ test('ep-keys: a note played under a scale bend starts at its own next scale ton
 })
 
 test('ep-keys: a held note bent a step lands on its next scale tone', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
   // F4 held, then bent a step: to G (2 semitones). (A chord's two pitches can't be told apart
   // by the pitch estimate, so each voice's own step is only checked one note at a time.)

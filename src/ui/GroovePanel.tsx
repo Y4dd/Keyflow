@@ -20,33 +20,44 @@ const SCALE_NAMES: Record<ScaleId, string> = {
   mixolydian: 'Mixolydian',
 }
 
-const WHEELS: { level: Wheels; label: string; text: string }[] = [
+// "Help on the keys": the training-wheels level and the highlighting look (both saved as before)
+// in one menu. Chord tones only and Off keep whichever look was chosen last.
+const HELP: { wheels: Wheels; look?: Look; label: string; text: string }[] = [
   {
-    level: 3,
-    label: 'Names',
-    text: 'Chord tones marked strongly, the rest of the scale softly, names on both, and the other keys dimmed.',
+    wheels: 3,
+    look: 'tags',
+    label: 'Tags with names',
+    text: 'A named tag on each chord tone, names on the other scale tones, the other keys dimmed.',
   },
   {
-    level: 2,
-    label: 'No names',
-    text: 'Chord tones marked strongly, the rest of the scale softly, and the other keys dimmed.',
-  },
-  { level: 1, label: 'Chord tones', text: 'Only the chord tones marked.' },
-  { level: 0, label: 'Off', text: 'No help on the keys: play by ear.' },
-]
-
-const LOOK_CHIPS: { look: Look; label: string; text: string }[] = [
-  {
+    wheels: 2,
     look: 'tags',
     label: 'Tags',
-    text: 'A tag on each chord tone; the other scale tones get their name or a small dash.',
+    text: 'A tag on each chord tone, a small dash on the other scale tones, the other keys dimmed.',
   },
   {
+    wheels: 3,
+    look: 'spotlight',
+    label: 'Spotlight with names',
+    text: 'Chord tones brightest, the other scale tones dimmer, the rest darkest, with names.',
+  },
+  {
+    wheels: 2,
     look: 'spotlight',
     label: 'Spotlight',
     text: 'No marks, only light: chord tones brightest, the other scale tones dimmer, the rest darkest.',
   },
+  { wheels: 1, label: 'Chord tones only', text: 'Only the chord tones marked.' },
+  { wheels: 0, label: 'Off', text: 'No help on the keys: play by ear.' },
 ]
+const helpValue = (wheels: Wheels, look?: Look) => (wheels >= 2 ? `${wheels} ${look}` : `${wheels}`)
+
+function useHelp() {
+  const wheels = useGrooveStore((s) => s.wheels)
+  const look = useViewStore((s) => s.look)
+  const value = helpValue(wheels, look)
+  return { value, help: HELP.find((h) => helpValue(h.wheels, h.look) === value)! }
+}
 
 // A focused menu takes the computer keys (type-ahead), so let go after a choice.
 const blur = (e: ChangeEvent<HTMLSelectElement>) => e.currentTarget.blur()
@@ -72,6 +83,18 @@ function RecordIcon() {
   )
 }
 
+/** The top bar's small stop button: shown while a groove (or a replay) plays, in every view. */
+export function StopGroove() {
+  const playing = useGrooveStore((s) => s.playing)
+  if (!playing) return null
+  return (
+    <button type="button" className="stop-groove" onClick={groove.stop}>
+      <TransportIcon playing />
+      Stop groove
+    </button>
+  )
+}
+
 // The groove's bass and chords keep their sounds' colours on their sliders (One Colour Per Sound),
 // Round Bass (GROOVE_BASS) and EP Keys, as the transport note names them.
 const MIX_ROWS: { channel: Channel; label: string; sound?: PresetId }[] = [
@@ -84,15 +107,12 @@ const MIX_ROWS: { channel: Channel; label: string; sound?: PresetId }[] = [
 const signedDb = (db: number) => `${db > 0 ? '+' : db < 0 ? '−' : ''}${Math.abs(db)} dB`
 
 /** Levels and mutes for the groove's parts and your synth, and "you play bass" (P1-T6). */
-function Mix() {
+export function Mix() {
   const { channels, youPlayBass } = useAudioStore((s) => s.mixer)
   const split = useAudioStore((s) => s.layout.split)
   const bassYours = youPlayBass && split
   return (
-    <div className="mix" role="group" aria-labelledby="mix-label">
-      <span id="mix-label" className="mix-label">
-        Mix
-      </span>
+    <div className="mix" data-testid="mix">
       <div className="knobs mix-rows">
         {MIX_ROWS.map(({ channel, label, sound }) => {
           const { db, muted } = channels[channel]
@@ -137,7 +157,7 @@ function Mix() {
           <span className="muted small">
             {split
               ? '(mutes the groove’s bass while the split is on, so your left hand is the bass)'
-              : '(mutes the groove’s bass once you turn on Split in the Play card)'}
+              : '(mutes the groove’s bass once you turn on Split keyboard in Setup)'}
           </span>
         </span>
       </label>
@@ -145,175 +165,157 @@ function Mix() {
   )
 }
 
-/** The groove transport: play and stop, which groove, key, tempo, loop and count-in. */
-export function GroovePanel() {
-  const { grooveId, tonic, bpm, loop, countIn, playing, scale, wheels } = useGrooveStore()
+/** Jam's two lines of guidance: what the help on the keys shows, and what the transport does. */
+export function GrooveNote() {
+  const { grooveId, loop, countIn } = useGrooveStore()
   const running = useAudioStore((s) => s.status === 'running')
-  const g = grooveOf(grooveId)
-  const [min, max] = tempoRange(g)
-  const wheel = WHEELS.find((w) => w.level === wheels)!
-  const look = useViewStore((s) => s.look)
-  const lookChip = LOOK_CHIPS.find((l) => l.look === look)!
   const recording = useTakesStore((s) => s.recording)
   const replaying = useTakesStore((s) => s.replaying !== null)
-  // A take keeps one groove, key and tempo (src/analysis/take.ts), and a replay plays the take's.
-  const locked = recording || replaying
-
+  const g = grooveOf(grooveId)
+  const { help } = useHelp()
   return (
-    <section className="card groove" aria-labelledby="groove-tab" data-testid="groove">
-      <h2 className="tab" id="groove-tab">
-        Groove <span className="range">{g.name}</span>
-      </h2>
-      <div className="transport">
-        <button
-          type="button"
-          className="transport-play"
-          aria-pressed={playing}
-          disabled={!running}
-          onClick={playing ? groove.stop : groove.play}
-        >
-          <TransportIcon playing={playing} />
-          {playing ? 'Stop' : 'Play'}
-        </button>
-        <button
-          type="button"
-          className="transport-record"
-          aria-pressed={recording}
-          disabled={!running || replaying}
-          onClick={recording ? groove.stop : takes.record}
-        >
-          <RecordIcon />
-          {recording ? 'Save take' : 'Record'}
-        </button>
-        <label className="field">
-          Groove
-          <select
-            value={grooveId}
-            disabled={locked}
-            onChange={(e) => {
-              groove.setGroove(e.target.value)
-              blur(e)
-            }}
-          >
-            {GROOVES.map((x) => (
-              <option key={x.id} value={x.id}>
-                {x.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          Key
-          <select
-            value={tonic}
-            disabled={locked}
-            onChange={(e) => {
-              groove.setTonic(Number(e.target.value))
-              blur(e)
-            }}
-          >
-            {Array.from({ length: 12 }, (_, pc) => (
-              <option key={pc} value={pc}>
-                {keyName({ tonic: pc, mode: g.key.mode })} {g.key.mode}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="tempo">
-          <span>Tempo</span>
-          <input
-            type="range"
-            min={min}
-            max={max}
-            step={1}
-            value={bpm}
-            disabled={locked}
-            onChange={(e) => groove.setBpm(Number(e.target.value))}
-          />
-          <output>{bpm} BPM</output>
-        </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={loop}
-            onChange={(e) => groove.setLoop(e.target.checked)}
-          />
-          Loop
-        </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={countIn}
-            onChange={(e) => groove.setCountIn(e.target.checked)}
-          />
-          Count-in
-        </label>
-      </div>
-      <div className="fields">
-        <label className="field">
-          Scale
-          <select
-            value={scale}
-            onChange={(e) => {
-              groove.setScale(e.target.value as ScaleId)
-              blur(e)
-            }}
-          >
-            {scalesOf(g).map((id) => (
-              <option key={id} value={id}>
-                {SCALE_NAMES[id]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="field">
-          <span id="wheels-label">Training wheels</span>
-          <div className="chips" role="radiogroup" aria-labelledby="wheels-label">
-            {WHEELS.map(({ level, label }) => (
-              <label key={level} className="chip">
-                <input
-                  type="radio"
-                  name="wheels"
-                  value={level}
-                  checked={level === wheels}
-                  onChange={() => groove.setWheels(level)}
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="field">
-          <span id="look-label">Look</span>
-          <div className="chips" role="radiogroup" aria-labelledby="look-label">
-            {LOOK_CHIPS.map((l) => (
-              <label key={l.look} className="chip">
-                <input
-                  type="radio"
-                  name="look"
-                  value={l.look}
-                  checked={l.look === look}
-                  onChange={() => view.setLook(l.look)}
-                />
-                {l.label}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-      <p className="blurb">
-        {wheel.text} {wheels > 0 && lookChip.text}
-      </p>
+    <>
+      <p className="blurb">{help.text}</p>
       <p className="muted small transport-note">
         {recording
           ? 'Recording: play over the groove, then Save take (or Stop) to keep it. The groove, key and tempo stay as they are until then.'
           : replaying
             ? 'Replaying a take over its groove, key and tempo. Stop ends it.'
             : running
-              ? `Drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
+              ? `${g.name}: drums, Round Bass and EP Keys${countIn ? ', after one bar of clicks' : ''}. ${loop ? 'Loops until you stop it' : `Plays its ${g.bars} bars once`}.`
               : 'Turn sound on to play the groove.'}
       </p>
-      <Mix />
-    </section>
+    </>
+  )
+}
+
+/** Jam's transport strip, over the keys: play and record, groove, key, tempo, scale, help. */
+export function Transport() {
+  const { grooveId, tonic, bpm, loop, countIn, playing, scale } = useGrooveStore()
+  const running = useAudioStore((s) => s.status === 'running')
+  const g = grooveOf(grooveId)
+  const [min, max] = tempoRange(g)
+  const { value: helpNow } = useHelp()
+  const recording = useTakesStore((s) => s.recording)
+  const replaying = useTakesStore((s) => s.replaying !== null)
+  // A take keeps one groove, key and tempo (src/analysis/take.ts), and a replay plays the take's.
+  const locked = recording || replaying
+
+  return (
+    <div className="transport" role="group" aria-label="Groove" data-testid="groove">
+      <button
+        type="button"
+        className="transport-play"
+        aria-pressed={playing}
+        disabled={!running}
+        onClick={playing ? groove.stop : groove.play}
+      >
+        <TransportIcon playing={playing} />
+        {playing ? 'Stop' : 'Play'}
+      </button>
+      <button
+        type="button"
+        className="transport-record"
+        aria-pressed={recording}
+        disabled={!running || replaying}
+        onClick={recording ? groove.stop : takes.record}
+      >
+        <RecordIcon />
+        {recording ? 'Save take' : 'Record'}
+      </button>
+      <label className="field">
+        Groove
+        <select
+          value={grooveId}
+          disabled={locked}
+          onChange={(e) => {
+            groove.setGroove(e.target.value)
+            blur(e)
+          }}
+        >
+          {GROOVES.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Key
+        <select
+          value={tonic}
+          disabled={locked}
+          onChange={(e) => {
+            groove.setTonic(Number(e.target.value))
+            blur(e)
+          }}
+        >
+          {Array.from({ length: 12 }, (_, pc) => (
+            <option key={pc} value={pc}>
+              {keyName({ tonic: pc, mode: g.key.mode })} {g.key.mode}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="tempo">
+        <span>Tempo</span>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={bpm}
+          disabled={locked}
+          onChange={(e) => groove.setBpm(Number(e.target.value))}
+        />
+        <output>{bpm} BPM</output>
+      </label>
+      <label className="field">
+        Scale
+        <select
+          value={scale}
+          onChange={(e) => {
+            groove.setScale(e.target.value as ScaleId)
+            blur(e)
+          }}
+        >
+          {scalesOf(g).map((id) => (
+            <option key={id} value={id}>
+              {SCALE_NAMES[id]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        Help on the keys
+        <select
+          value={helpNow}
+          onChange={(e) => {
+            const h = HELP.find((x) => helpValue(x.wheels, x.look) === e.target.value)!
+            groove.setWheels(h.wheels)
+            if (h.look) view.setLook(h.look)
+            blur(e)
+          }}
+        >
+          {HELP.map((h) => (
+            <option key={h.label} value={helpValue(h.wheels, h.look)}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={loop} onChange={(e) => groove.setLoop(e.target.checked)} />
+        Loop
+      </label>
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={countIn}
+          onChange={(e) => groove.setCountIn(e.target.checked)}
+        />
+        Count-in
+      </label>
+    </div>
   )
 }

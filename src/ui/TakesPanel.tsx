@@ -195,7 +195,7 @@ export function TakesPanel() {
       {error && <p className="hint">{error}</p>}
       {!take ? (
         <p className="blurb takes-empty">
-          No takes yet. Press <strong>Record</strong> in the Groove card, play over the groove, then{' '}
+          No takes yet. Press <strong>Record</strong> over the keys, play over the groove, then{' '}
           <strong>Save take</strong>: it lands here, to replay over its groove or export as a MIDI
           file.
         </p>

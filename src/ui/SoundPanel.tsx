@@ -254,7 +254,17 @@ function Knobs({ presetId }: { presetId: PresetId }) {
 const OCTAVES: number[] = []
 for (let o = MIN_OCTAVE; o <= MAX_OCTAVE; o++) OCTAVES.push(o)
 
-function ZoneControls({ zone, title, keys }: { zone: ZoneId; title: string; keys: string }) {
+/** A zone's sleeves, octave and knobs: in Setup's crate, and in the drawer over the keys. */
+export function ZoneControls({ zone }: { zone: ZoneId }) {
+  const title = zone === 'left' ? 'Left sound' : 'Main sound'
+  const split = useAudioStore((s) => s.layout.split)
+  const splitNote = useAudioStore((s) => s.layout.splitNote)
+  const keys =
+    zone === 'left'
+      ? `below ${name(splitNote)}`
+      : split
+        ? `${name(splitNote)} and up`
+        : 'whole keyboard'
   const { presetId, octave } = useAudioStore((s) => s.layout[zone])
   return (
     <fieldset className="card" data-sound={presetId}>
@@ -349,7 +359,9 @@ function PedalControls() {
         />
         <span>
           Invert pedal{' '}
-          <span className="muted small">(if the Play panel shows it down when it's up)</span>
+          <span className="muted small">
+            (if the readout over the keys shows it down when it's up)
+          </span>
         </span>
       </label>
       <div className="fields">
@@ -404,7 +416,7 @@ function PedalControls() {
         Bends move the main sound. Hold the bend key, or scroll over the on-screen keys for a bend
         that springs back when you stop.
         {bendSemitones === 'scale' &&
-          ' To next scale tone bends each note to the next note of the Groove card’s scale, 1 to 3 semitones up (scrolling down goes to the one below).'}
+          ' To next scale tone bends each note to the next note of Jam’s scale, 1 to 3 semitones up (scrolling down goes to the one below).'}
       </p>
     </fieldset>
   )
@@ -413,15 +425,10 @@ function PedalControls() {
 /** The crate's sound cards: left sound (when split), main sound, pedal and bend. */
 export function SoundCrate() {
   const split = useAudioStore((s) => s.layout.split)
-  const splitNote = useAudioStore((s) => s.layout.splitNote)
   return (
     <>
-      {split && <ZoneControls zone="left" title="Left sound" keys={`below ${name(splitNote)}`} />}
-      <ZoneControls
-        zone="main"
-        title="Main sound"
-        keys={split ? `${name(splitNote)} and up` : 'whole keyboard'}
-      />
+      {split && <ZoneControls zone="left" />}
+      <ZoneControls zone="main" />
       <PedalControls />
     </>
   )

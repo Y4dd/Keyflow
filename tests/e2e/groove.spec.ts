@@ -14,7 +14,7 @@ type DevWindow = Window & { __keyflow?: DevApi }
 const BAR = 4 * 192
 
 async function open(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/jam')
   await page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 }
 
@@ -34,7 +34,7 @@ test('plays after a count-in, follows key and tempo changes, and Stop leaves not
   await open(page)
   const play = card(page).getByRole('button', { name: 'Play' })
   await expect(play).toBeDisabled()
-  await expect(card(page)).toContainText('Turn sound on to play the groove.')
+  await expect(page.getByText('Turn sound on to play the groove.')).toBeVisible()
   await startSound(page)
 
   await play.click()
@@ -51,7 +51,7 @@ test('plays after a count-in, follows key and tempo changes, and Stop leaves not
   await expect.poll(() => held(page), { timeout: 5000 }).toBeGreaterThan(0)
 
   // Key and tempo change while it plays; it keeps running.
-  await card(page).getByLabel('Key').selectOption({ label: 'F minor' })
+  await card(page).getByRole('combobox', { name: /^Key/ }).selectOption({ label: 'F minor' })
   await card(page).getByLabel('Tempo').fill('140')
   await expect(card(page).getByText('140 BPM')).toBeVisible()
   const before = (await ticks(page))!
@@ -150,8 +150,10 @@ test('every groove in the menu plays at its own key and tempo', async ({ page })
     await expect.poll(() => ticks(page), { timeout: 8000 }).toBeGreaterThan(BAR)
     await menu.selectOption({ label: name })
     await expect.poll(() => ticks(page)).toBeLessThan(BAR / 2)
-    await expect(card(page).getByRole('heading')).toContainText(name)
-    await expect(card(page).getByLabel('Key').locator('option:checked')).toHaveText(key)
+    await expect(menu.locator('option:checked')).toHaveText(name)
+    await expect(
+      card(page).getByRole('combobox', { name: /^Key/ }).locator('option:checked'),
+    ).toHaveText(key)
     await expect(card(page).getByText(`${bpm} BPM`)).toBeVisible()
     // Restarted from the top, and its bass and chords sound.
     await expect.poll(() => ticks(page), { timeout: 5000 }).toBeGreaterThan(BAR / 4)

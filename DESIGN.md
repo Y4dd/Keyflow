@@ -162,7 +162,7 @@ Each fills its sleeve art, its zone strip over the keyboard, the keys it lights,
 - **Keyboard Well** (`well`): the inset behind the canvas keyboard; the dev log.
 - **Divider Card** (`card`): every panel.
 - **Raised Card** (`card-raised`): selects, button hover, step pills, `kbd` keys.
-- **Hairline** (`rule`): decorative rules only (the masthead's bottom edge). Never a control outline.
+- **Hairline** (`rule`): decorative rules only (the top bar's bottom edge, the sound drawer's top edge). Never a control outline.
 - **Control Line** (`line`): button, chip and select outlines, dashed "to do" stickers, the scrollbar thumb.
 - **Kraft** (`kraft`): divider tabs, the wordmark, text selection.
 - **Bone** (`bone`): text; the selected chip's fill; the native accent colour.
@@ -199,21 +199,26 @@ Nothing in the DOM goes below 14px except the 12px ON sticker; the canvas labels
 Numbers that change (knob values, latency, held notes) use tabular figures. Strong text is 650.
 
 ### Named Rules
-**The Tab-Only Display Rule.** Big Shoulders appears on the wordmark and the divider tabs and nowhere else.
+**The Tab-Only Display Rule.** Big Shoulders appears on the wordmark, the divider tabs and the view tabs in the top bar, and nowhere else.
 
 **The Self-Hosted Fonts Rule.** Every font ships from `src/assets/fonts/` with its source and license listed in [`src/assets/LICENSES.md`](src/assets/LICENSES.md). No font CDN or runtime third-party request.
 
 ## Layout
 
-One column, up to 1360px wide, centred, with 28px top, 48px side and 72px bottom padding (20px / 24px / 56px under 720px). Spacing rides a 4px base (4, 8, 12, 16, 24, 32, 48).
+The window is one screen that never scrolls as a whole (P2-T12): a slim top bar, the current view scrolling under it, and the dock pinned at the bottom. Content is up to 1360px wide, centred, with 48px side gutters (24px under 720px). Spacing rides a 4px base (4, 8, 12, 16, 24, 32, 48).
 
-Order, top to bottom:
-1. **Masthead:** wordmark, tagline (34ch), and the setup-step stickers pushed right; a `rule` hairline beneath, 20px below the content.
-2. **Setup row:** the Keyboard and Sound cards side by side (auto-fit columns, min 480px), 48px below the masthead. This row replaced the theme's next-step bar; the card whose step is "now" carries the yellow ring and the yellow button.
-3. **Play card:** the full-width canvas keyboard (180px tall) in its well, then the play bar: the split controls on one side, the held-notes and pedal readout on the other, then the computer-key help.
-4. **The crate:** divider cards for Left sound (only while the split is on), Main sound, Pedal & bend and Timing (auto-fit columns, min 380px), left sound first to match the keys. At 1240px and up, Timing alone on the last row spans it, its tips in a second column.
+1. **Top bar:** the wordmark at 30px, then the three views (Jam, Practice, Learn) as divider tabs in Big Shoulders 22px capitals: the current one kraft with `bin` text, the others `bone-muted` (hover: `card` fill). At the right end, in this order: a small "Stop groove" pill while a groove plays, the setup sticker (the next of Keyboard and Sound as a step pill linking to Setup, only while one isn't done), and the Setup gear (a 42px circle, kraft when Setup is open). A `rule` hairline beneath. Things that come and go sit at the right end, so the view tabs never move.
+2. **View:** scrolls on its own, 44px below the top bar. Cards keep 48px between them for their tabs.
+3. **Dock:** on `card`, pinned at the bottom of every view and mounted once: Jam's transport strip (Jam only), the readout line (Start audio while sound is off, held notes and pedal, then a pill per zone naming its sound with a dot in the sound's colour, pushed right), then the 180px canvas keyboard in its well. A zone pill or the zone strip on the canvas opens that zone's sleeves and knobs in the sound drawer, which rises over the view from the dock's top edge, so the keys never move. On Setup the readout shows only held notes and pedal, since Setup has the Sound card and the full sound cards.
 
-Grids use 48px row and 24px column gaps; the extra row gap leaves room for each card's tab. The keyboard keeps one fixed place and size; later screens (jam mode) keep it there.
+Views:
+- **Jam:** one line on the chosen help on the keys and one on the transport, then the Mix and Takes drawers (native details opened from a pill; the open one takes the full width).
+- **Practice:** the Drills card, then Progress (P2-T13 designs this screen).
+- **Learn:** a placeholder card until the chord and scale library (P2-T10).
+- **Setup:** the Keyboard and Sound cards side by side (min 480px), then Split and Computer keys, then the crate (Left sound while split, Main sound, Pedal & bend, Timing; min 380px; at 1240px and up Timing alone on the last row spans it, its tips in a second column), then Your data. The card whose step is "now" carries the yellow ring and button.
+- **First visit:** a full-screen walk-through on `bin`, 640px wide: wordmark, tagline, the Keyboard and Sound step pills, the Keyboard card, then the Sound card, each with Skip setup (or Back) and Next (Start playing on the last). Next is yellow only when the card shows no yellow button of its own, so each screen has one.
+
+Grids use 48px row and 24px column gaps; the extra row gap leaves room for each card's tab.
 
 ## Elevation & Depth
 
@@ -269,12 +274,13 @@ Ordinary native buttons, outlined pills.
 - **Select:** `card-raised` fill, 1px `line` border, 6px corners, 6px 10px.
 - **Checkbox and radio:** native, 18px, tinted by `accent-color: bone`.
 - **Range (knobs):** native, full width, accent in the card's sound colour (`bone-muted` outside a sound). Knobs lay out as label, slider, right-aligned tabular value.
-- **Mix rows (Groove card, P1-T6):** the knob layout plus a Mute checkbox per row, at most 720px wide under a 650-weight "Mix" label. The groove bass and chords rows take Round Bass and EP Keys colours; Drums and Your synth stay `bone-muted`. A silent row says "Muted" (or "Yours" when you play bass) in `bone-muted` in place of its level.
+- **Mix rows (Jam's Mix drawer, P1-T6):** the knob layout plus a Mute checkbox per row, at most 720px wide. The groove bass and chords rows take Round Bass and EP Keys colours; Drums and Your synth stay `bone-muted`. A silent row says "Muted" (or "Yours" when you play bass) in `bone-muted` in place of its level.
 - **Hint:** a `now`-edged box (55% yellow border, 10% yellow tint over `card`) holding one next step; used for problems as well as guidance.
 
-### Navigation (setup steps)
-- **Style:** an ordered list of pill links in the masthead, each a 30px sticker plus a label, linking to its card.
-- **States:** done = green sticker with a drawn check mark and the past-tense label; now = yellow sticker with the step number and an inset yellow ring; to do = dashed `line` outline with the number in `bone-muted`. A done step stays in the list.
+### Navigation (P2-T12)
+- **Views:** see Layout. The view tabs are links to hash routes, `aria-current="page"` on the current one.
+- **Step pills:** a 30px sticker plus a label. Done = green sticker with a drawn check mark and the past-tense label; now = yellow sticker with the step number and an inset yellow ring; to do = dashed `line` outline with the number in `bone-muted`. The top bar shows one (the setup sticker); the walk-through shows Keyboard and Sound, the screen shown being "now".
+- **Drawers:** native `details` whose summary is an outlined pill (a `bone` outline when open). Also used for Practice by type and the computer-key help.
 
 ### Sleeves (signature)
 The preset picker. Each preset is a square sleeve of original art over a hidden native radio. Unchosen sleeves sit at 50% opacity (80% on hover) with a muted name. The chosen one lifts 12px, goes full opacity, gains the floor shadow, and an ON sticker in `now` pops in at its top right.
@@ -284,31 +290,31 @@ The preset picker. Each preset is a square sleeve of original art over a hidden 
 - **Zone strip:** 20px band over the keys in each zone's sound colour, named in 11px bold capitals in `bin`.
 - **Split point:** a 2px `bin` line through strip and keys.
 - **Held key:** filled toward the sound playing it, from 30% (soft) to full colour (hard).
-- **Letters:** `key-letter` on idle whites, `bin` on other light fills (dimmed, lit), `bone` on dark fills; letters and C-octave names only when a white key is at least 14px wide. A Play-card checkbox (a saved setting) hides the computer-key letters; the C-octave names stay.
-- **Highlighting (jam mode, P1-T4b):** two looks, chosen with Look chips in the Groove card and saved. Both dim notes outside the scale toward `well`, never red, and a held key's fill covers every mark.
+- **Letters:** `key-letter` on idle whites, `bin` on other light fills (dimmed, lit), `bone` on dark fills; letters and C-octave names only when a white key is at least 14px wide. A checkbox in Setup's Computer keys card (a saved setting) hides the computer-key letters; the C-octave names stay.
+- **Highlighting (jam mode, P1-T4b):** two looks, chosen in Help on the keys and saved. Both dim notes outside the scale toward `well`, never red, and a held key's fill covers every mark.
   - **Tags** (default): a chord tone wears a pill centred 40px (whites) or 26px (blacks) above the key's bottom, `bin` on whites and `bone` on blacks. At Names it holds the note name (13px bold `bone` on whites, 12px bold `bin` on blacks); otherwise it's a 9px-tall pill. A scale tone shows its 12px name at Names, else a 4px dash in `key-letter` (whites) or `kraft` (blacks). Other whites dim 55%, blacks 50%.
   - **Spotlight:** no marks, three brightness steps. Chord tones are lit (whites `#fffbf3`, blacks 90% toward `kraft`), scale tones mid (whites 40% toward `well`, blacks 40% toward `kraft`), the rest dark (whites 70% toward `well`, blacks 50%). At Chord tones every non-chord white sits at 50%. Names at Names sit 32px (whites) or 24px (blacks) above the key's bottom, chord tones in bold.
   - Names are spelled by the scale and then the key, dark on light fills and `bone` on dark ones.
-- **Training wheels:** chips in the Groove card (Names, No names, Chord tones, Off), beside a Scale select that offers only the groove's own scales, with one 14px `bone-muted` line describing the chosen level and look.
+- **Help on the keys (P2-T12):** one select in the transport strip joining the training-wheels level and the look: Tags with names, Tags, Spotlight with names, Spotlight, Chord tones only, Off. Beside a Scale select that offers only the groove's own scales; Jam's view describes the choice in one line.
 - **Redraw:** in an animation frame scheduled only after a change, never per note through React.
 
 ### Takes (P1-T7)
 - **Record:** an ordinary pill button beside Play (smaller, so the transport keeps one row), with a filled `bone` dot (no red: the dot is the shape). While recording it reads "Save take", filled `bone` like Play's Stop, and the Groove, Key and Tempo controls dim to 45% (locked for the take, and during a replay).
-- **Takes card:** full width under the Groove card, its tab noting how many takes. Empty, one 16px `bone-muted` line says how to record. Otherwise a list of takes (visible native radios, groove name in 650 over a 14px `bone-muted` line of key, tempo, length and when, tabular figures) beside the chosen take's piano roll, then Replay (pressed: "Stop replay") and Export .mid as outlined pills. The chosen take sits on `card-raised` with a 2px inset `bone` outline; keyboard focus draws it in `now`.
+- **Takes card:** in Jam's Takes drawer, its tab noting how many takes. Empty, one 16px `bone-muted` line says how to record. Otherwise a list of takes (visible native radios, groove name in 650 over a 14px `bone-muted` line of key, tempo, length and when, tabular figures) beside the chosen take's piano roll, then Replay (pressed: "Stop replay") and Export .mid as outlined pills. The chosen take sits on `card-raised` with a 2px inset `bone` outline; keyboard focus draws it in `now`.
 - **Piano roll (canvas):** 260px tall in a `well` like the keyboard. Rows follow the keys turned on their side (`bin` for white keys, `well` for black), a `rule` hairline under each C named in the gutter (11px `bone-muted`). Along the top a 24px strip of chord symbols (13px bold `bone`) on alternating `card` and `card-raised`, a `rule` line down at each chord change, and "Count-in" over the count-in bar. Notes are 2px-rounded bars: chord tones `bone`, scale tones `bone-muted`, others `line` (dimmed, never red), 55% to full opacity by velocity. Drawn on a take change or a resize only.
 - **Take stats (P1-T8):** under the roll, label-over-value pairs in a wrapping row (14px `bone-muted` label over a 16px 650 `bone` value, tabular figures, 32px apart): Notes, Range, In the scale, Chord tones on 1 and 3, Longest rest. No big numbers, no score and no colour for good or bad. Under them, the one suggestion as a plain 16px `bone` sentence (not a yellow hint: it isn't a setup step).
 
 ### Drills (P2-T3)
-- **Drills card:** full width under the Play card, so the prompt sits next to the keys. It holds chips for the five drill types. With none chosen, one 14px `bone-muted` line explains them.
+- **Drills card:** in Practice, over the pinned keyboard. Start today's session, then the five drill-type chips behind a Practice by type drawer (until the library's Drill this replaces them). With no drill open, one 14px `bone-muted` line explains the session. A scale drill in time, opened before Timing is calibrated, shows one yellow hint linking to Setup.
 - **Prompt:** the largest DOM text (650, 40px, 32px under 720px, balanced, 30ch), in the body face, because it is read from the stand. A formula line (18px `bone`) sits under it for Build it.
 - **Result line:** always one line high (18px), so nothing shifts while you play. A wrong try shows one `bone-muted` sentence ("You played G6."). A right answer shows a 30px sticker ringed in `bone` with the drawn check, then "**Right**, in 1.4 s". There is no red and no score, and yellow and green keep their setup jobs.
 - **Actions:** Skip, which reads Next once the answer is right, and Close drills, both outlined pills.
 
 ### Progress (P2-T7)
-- **Progress card:** full width above "Your data". First one 16px `bone-muted` line ("You practised on 5 of the last 14 days, 3 days in a row."; before any practice, where the days will show), then 14 dots for the last 14 days, oldest first: a practised day is a solid `bone` 14px dot, any other a dashed `line` ring. There is no streak to lose: a missed day is an empty ring, "days in a row" shows only from two, and a day not yet played doesn't end it.
-- **Legend:** the four marks with their names and counts (14px `bone-muted` names, 650 `bone` tabular counts), wrapping beside the temporary look chips.
+- **Progress card:** in Practice, under the Drills card. First one 16px `bone-muted` line ("You practised on 5 of the last 14 days, 3 days in a row."; before any practice, where the days will show), then 14 dots for the last 14 days, oldest first: a practised day is a solid `bone` 14px dot, any other a dashed `line` ring. There is no streak to lose: a missed day is an empty ring, "days in a row" shows only from two, and a day not yet played doesn't end it.
+- **Legend:** the four marks with their names and counts (14px `bone-muted` names, 650 `bone` tabular counts), wrapping.
 - **Heatmap:** a native table: 12 key columns (650 `bone-muted` names, flats and sharps as ♭ and ♯) and one row per chord or scale type (16px `bone` names, sticky on the left when the table scrolls sideways under narrow widths), grouped under 650 `bone-muted` track names. Cells are 40px. Bone ramp only (no red, yellow, green or sound colour), and every level is a shape too: not open yet = dashed `line` outline at 45%; new = solid `line` outline; shaky = a `bone-muted` outline partly filled by stability; known cold = solid `bone` with a drawn `bin` check. Each cell also carries its level as hidden text. Nothing animates.
-- **Looks (being auditioned, P2-T7's taste step):** Fill (28px squares filling from the bottom), Stickers (28px rings growing a centre dot, solid when cold), Tint (36px tiles whose tone rises with stability). The pick becomes the only look.
+- **Look:** Fill (28px squares filling from the bottom), picked in P2-T7's taste step.
 
 ## Do's and Don'ts
 
