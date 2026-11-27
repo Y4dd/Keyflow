@@ -340,8 +340,9 @@ export const SCALE_BPM = 70
 
 /**
  * A random drill of a kind, never the item just played (interleaving).
- * shortcut: uniform over a fixed vocabulary, no 9ths and no curriculum; the session builder
- * (P2-T6) replaces this with due and unlocked items.
+ * Practice by type, outside a session (the session builder, P2-T6, picks from due and unlocked
+ * items). shortcut: uniform over a fixed vocabulary, no 9ths; drop it with the type chips once
+ * P2-T4's manual check, which uses them, has passed.
  */
 export function pickDrill(kind: DrillKind, previous: string | null, random = Math.random): Drill {
   const one = <T>(xs: readonly T[]) => xs[Math.floor(random() * xs.length)]!

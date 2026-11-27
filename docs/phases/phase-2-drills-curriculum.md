@@ -77,13 +77,14 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - **Automated:** graph validation (no cycles, every prerequisite exists).
 - **Built:** 2026-11-27. `src/practice/curriculum.ts` (see "Curriculum (P2-T5)" in `docs/architecture.md`): 19 units in the five tracks, as a TS list. A unit opens when each prerequisite has half its items stable (FSRS stability of 7 days or more, in `UNLOCK`), so 7th chords unlock once minor triads are stable in six keys. `unlockNext` returns up to 3 item IDs, mixing tracks; scale units use the `asc1` item only. Unit tests in `src/practice/curriculum.test.ts` (graph validation, every item makes a drill, unlock rules). There is no manual check.
 
-### P2-T6: Session builder
+### P2-T6: Session builder [done 2026-11-27]
 **Depends on:** P2-T1, P2-T3, P2-T4, P2-T5. **Model:** Opus.
 
 - **Core session (about 5 min):** due items first, **interleaved** (no item twice in a row; mixed types and keys), then new items.
 - **Apply:** after the core, offer "jam with what you practiced", e.g. load a groove with today's scale selected.
 - Adaptive difficulty: if the rolling success rate is above about 90%, add new items or strict modes; below about 70%, slow down new items. Both thresholds are config.
 - **Automated:** session composition tests (interleaving, due-first, new-item cap).
+- **Built:** 2026-11-27. `src/practice/session.ts` (pure) and the store `src/state/session.ts` (see "Session builder (P2-T6)" in `docs/architecture.md`). The Drills card's **Start today’s session** runs at most 20 due reviews, most overdue first, then `unlockNext`'s new items, each part interleaved by type, then key. `SESSION` holds the starting values: 4 new items above a 90% success rate (not Again, over the last 20 ratings), 2 below 70%, else 3. New items are unlocked when first practised, so one left unplayed comes back next session. A new chord is drilled as Build it. After the last drill, **Jam** sets the groove, key and solo scale from the last scale practised; sessions without a scale offer none. The type chips stay for practice by type until P2-T4's manual check, which uses them, is done. Strict modes don't adapt yet (a `shortcut:`). Unit tests in `src/practice/session.test.ts`; e2e in `tests/e2e/session.spec.ts`. There is no manual check.
 
 ### P2-T7: Progress view [built 2026-11-27, manual check pending]
 **Depends on:** P2-T1, P2-T5. **Model:** Opus.

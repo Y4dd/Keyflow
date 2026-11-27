@@ -11,7 +11,8 @@ const TONICS = {
   minor: ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'],
 }
 
-const pretty = (n: string) => n[0] + n.slice(1).replaceAll('b', '♭').replaceAll('#', '♯')
+/** A note name with ♭ and ♯ for b and #. */
+export const pretty = (n: string) => n[0] + n.slice(1).replaceAll('b', '♭').replaceAll('#', '♯')
 
 /** "E♭", "C♯": the key's tonic as its key signature spells it. */
 export const keyName = (key: Key): string => pretty(TONICS[key.mode][key.tonic]!)

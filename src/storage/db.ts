@@ -8,6 +8,7 @@
 // keeps the settings and takes as they are.
 
 import { Dexie, liveQuery, type EntityTable } from 'dexie'
+import type { Grade } from 'ts-fsrs'
 import { parseTake, type Take } from '../analysis/take.ts'
 import type { Item, ReviewLog } from '../practice/items.ts'
 import type { BackupData, Dump } from './backup.ts'
@@ -119,6 +120,12 @@ export function watchProgress(
     times: (await db.reviewLogs.where('at').aboveOrEqual(since).keys()) as Date[],
   })).subscribe({ next: onChange, error: () => {} }) // a failed read leaves the view as it was
   return () => sub.unsubscribe()
+}
+
+/** The ratings of the latest `n` attempts at any item, oldest first (P2-T6's success rate). */
+export async function loadRecentRatings(n: number): Promise<Grade[]> {
+  const logs = await db.reviewLogs.orderBy('at').reverse().limit(n).toArray()
+  return logs.reverse().map((l) => l.rating)
 }
 
 /** The database version this app declares, which a backup file is checked against (P2-T8). */

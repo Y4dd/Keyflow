@@ -1,6 +1,9 @@
+import { GROOVES } from '../grooves/library.ts'
+import { pretty } from '../music/spelling.ts'
 import type { DrillKind } from '../practice/drills.ts'
 import type { PacingId } from '../practice/grading.ts'
 import { drills, useDrillStore } from '../state/drills.ts'
+import { session, useSessionStore } from '../state/session.ts'
 
 const KINDS: { kind: DrillKind; label: string }[] = [
   { kind: 'note', label: 'Find the note' },
@@ -26,19 +29,37 @@ const check = (
 )
 
 /**
- * Drills: pick a type, answer the prompt on the keys. A stalled answer gets hints in steps (the
+ * Drills: today's session (P2-T6), or one type at a time. Pick a type, answer the prompt on the keys. A stalled answer gets hints in steps (the
  * keys they mark are on the canvas keyboard), and the right one its rating. Re-renders on a new
  * drill, a new feedback line, a hint or the right answer, never per note.
  */
 export function DrillPanel() {
   const { drill, done, ms, say, hint, rating, pacing } = useDrillStore()
-  const kind = drill?.kind ?? null
+  const { status, at, total, jam } = useSessionStore()
+  const inSession = status === 'on'
+  const kind = inSession ? null : (drill?.kind ?? null)
 
   return (
     <section className="card drills" aria-labelledby="drills-tab" data-testid="drills">
       <h2 className="tab" id="drills-tab">
         Drills
       </h2>
+      <div className="actions">
+        {inSession ? (
+          <span className="drill-step" data-testid="session-count">
+            Session: {at} of {total}
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="primary"
+            disabled={status === 'building'}
+            onClick={() => void session.start()}
+          >
+            Start today’s session
+          </button>
+        )}
+      </div>
       <div className="chips" role="radiogroup" aria-label="Drill type">
         {KINDS.map((k) => (
           <label key={k.kind} className="chip">
@@ -47,16 +68,36 @@ export function DrillPanel() {
               name="drill-kind"
               value={k.kind}
               checked={k.kind === kind}
-              onChange={() => drills.pick(k.kind)}
+              onChange={() => {
+                session.leave()
+                drills.pick(k.kind)
+              }}
             />
             {k.label}
           </label>
         ))}
       </div>
-      {!drill ? (
+      {!drill && status === 'done' ? (
+        <div className="drill" data-testid="session-done">
+          <p className="blurb">
+            {total === 0
+              ? 'Nothing is due right now. New items come as the ones you have settle in.'
+              : 'That’s today’s session.'}
+          </p>
+          {jam && (
+            <div className="actions">
+              <button type="button" className="primary" onClick={session.jam}>
+                Jam: {pretty(jam.root)} {jam.scale} over the{' '}
+                {GROOVES.find((g) => g.id === jam.grooveId)?.name.toLowerCase()}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : !drill ? (
         <p className="blurb drill-empty">
-          Pick a drill and answer on the keys. Any octave counts unless the prompt names an
-          inversion. The keyboard’s highlighting stays off while a drill is open.
+          Today’s session mixes what’s due with a few new things, about five minutes. Or pick one
+          type. Answer on the keys. Any octave counts unless the prompt names an inversion. The
+          keyboard’s highlighting stays off while a drill is open.
         </p>
       ) : (
         <div className="drill" data-state={done ? 'done' : 'now'} data-item={drill.item}>
@@ -91,10 +132,19 @@ export function DrillPanel() {
             )}
           </p>
           <div className="actions">
-            <button type="button" onClick={() => drills.pick(drill.kind)}>
+            <button
+              type="button"
+              onClick={() => (inSession ? session.next() : drills.pick(drill.kind))}
+            >
               {done ? 'Next' : 'Skip'}
             </button>
-            <button type="button" onClick={drills.stop}>
+            <button
+              type="button"
+              onClick={() => {
+                session.leave()
+                drills.stop()
+              }}
+            >
               Close drills
             </button>
           </div>
