@@ -57,7 +57,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 |---|---|---|---|
 | 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | In progress (all tasks built; P1-T8 manual check pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
-| 2 | Drills and curriculum: spaced review, soloing scales, chords | In progress (P2-T1, P2-T2, P2-T3, P2-T5, P2-T8 done; P2-T4 built, manual check pending) | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
+| 2 | Drills and curriculum: spaced review, soloing scales, chords | In progress (P2-T1, P2-T2, P2-T3, P2-T5, P2-T8 done; P2-T4, P2-T7 built, manual checks pending; P2-T6 building) | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
 | 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
 | 5 | Song import | Not started | [phase-5-song-import.md](docs/phases/phase-5-song-import.md) |
@@ -75,6 +75,7 @@ Checks only the user can do (hands, ears, the real YPT-380). Work carries on pas
 |---|---|---|---|---|---|
 | [P1-T8](docs/manual-tests/P1-T8.md) | 1, 2 | 3 | none | Chrome | 4 |
 | [P2-T4](docs/manual-tests/P2-T4.md) | 1 | 2, 3 | none | Chrome | 6 |
+| [P2-T7](docs/manual-tests/P2-T7.md) | none | 1, 2 | none | Chrome | 3 |
 
 ---
 
@@ -92,6 +93,7 @@ Newest last. Format: `YYYY-MM-DD: decision. Reason.` This log holds the current 
 - 2026-11-27: **P2-T8 data export and import.** One JSON file (`app: 'keyflow'`, `version` = the database version, settings, takes, items, review logs), from the "Your data" card. An import is checked whole before anything is written: one bad row or a repeated item ID rejects the file, and a file from a newer database version is refused. Cards are checked by kind against a fresh ts-fsrs card and then by a trial review. Settings fall back to defaults as on load. All four tables are replaced in one transaction, then the page reloads. Exports pass the same checks, so the app always imports its own file. A new field on review logs must be added to `parseReviewLog` (`src/practice/items.ts`), or exports drop it.
 - 2026-11-27: **P2-T4 grading and hints.** `src/practice/grading.ts` (pure). `GRADING` holds the target times (note 2 s, triad 3 s, 7th 4 s; 9ths 5 s, a shortcut) and three hint paces: Quick, Steady and Patient, with a first hint after 4, 6 or 10 s for a new item, ×(1 + log2(1 + stability)), capped, then fixed steps. Temporary chips choose the pace until the P2-T4 audition; Steady is the default until then. A scale's target is a 2 s reaction allowance plus its run at the drill's tempo. Only the allowance is halved for Easy, since the gaps are held to the tempo. For a scale, the stall timer restarts on each right note. A new drill, Skip or Close records Again (ms null), but only once a key was pressed or a hint shown, so skipping an untouched random drill records nothing. After a step-3 answer the drill asks once more, unaided and unrecorded. The store's `rating` is there for P2-T6.
 - 2026-11-27: **P2-T4 hint ladder by drill kind** (a reading of learning-design.md). "Build it"'s formula is part of its prompt, so it isn't logged as a hint; the ladder shows from step 2, and the level stays 0 until a hint actually appears. Find the note has no anchor that isn't the answer, so step 1 anchors on C (F for C itself) and the key lights only at step 3. Chord in key anchors on the key's tonic, since the chord's root would answer the riddle. A scale's step 2 names the half-steps but marks only the root. Hint keys are drawn on the canvas keyboard in place of the jam highlighting, which is off during drills.
+- 2026-11-27: **P2-T7 progress view.** The Progress card (`src/practice/progress.ts`, pure; `src/ui/ProgressPanel.tsx`, lazy-loaded because the curriculum loads the FSRS scheduler) shows the curriculum's chord and scale items as 17 type rows by 12 key columns. Levels: not open yet, new (never reviewed), shaky (stability under `UNLOCK.stableDays`) and known cold (at it), so the heatmap agrees with unlocking. Each level is a bone-tone shape, and known cold always wears a check. Geography and chords in key aren't in the grid. Practice days: the last 14 local days as dots plus one line, with no streak to lose (a day not yet played doesn't end the run). `watchProgress` (`src/storage/db.ts`) uses Dexie's `liveQuery`, so the card refreshes after each recorded attempt. Three cell looks (Fill, Stickers, Tint) wait for one taste pick, and the pick becomes the only look.
 
 ---
 
