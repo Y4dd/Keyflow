@@ -73,7 +73,7 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - **Automated:** graph validation (no cycles, every prerequisite exists).
 
 ### P2-T6: Session builder
-**Depends on:** P2-T1, P2-T3, P2-T5.
+**Depends on:** P2-T1, P2-T3, P2-T4, P2-T5.
 
 - **Core session (about 5 min):** due items first, **interleaved** (no item twice in a row; mixed types and keys), then new items.
 - **Apply:** after the core, offer "jam with what you practiced", e.g. load a groove with today's scale selected.

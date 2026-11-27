@@ -49,7 +49,7 @@ Learning principles behind all of this: [`docs/learning-design.md`](docs/learnin
 
 ## Phases
 
-Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteria, open questions and done-when. AI sessions should take **one task ID at a time**, by default in the order listed.
+Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteria, open questions and done-when. Each session takes **one task ID**. Tasks run in the order listed unless their `Depends on:` lines let several run at once (see "Parallel tasks" in `CLAUDE.md`).
 
 **Task status** is tracked in each phase file by adding a marker after the task heading, e.g. `### P0-T3: Input bus and MIDI layer [done 2026-12-01]` or `[in progress]`, or `[built 2026-12-01, manual check pending]` when only the user's manual check is left. Headings with no marker are not started. This table tracks phase-level status.
 
