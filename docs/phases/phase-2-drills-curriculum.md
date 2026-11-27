@@ -60,7 +60,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - **Automated:** grading unit tests; the hint delay increases with stability.
 - **Manual:** hints feel helpful, not naggy.
 
-### P2-T5: Curriculum graph
+### P2-T5: Curriculum graph [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Sonnet.
 
 Tracks, each a sequence of units with prerequisites. Starting version, open to change:
@@ -74,6 +74,7 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - An item unlocks when its prerequisites reach a stability threshold. At most 2–4 new items per session.
 - Curriculum is data (a JSON or TS graph), not code.
 - **Automated:** graph validation (no cycles, every prerequisite exists).
+- **Built:** 2026-11-27. `src/practice/curriculum.ts` (see "Curriculum (P2-T5)" in `docs/architecture.md`): 19 units in the five tracks, as a TS list. A unit opens when each prerequisite has half its items stable (FSRS stability of 7 days or more, in `UNLOCK`), so 7th chords unlock once minor triads are stable in six keys. `unlockNext` returns up to 3 item IDs, mixing tracks; scale units use the `asc1` item only. Unit tests in `src/practice/curriculum.test.ts` (graph validation, every item makes a drill, unlock rules). There is no manual check.
 
 ### P2-T6: Session builder
 **Depends on:** P2-T1, P2-T3, P2-T4, P2-T5. **Model:** Opus.
