@@ -57,7 +57,7 @@ Each phase file stands alone: goal, scope, tasks with IDs and acceptance criteri
 |---|---|---|---|
 | 0 | Foundation: hardware check, MIDI, synth, split, pedal, latency | Done (2026-11-25) | [phase-0-foundation.md](docs/phases/phase-0-foundation.md) |
 | 1 | Jam mode: grooves, highlighting, record and replay | In progress (all tasks built; P1-T8 manual check pending) | [phase-1-jam-mode.md](docs/phases/phase-1-jam-mode.md) |
-| 2 | Drills and curriculum: spaced review, soloing scales, chords | Not started | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
+| 2 | Drills and curriculum: spaced review, soloing scales, chords | In progress (P2-T2, then P2-T3) | [phase-2-drills-curriculum.md](docs/phases/phase-2-drills-curriculum.md) |
 | 3 | Comping mode | Not started | [phase-3-comping.md](docs/phases/phase-3-comping.md) |
 | 4 | Solo coaching and ear training | Not started | [phase-4-solo-coaching-ear-training.md](docs/phases/phase-4-solo-coaching-ear-training.md) |
 | 5 | Song import | Not started | [phase-5-song-import.md](docs/phases/phase-5-song-import.md) |
