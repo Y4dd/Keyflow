@@ -134,10 +134,12 @@ _Manual check results (2026-11-26, Chrome, YPT-380): pass. The default balance s
 
 _Manual check results (2026-11-26, Chrome and Firefox, YPT-380): pass on recording and replay. Taste step 4 raised nothing, so the roll stays. Step 5 (export in another program) was skipped, since there is no MIDI player on hand._
 
-### P1-T8: Basic take stats (gentle) [built 2026-11-26, manual check pending]
+### P1-T8: Basic take stats (gentle) [done 2026-11-27]
 - After a take: notes played, range used, % of notes in the scale, % of notes landing on chord tones on strong beats, longest rest.
 - Show **one** suggestion picked from simple rules, e.g. "Try leaving a full bar of space between phrases" or "You haven't used the blue note yet". No score.
 - Built: stats are worked out when a take is shown (`src/analysis/stats.ts`, pure; nothing new is stored, so no migration) and sit under the take's piano roll in the Takes card: **Notes**, **Range** (lowest to highest, spelled by key), **In the scale** (% of notes in the take's solo scale), **Chord tones on 1 and 3** (of the notes starting on beat 1 or 3, the % that are tones of the chord on that beat, with the count) and **Longest rest** (every key up, between the first and last press, in beats or bars). A note is on beat 1 or 3 if it starts within an eighth of a beat of it, as heard: its time less the take's calibration offset, with the two clock mappings' leads lined up; the chord is the one on that beat, and count-in notes don't count. Under the stats, **one** suggestion: the first of these rules that applies (fewer than 8 notes: play a little longer; a take over 4 bars with no rest of a bar: leave a bar of space; minor blues without its blue note: try it; under half of 4+ strong-beat notes on chord tones: land on a chord tone on 1 and 3; all within a fifth: move up or down an octave; under 70% in the scale: one pass inside the scale), else a phrasing idea. No score, no colours for good or bad. A take whose groove is gone shows no chord-tone count. **Automated:** every stat, the calibration correction, the count-in, the chord on a change, the rest with overlapping notes, a take with no notes, and every rule and their order (unit); e2e (Chromium and Firefox): a recorded take shows its notes, range, scale % and a suggestion. **Manual:** on-beat notes from the real keyboard count as on the beat, and the chord-tone count follows the changes (must-pass); the suggestion's tone (taste).
+
+_Manual check results (2026-11-27, Chrome, YPT-380): pass. Step 1 read "7 of 7" for 8 notes played: one D started outside the on-beat window, so it was left out of the stat, not counted wrong. Taste step 3 raised nothing. The user asked for more visual feedback on the take's piano roll itself: P2-T11._
 
 ---
 

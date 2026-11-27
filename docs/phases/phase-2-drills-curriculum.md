@@ -52,7 +52,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - **Automated:** each drill type end-to-end through the simulated source (Playwright).
 - **Built:** 2026-11-27. The drills live in `src/practice/drills.ts` and the card in `src/ui/DrillPanel.tsx` (see "Drills (P2-T3)" in `docs/architecture.md`). Chord in key uses the new item type `rn:<key>:<major|minor>:<numeral>`. Build it shows the formula under the prompt from the start. Scale drills pick 70 BPM, with no click track. Drills are picked at random until P2-T6. The keyboard's highlighting is off while a drill is open. Each attempt reports its time, wrong notes and one feedback line for P2-T4. The e2e spec is `tests/e2e/drills.spec.ts`. There is no manual check, since every drill is driven by the simulated source.
 
-### P2-T4: Grading and hint ladder [built 2026-11-27, manual check pending]
+### P2-T4: Grading and hint ladder [done 2026-11-27]
 **Depends on:** P2-T1, P2-T3. **Model:** Opus.
 
 - Implement the rating table and the hint ladder from `learning-design.md`. The delay before the first hint scales with FSRS stability.
@@ -60,6 +60,8 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - **Automated:** grading unit tests; the hint delay increases with stability.
 - **Manual:** hints feel helpful, not naggy.
 - **Built:** 2026-11-27. `src/practice/grading.ts` (pure): `GRADING` holds the target times, the scale reaction allowance and three hint-pace profiles; `rate`, `targetOf`, `hintDelays` and `hintsFor`. The drill store (`src/state/drills.ts`) runs the hint timers from the item's stored stability, rates each finished or abandoned attempt and calls `recordAttempt` once. After the step-3 answer it asks once more, unaided and unrecorded. Hint keys are drawn on the canvas keyboard in place of the (drill-off) jam highlighting. The card shows the hint, the rating and one tip, with temporary **Hints: Quick / Steady / Patient** chips for the audition (Steady is the default until then). Unit tests in `src/practice/grading.test.ts`; e2e (the ladder under a fake clock, the retry, a saved rating, skip as Again) in `tests/e2e/drills.spec.ts`. Manual check: [`docs/manual-tests/P2-T4.md`](../manual-tests/P2-T4.md).
+
+_Manual check results (2026-11-27, Chrome, YPT-380): step 1 pass. Hint pace taste: **Steady**, now the default; the pace chips are removed with the drills layout work. Step 3 pass, with one finding: the user doesn't yet know most chords, scales or inversions, so "Play the chord" and "Play the scale" have nothing to work it out from. That led to P2-T9 (played-chord indicator) and P2-T10 (chord and scale library)._
 
 ### P2-T5: Curriculum graph [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Sonnet.
@@ -86,12 +88,14 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - **Automated:** session composition tests (interleaving, due-first, new-item cap).
 - **Built:** 2026-11-27. `src/practice/session.ts` (pure) and the store `src/state/session.ts` (see "Session builder (P2-T6)" in `docs/architecture.md`). The Drills card's **Start today’s session** runs at most 20 due reviews, most overdue first, then `unlockNext`'s new items, each part interleaved by type, then key. `SESSION` holds the starting values: 4 new items above a 90% success rate (not Again, over the last 20 ratings), 2 below 70%, else 3. New items are unlocked when first practised, so one left unplayed comes back next session. A new chord is drilled as Build it. After the last drill, **Jam** sets the groove, key and solo scale from the last scale practised; sessions without a scale offer none. The type chips stay for practice by type until P2-T4's manual check, which uses them, is done. Strict modes don't adapt yet (a `shortcut:`). Unit tests in `src/practice/session.test.ts`; e2e in `tests/e2e/session.spec.ts`. There is no manual check.
 
-### P2-T7: Progress view [built 2026-11-27, manual check pending]
+### P2-T7: Progress view [done 2026-11-27]
 **Depends on:** P2-T1, P2-T5. **Model:** Opus.
 
 - Heatmap of keys × chord or scale types, colored by FSRS stability, showing what you know cold, what's shaky and what's new.
 - Streak and consistency shown gently (see the feedback tone in `learning-design.md`).
 - **Built:** 2026-11-27. The Progress card (`src/ui/ProgressPanel.tsx`) over `src/practice/progress.ts` (see "Progress view (P2-T7)" in `docs/architecture.md`, and "Progress (P2-T7)" in `DESIGN.md`). The heatmap is the curriculum's chord and scale items: 17 rows (type and inversion) under three tracks, 12 key columns. A cell is not open yet, new, shaky or known cold, and known cold is the curriculum's own stable line (`UNLOCK.stableDays`), so what reads as known is what unlocks the next unit. Every level is a shape as well as a tone of `bone`. Geography and chords in key have no keys × types grid, so they aren't shown. Practice days are the last 14 local days as dots and one line ("You practised on 5 of the last 14 days, 3 days in a row."), with no streak to lose. The card updates after each recorded attempt through Dexie's `liveQuery`. Three cell looks (Fill, Stickers, Tint) wait for one taste pick in [`docs/manual-tests/P2-T7.md`](../manual-tests/P2-T7.md). Unit tests in `src/practice/progress.test.ts`, the live update in `tests/e2e/progress.spec.ts`.
+
+_Manual check results (2026-11-27, Chrome): the idea and the grid pass. Look taste: no preference, so **Fill** (the current default) stays and the look chips are removed with the layout work. The user finds the card, like the page, visually bland and wants it revisited together with navigation._
 
 ### P2-T8: Data export and import [done 2026-11-27]
 **Depends on:** P2-T1. **Model:** Opus.
@@ -99,6 +103,39 @@ Tracks, each a sequence of units with prerequisites. Starting version, open to c
 - Export all user data (settings, items, logs, takes) as a single JSON file. Import with a schema-version check.
 - **Automated:** export → wipe → import round trip.
 - **Built:** 2026-11-27. The "Your data" card (`src/ui/DataPanel.tsx`) has Export backup and Import backup; the format and its checks are in `src/storage/backup.ts` (see "Export and import (P2-T8)" in `docs/architecture.md`). The file carries the database version, and one from a newer version is refused. Every imported row is checked before anything is written, and one bad row rejects the whole file. The import asks before replacing, writes all four tables in one transaction, then reloads the page. Unit tests in `src/storage/backup.test.ts`; the round trip and the refused files in `tests/e2e/backup.spec.ts`. There is no manual check.
+
+### P2-T9: Played-chord indicator, on by default
+**Depends on:** none. **Model:** Opus.
+
+Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, so the app names it for them.
+- Whatever is held (pedal-sustained notes included, as `createHeldNotes` counts them) is named live beside the keyboard: the chord symbol with its inversion as a slash chord (`Em/G`), or the note name for one note, or the interval for two. Spelled by key. When a groove key is set, the Roman numeral in that key shows too (`vi`).
+- Uses `detectChord` (`src/analysis/recognize.ts`, P2-T2). Updates on note changes through the store at most once per change, never per frame; the hot path rules hold.
+- On by default, everywhere the keyboard is, drills included (it names what you played, not the target). One setting turns it off, saved with the settings.
+- **Automated:** inject a chord, an inversion, a single note and a pedal-held chord through the simulated source; the label matches. Off setting hides it.
+- **Manual:** none (the label is checked by e2e).
+
+### P2-T10: Chord and scale library
+**Depends on:** P2-T9; the layout task (navigation), which gives the library its place. **Model:** Opus.
+
+Added 2026-11-27 from the P2-T4 check: something to look a chord or scale up in, so drills can be worked out rather than known.
+- Pick a key and a chord type (the curriculum's triads and 7ths, plus sus and diminished) or a scale (the curriculum's soloing scales and modes). The keyboard shows it: chord tones labelled R, 3, 5 (b3, 7…) and note names, and for chords each inversion (root position, 1st, 2nd, and 3rd for 7ths), stepped with buttons or arrow keys.
+- Shows the formula in half-steps (the same words "Build it" uses) and, for a key, its diatonic chords as Roman numerals, each one clickable.
+- **Hear it:** plays the chord (block, then broken) or the scale up and down through the audio engine at a set tempo, using `Tone.immediate()` rules like every other trigger.
+- **Drill this:** opens the matching drill for the item shown.
+- No notation. Content is generated from `tonal` and the curriculum's vocabulary, not hand-typed tables.
+- **Automated:** for a sample of keys, types and inversions, the highlighted MIDI notes match `tonal`; Hear it schedules the right notes (dev inspector or the engine's test hook); Drill this opens the right item.
+- **Manual:** taste only, if the layout has real alternatives (Taste in one round).
+
+### P2-T11: Take feedback on the piano roll
+**Depends on:** none. **Model:** Opus.
+
+Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only as numbers.
+- Each note on the take's piano roll is marked by what the stats count: a chord tone on beat 1 or 3, in the scale, or out of the scale (dimmed, never red). The strong beats and bar lines are visible behind the notes, and the longest rest is shaded.
+- The one suggestion points at its evidence on the roll where it has some (the bar with no space, the first unused blue note's place).
+- Hovering or tapping a stat highlights the notes it counts. The roll stays a canvas that reads state each frame.
+- The categories come from `src/analysis/stats.ts` (pure), one source for the numbers and the marks.
+- **Automated:** unit tests that every note gets exactly the category the stats count it under; an e2e take recorded through the simulated source shows the expected count per category.
+- **Manual:** taste: the marking look (3 or 4 candidates, Taste in one round).
 
 ---
 
