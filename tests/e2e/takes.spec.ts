@@ -89,6 +89,14 @@ test('a take is saved, and replays over its groove with identical events', async
   await expect(page.getByTestId('takes')).toContainText('No takes yet')
   await recordTake(page)
 
+  // P1-T8: its stats (D, F and A in D minor pentatonic) and one suggestion. The strong-beat
+  // count depends on when the injection landed, so it's unit-tested (src/analysis/stats.test.ts).
+  const stats = page.getByTestId('take-stats')
+  await expect(stats).toContainText('Notes3')
+  await expect(stats).toContainText('RangeD4 to A4')
+  await expect(stats).toContainText('In the scale100%')
+  await expect(stats.locator('.take-tip')).toHaveText(/^Play a little longer next time/)
+
   const [take] = await storedTakes(page)
   expect(take!.events.map(strip)).toEqual(PLAYED.map(strip))
   const gaps = (times: number[]) => times.slice(1).map((t, i) => t - times[i]!)

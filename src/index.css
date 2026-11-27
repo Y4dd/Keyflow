@@ -804,6 +804,35 @@ kbd {
   height: 260px;
 }
 
+/* Take stats (P1-T8): plain label-over-value pairs at body size (no big numbers, no score),
+   then the one suggestion as an ordinary sentence. */
+.take-stats {
+  margin-top: 16px;
+}
+
+.take-stats dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+  margin: 0;
+}
+
+.take-stats dt {
+  font-size: 14px;
+  color: var(--bone-muted);
+}
+
+.take-stats dd {
+  margin: 2px 0 0;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.take-tip {
+  max-width: 80ch;
+  margin: 12px 0 0;
+}
+
 .take-view .actions {
   margin-top: 16px;
 }

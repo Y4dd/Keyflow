@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+import { blueNote, suggest, takeStats, type Suggestion } from '../analysis/stats.ts'
 import { takeNotes, takeToMidi, type Take } from '../analysis/take.ts'
+import { pc } from '../music/harmony.ts'
 import { transpose } from '../grooves/groove.ts'
 import { GROOVES } from '../grooves/library.ts'
 import { keyName, noteNames } from '../music/spelling.ts'
@@ -85,6 +87,94 @@ function Roll({ take }: { take: StoredTake }) {
   )
 }
 
+const percent = (share: number) => `${Math.round(share * 100)}%`
+
+/** "1.5 bars", "3 beats": a rest in the take's own beats, to the half. */
+function restLength(ms: number, bpm: number) {
+  const beats = (ms * bpm) / 60_000
+  // Down, so a rest just short of a bar never reads as one beside the "bar of space" tip.
+  const half = (n: number) => Math.floor(n * 2) / 2
+  const [n, unit] = beats >= 4 ? [half(beats / 4), 'bar'] : [half(beats), 'beat']
+  if (n === 0) return 'Under half a beat'
+  return `${n} ${unit}${n === 1 ? '' : 's'}`
+}
+
+function suggestionText(s: Suggestion, take: Take, names: readonly string[]): string {
+  switch (s) {
+    case 'longer':
+      return 'Play a little longer next time: a few phrases give you more to hear back.'
+    case 'space':
+      return 'Try leaving a full bar of space between phrases.'
+    case 'blueNote':
+      return `You haven’t used the blue note yet: try ${names[blueNote(take.tonic)]} on the way from ${names[pc(take.tonic + 5)]} to ${names[pc(take.tonic + 7)]}.`
+    case 'land':
+      return 'Try landing on a chord tone on beats 1 and 3: the keyboard marks them as the chords change.'
+    case 'range':
+      return 'Try starting your next phrase an octave higher or lower than the last.'
+    case 'scale':
+      return 'Try one pass using only the scale’s notes, so the outside notes you add later stand out.'
+    case 'repeat':
+      return 'Next time, try playing one short idea twice and changing how it ends.'
+  }
+}
+
+/** What the chosen take holds, and one thing to try next. No score. */
+function Stats({ take }: { take: StoredTake }) {
+  const { stats, names, tip } = useMemo(() => {
+    const g = grooveOf(take.grooveId)
+    const names = noteNames({ tonic: take.tonic, mode: g.key.mode }, take.scale)
+    // Without its groove there are no chords to compare with.
+    const shown = canReplay(take) ? transpose(g, take.tonic - g.key.tonic) : null
+    const stats = takeStats(take, shown)
+    return { stats, names, tip: suggestionText(suggest(stats, take), take, names) }
+  }, [take])
+  // C♭ belongs to the octave above its key, B♯ to the one below.
+  const name = (n: number) => {
+    const s = names[pc(n)]!
+    return `${s}${Math.floor(n / 12) - 1 + (s === 'C♭' ? 1 : s === 'B♯' ? -1 : 0)}`
+  }
+  const { lowest, highest, inScale, strongBeats, longestRestMs } = stats
+  return (
+    <div className="take-stats" data-testid="take-stats">
+      <dl>
+        <div>
+          <dt>Notes</dt>
+          <dd>{stats.notes}</dd>
+        </div>
+        {lowest !== null && highest !== null && (
+          <div>
+            <dt>Range</dt>
+            <dd>{lowest === highest ? name(lowest) : `${name(lowest)} to ${name(highest)}`}</dd>
+          </div>
+        )}
+        {inScale !== null && (
+          <div>
+            <dt>In the scale</dt>
+            <dd>{percent(inScale)}</dd>
+          </div>
+        )}
+        {strongBeats && stats.notes > 0 && (
+          <div>
+            <dt>Chord tones on 1 and 3</dt>
+            <dd>
+              {strongBeats.notes === 0
+                ? 'No notes on 1 or 3'
+                : `${percent(strongBeats.chordTones / strongBeats.notes)} (${strongBeats.chordTones} of ${strongBeats.notes})`}
+            </dd>
+          </div>
+        )}
+        {longestRestMs !== null && (
+          <div>
+            <dt>Longest rest</dt>
+            <dd>{restLength(longestRestMs, take.bpm)}</dd>
+          </div>
+        )}
+      </dl>
+      <p className="take-tip">{tip}</p>
+    </div>
+  )
+}
+
 /** Saved takes: pick one to see its piano roll, replay it over its groove, or export it. */
 export function TakesPanel() {
   const { takes: list, selected, replaying, recording, error } = useTakesStore()
@@ -129,6 +219,7 @@ export function TakesPanel() {
           </div>
           <div className="take-view">
             <Roll take={take} />
+            <Stats take={take} />
             <div className="actions">
               <button
                 type="button"
