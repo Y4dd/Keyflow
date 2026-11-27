@@ -25,7 +25,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
 - Dexie tables `items` and `reviewLogs`. Every attempt is logged: item, rating, response time, hint level, wrong notes.
 - **Automated:** rating → schedule round trip; persistence survives reload.
 
-### P2-T2: Chord and scale recognition from input
+### P2-T2: Chord and scale recognition from input [done 2026-11-27]
 **Depends on:** none. **Model:** Sonnet.
 
 - From held notes (sustain counted when the pedal is in Sustain mode), produce the set of pitch classes being played, then check it against the target:
@@ -34,6 +34,7 @@ Each task names the tasks it needs. Tasks whose dependencies are done can run at
   - scale drills: an ordered sequence of notes, checking order and, optionally, tempo
 - Use `tonal` chord detection for display ("you played G6").
 - **Automated:** table-driven tests covering every triad quality and inversion in all 12 keys, plus extra-note and missing-note cases.
+- **Built:** 2026-11-27, `src/analysis/recognize.ts` (see "Recognition (P2-T2)" in `docs/architecture.md`). The table covers triads, sus2/sus4, aug, dim and four 7th qualities, every inversion, 12 roots, in all three chord modes. Scale drills take MIDI targets and compare in any octave by default; timing is per gap, with the tolerance in `SCALE_TIMING`.
 
 ### P2-T3: Drill types
 **Depends on:** P2-T2. **Model:** Opus.
