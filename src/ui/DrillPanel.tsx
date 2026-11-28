@@ -3,7 +3,7 @@ import { pretty } from '../music/spelling.ts'
 import type { DrillKind } from '../practice/drills.ts'
 import { useCalibrationStore } from '../state/calibration.ts'
 import { drills, useDrillStore } from '../state/drills.ts'
-import { session, useSessionStore } from '../state/session.ts'
+import { session, useDrillStage, useSessionStore } from '../state/session.ts'
 
 const KINDS: { kind: DrillKind; label: string }[] = [
   { kind: 'note', label: 'Find the note' },
@@ -23,28 +23,47 @@ const check = (
 
 /**
  * Drills: today's session (P2-T6), or one type at a time (behind "Practice by type" until the
- * library's Drill this replaces it, P2-T10). Answer the prompt on the keys. A stalled answer gets hints in steps (the
- * keys they mark are on the canvas keyboard), and the right one its rating. Re-renders on a new
- * drill, a new feedback line, a hint or the right answer, never per note.
+ * library's Drill this replaces it, P2-T10). With nothing open, a card with the one Start; with a
+ * drill open, the stage at the bottom of the view, right over the pinned keys (P2-T13). Answer the
+ * prompt on the keys. A stalled answer gets hints in steps (the keys they mark are on the canvas
+ * keyboard), and the right one its rating. Re-renders on a new drill, a new feedback line, a hint
+ * or the right answer, never per note.
  */
 export function DrillPanel() {
   const { drill, done, ms, say, hint, rating } = useDrillStore()
   const calibrated = useCalibrationStore((s) => s.offsetMs != null)
   const { status, at, total, jam } = useSessionStore()
+  const stage = useDrillStage()
   const inSession = status === 'on'
   const kind = inSession ? null : (drill?.kind ?? null)
 
-  return (
-    <section className="card drills" aria-labelledby="drills-tab" data-testid="drills">
-      <h2 className="tab" id="drills-tab">
-        Drills
-      </h2>
-      <div className="actions">
-        {inSession ? (
-          <span className="drill-step" data-testid="session-count">
-            Session: {at} of {total}
-          </span>
-        ) : (
+  const typeChips = (
+    <div className="chips" role="radiogroup" aria-label="Drill type">
+      {KINDS.map((k) => (
+        <label key={k.kind} className="chip">
+          <input
+            type="radio"
+            name="drill-kind"
+            value={k.kind}
+            checked={k.kind === kind}
+            onChange={() => {
+              session.leave()
+              drills.pick(k.kind)
+            }}
+          />
+          {k.label}
+        </label>
+      ))}
+    </div>
+  )
+
+  if (!stage)
+    return (
+      <section className="card drills" aria-labelledby="drills-tab" data-testid="drills">
+        <h2 className="tab" id="drills-tab">
+          Drills
+        </h2>
+        <div className="actions">
           <button
             type="button"
             className="primary"
@@ -53,50 +72,78 @@ export function DrillPanel() {
           >
             Start today’s session
           </button>
-        )}
-      </div>
-      <details className="by-type" open={kind !== null}>
-        <summary>Practice by type</summary>
-        <div className="chips" role="radiogroup" aria-label="Drill type">
-          {KINDS.map((k) => (
-            <label key={k.kind} className="chip">
-              <input
-                type="radio"
-                name="drill-kind"
-                value={k.kind}
-                checked={k.kind === kind}
-                onChange={() => {
-                  session.leave()
-                  drills.pick(k.kind)
-                }}
-              />
-              {k.label}
-            </label>
-          ))}
         </div>
-      </details>
-      {!drill && status === 'done' ? (
+        <p className="blurb drill-empty">
+          About five minutes: what’s due, mixed with a few new things. Answer on the keys; any
+          octave counts unless the prompt names an inversion.
+        </p>
+        <details className="by-type">
+          <summary>Practice by type</summary>
+          {typeChips}
+        </details>
+      </section>
+    )
+
+  return (
+    <section className="drill-stage" aria-labelledby="drills-tab" data-testid="drills">
+      <h2 className="visually-hidden" id="drills-tab">
+        Drills
+      </h2>
+      {drill && (
+        <div className="stage-bar">
+          {inSession ? (
+            <div className="session-progress">
+              <ol className="session-dots" aria-hidden="true">
+                {Array.from({ length: total }, (_, i) => (
+                  <li key={i} data-at={i + 1 < at ? 'past' : i + 1 === at ? 'now' : 'next'} />
+                ))}
+              </ol>
+              <span className="drill-step" data-testid="session-count">
+                Session: {at} of {total}
+              </span>
+            </div>
+          ) : (
+            typeChips
+          )}
+          <div className="actions">
+            <button
+              type="button"
+              onClick={() => (inSession ? session.next() : drills.pick(drill.kind))}
+            >
+              {done ? 'Next' : 'Skip'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                session.leave()
+                drills.stop()
+              }}
+            >
+              Close drills
+            </button>
+          </div>
+        </div>
+      )}
+      {!drill ? (
         <div className="drill" data-testid="session-done">
-          <p className="blurb">
-            {total === 0
-              ? 'Nothing is due right now. New items come as the ones you have settle in.'
-              : 'That’s today’s session.'}
+          <p className="drill-prompt">
+            {total === 0 ? 'Nothing is due right now.' : 'That’s today’s session.'}
           </p>
-          {jam && (
-            <div className="actions">
+          {total === 0 && (
+            <p className="drill-detail">New items come as the ones you have settle in.</p>
+          )}
+          <div className="actions">
+            {jam && (
               <button type="button" className="primary" onClick={session.jam}>
                 Jam: {pretty(jam.root)} {jam.scale} over the{' '}
                 {GROOVES.find((g) => g.id === jam.grooveId)?.name.toLowerCase()}
               </button>
-            </div>
-          )}
+            )}
+            <button type="button" onClick={session.leave}>
+              Back to progress
+            </button>
+          </div>
         </div>
-      ) : !drill ? (
-        <p className="blurb drill-empty">
-          Today’s session mixes what’s due with a few new things, about five minutes. Answer on the
-          keys. Any octave counts unless the prompt names an inversion. The keyboard’s highlighting
-          stays off while a drill is open.
-        </p>
       ) : (
         <div className="drill" data-state={done ? 'done' : 'now'} data-item={drill.item}>
           <p className="drill-prompt" data-testid="drill-prompt">
@@ -135,23 +182,6 @@ export function DrillPanel() {
               </>
             )}
           </p>
-          <div className="actions">
-            <button
-              type="button"
-              onClick={() => (inSession ? session.next() : drills.pick(drill.kind))}
-            >
-              {done ? 'Next' : 'Skip'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                session.leave()
-                drills.stop()
-              }}
-            >
-              Close drills
-            </button>
-          </div>
         </div>
       )}
     </section>

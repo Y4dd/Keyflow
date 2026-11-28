@@ -28,6 +28,13 @@ export const useSessionStore = create<SessionState>(() => ({
   jam: null,
 }))
 
+/** True while a drill or the session's end has the stage, so Practice hides its start screen. */
+export const useDrillStage = () => {
+  const open = useDrillStore((s) => s.drill !== null)
+  const done = useSessionStore((s) => s.status === 'done')
+  return open || done
+}
+
 let queue: Drill[] = []
 let run = 0 // the session a pending build belongs to
 

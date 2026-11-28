@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { useRoute, type Route } from './state/route.ts'
+import { useDrillStage } from './state/session.ts'
 import { CalibrationPanel } from './ui/CalibrationPanel.tsx'
 import { DataPanel } from './ui/DataPanel.tsx'
 import { Dock } from './ui/Dock.tsx'
@@ -96,13 +97,16 @@ function JamView() {
 }
 
 function PracticeView() {
-  // shortcut: a placeholder holding the Drills and Progress cards as they were; P2-T13 designs it.
+  // The start screen (Drills, then Progress), or the drill alone at the bottom, over the keys.
+  const stage = useDrillStage()
   return (
     <>
       <DrillPanel />
-      <Suspense fallback={null}>
-        <ProgressPanel />
-      </Suspense>
+      {!stage && (
+        <Suspense fallback={null}>
+          <ProgressPanel />
+        </Suspense>
+      )}
     </>
   )
 }

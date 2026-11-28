@@ -47,6 +47,7 @@ const Mark = ({ level, fill }: { level: Level; fill: number }) => (
 export function ProgressPanel() {
   const [items, setItems] = useState<Item[]>([])
   const [times, setTimes] = useState<Date[]>([])
+  const [loaded, setLoaded] = useState(false) // so a returning learner never sees the empty state flash
   // shortcut: the 14-day window is fixed at mount, so a tab left open past midnight shows
   // yesterday's window until a reload; recompute on visibility change if that's ever noticed.
   const [now] = useState(() => new Date())
@@ -56,6 +57,7 @@ export function ProgressPanel() {
       watchProgress(dayStart(now, DAYS - 1), (p) => {
         setItems(p.items)
         setTimes(p.times)
+        setLoaded(true)
       }),
     [now],
   )
@@ -69,6 +71,7 @@ export function ProgressPanel() {
     return c
   }, [groups])
 
+  const opened = counts.new + counts.shaky + counts.cold > 0
   const practised = days.filter(Boolean).length
   const run = daysRunning(days)
 
@@ -99,55 +102,65 @@ export function ProgressPanel() {
         </ol>
       </div>
 
-      <div className="progress-key">
-        <ul className="legend">
-          {LEVELS.map(({ level, word }) => (
-            <li key={level}>
-              <Mark level={level} fill={level === 'shaky' ? 0.5 : level === 'cold' ? 1 : 0} />
-              {word} <span className="count">{counts[level]}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="heatmap-scroll">
-        <table className="heatmap">
-          <thead>
-            <tr>
-              <td />
-              {KEYS.map((k) => (
-                <th key={k} scope="col">
-                  {pretty(k)}
-                </th>
+      {loaded && !opened && (
+        <p className="blurb progress-empty" data-testid="progress-empty">
+          Chords and scales appear here in all 12 keys as you open them, from new to known cold.
+          Today’s session is where they start.
+        </p>
+      )}
+      {opened && (
+        <>
+          <div className="progress-key">
+            <ul className="legend">
+              {LEVELS.map(({ level, word }) => (
+                <li key={level}>
+                  <Mark level={level} fill={level === 'shaky' ? 0.5 : level === 'cold' ? 1 : 0} />
+                  {word} <span className="count">{counts[level]}</span>
+                </li>
               ))}
-            </tr>
-          </thead>
-          {groups.map((g) => (
-            <tbody key={g.track}>
-              <tr>
-                <th scope="rowgroup" colSpan={KEYS.length + 1} className="group">
-                  {TRACKS[g.track] ?? g.track}
-                </th>
-              </tr>
-              {g.rows.map((r) => (
-                <tr key={r.label}>
-                  <th scope="row">{r.label}</th>
-                  {r.cells.map((cell, k) => (
-                    <td key={k} data-item={cell?.item}>
-                      {cell && (
-                        <>
-                          <Mark level={cell.level} fill={cell.fill} />
-                          <span className="visually-hidden">{WORD[cell.level]}</span>
-                        </>
-                      )}
-                    </td>
+            </ul>
+          </div>
+
+          <div className="heatmap-scroll">
+            <table className="heatmap">
+              <thead>
+                <tr>
+                  <td />
+                  {KEYS.map((k) => (
+                    <th key={k} scope="col">
+                      {pretty(k)}
+                    </th>
                   ))}
                 </tr>
+              </thead>
+              {groups.map((g) => (
+                <tbody key={g.track}>
+                  <tr>
+                    <th scope="rowgroup" colSpan={KEYS.length + 1} className="group">
+                      {TRACKS[g.track] ?? g.track}
+                    </th>
+                  </tr>
+                  {g.rows.map((r) => (
+                    <tr key={r.label}>
+                      <th scope="row">{r.label}</th>
+                      {r.cells.map((cell, k) => (
+                        <td key={k} data-item={cell?.item}>
+                          {cell && (
+                            <>
+                              <Mark level={cell.level} fill={cell.fill} />
+                              <span className="visually-hidden">{WORD[cell.level]}</span>
+                            </>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
               ))}
-            </tbody>
-          ))}
-        </table>
-      </div>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   )
 }

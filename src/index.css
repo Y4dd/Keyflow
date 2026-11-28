@@ -1262,6 +1262,91 @@ input[type='range']:disabled {
   }
 }
 
+/* The drill stage (P2-T13): an open drill replaces the start screen and sits at the bottom of
+   the view, so the prompt reads right above the keys its hints mark. margin-top: auto, not
+   justify-content, so a stage taller than a short screen still scrolls from its top. */
+
+.view[data-view='practice'] {
+  display: flex;
+  flex-direction: column;
+}
+
+.view[data-view='practice']:has(> .drill-stage) {
+  padding-block: 24px 20px;
+}
+
+.drill-stage {
+  margin-top: auto;
+}
+
+/* Where you are (the session's dots, or the type chips) and Skip and Close share the top row,
+   so the prompt, the result and the hint stack straight down to the keys. */
+.stage-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 32px;
+}
+
+.stage-bar .actions {
+  margin-top: 0;
+}
+
+.drill-stage .drill {
+  margin-top: 16px;
+}
+
+.drill-stage .drill-result {
+  margin-top: 8px;
+}
+
+.drill-stage .drill-prompt {
+  max-width: 24ch;
+  font-size: clamp(36px, 7vh, 60px);
+  line-height: 1.1;
+}
+
+@media (max-width: 720px) {
+  .drill-stage .drill-prompt {
+    font-size: 32px;
+  }
+}
+
+.session-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  color: var(--bone-muted);
+}
+
+/* The session's drills as dots, with shape as well as tone: done solid, now a ring, to come dashed. */
+.session-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-dots li {
+  width: 12px;
+  height: 12px;
+  border: 2px dashed var(--line);
+  border-radius: 50%;
+}
+
+.session-dots li[data-at='past'] {
+  border: 0;
+  background: var(--bone);
+}
+
+.session-dots li[data-at='now'] {
+  border: 3px solid var(--bone);
+}
+
 /* Progress (P2-T7): practice days, then the keys × types heatmap. Bone ramp only, every state
    also a shape: dashed = not open yet, outline = new, part filled = shaky, solid = known cold. */
 
@@ -1272,6 +1357,11 @@ input[type='range']:disabled {
 
 .progress-days p {
   color: var(--bone-muted);
+}
+
+.progress-empty {
+  margin-top: 24px;
+  max-width: 60ch;
 }
 
 .days {

@@ -34,11 +34,12 @@ test('attempts fill the heatmap and the practice days as they are recorded', asy
   const progress = page.getByTestId('progress')
   const mark = (id: string) => progress.locator(`td[data-item="${id}"] .mark`)
 
-  await expect(mark('chord:E:min:root')).toHaveAttribute('data-level', 'locked')
+  await expect(progress.getByTestId('progress-empty')).toBeVisible() // nothing open: no grid yet
   await expect(progress.getByTestId('progress-days')).toContainText('Your practice days show here')
 
   const first = await record(page, 'chord:E:min:root')
   await expect(mark('chord:E:min:root')).toHaveAttribute('data-level', 'shaky')
+  await expect(progress.getByTestId('progress-empty')).toHaveCount(0)
   await expect(progress.getByTestId('progress-days')).toHaveText(
     'You practised on 1 of the last 14 days.',
   )
