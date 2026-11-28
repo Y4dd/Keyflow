@@ -4,8 +4,6 @@ import {
   CHORD_QUALITIES,
   createAttempt,
   drillOf,
-  pickDrill,
-  SCALE_BPM,
   SCALE_QUALITIES,
   type Attempt,
   type Drill,
@@ -231,24 +229,5 @@ describe('attempts', () => {
     const a = createAttempt(drillOf('geo:C'), 0)
     play(a, [on(60, 5)])
     expect(play(a, [on(61, 9)])).toMatchObject({ done: true, ms: 5, wrongNotes: 0 })
-  })
-})
-
-describe('pickDrill', () => {
-  it('gives the kind asked for, never the same item twice in a row', () => {
-    for (const kind of ['note', 'chord', 'scale', 'chordInKey', 'build'] as const) {
-      let last: string | null = null
-      for (let i = 0; i < 200; i++) {
-        const d = pickDrill(kind, last)
-        expect(d.kind).toBe(kind)
-        expect(d.item).not.toBe(last)
-        last = d.item
-      }
-    }
-  })
-
-  it('times scale drills', () => {
-    const d = pickDrill('scale', null)
-    expect(d.kind === 'scale' && d.bpm).toBe(SCALE_BPM)
   })
 })

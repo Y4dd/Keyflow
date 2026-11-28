@@ -18,7 +18,7 @@ const zone = (page: Page, title: 'Main sound' | 'Left sound') =>
 const pedal = (page: Page) => page.getByRole('radiogroup', { name: 'Pedal' })
 // Settings live in Setup, the help on the keys in Jam (P2-T12).
 async function go(page: Page, view: 'Jam' | 'Setup') {
-  const link = page.getByRole('link', { name: view, exact: true })
+  const link = page.locator('.topbar').getByRole('link', { name: view, exact: true })
   await link.click()
   await expect(link).toHaveAttribute('aria-current', 'page') // the old view is gone
 }

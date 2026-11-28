@@ -24,6 +24,7 @@ export const PURE_PATHS = [
   'src/analysis/',
   'src/practice/',
   'src/input/midi/parse.ts',
+  'src/input/sim/script.ts',
   'src/audio/voices.ts',
   'src/audio/zones.ts',
   'src/audio/curves.ts',

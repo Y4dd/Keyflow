@@ -18,7 +18,7 @@ import { chordOf, pc } from '../music/harmony.ts'
 
 // ---- Vocabulary (learning-design.md ids → tonal) ----
 
-const CHORDS = {
+export const CHORDS = {
   maj: { tonal: 'M', word: 'Major' },
   min: { tonal: 'm', word: 'Minor' },
   dim: { tonal: 'dim', word: 'Diminished' },
@@ -34,7 +34,7 @@ const CHORDS = {
   '9': { tonal: '9', word: 'Dominant 9th' },
 } as const
 
-const SCALES = {
+export const SCALES = {
   major: { tonal: 'major', word: 'major' },
   minor: { tonal: 'minor', word: 'minor' },
   minPent: { tonal: 'minor pentatonic', word: 'minor pentatonic' },
@@ -98,7 +98,7 @@ export interface DrillOptions {
 
 const pretty = (n: string) => n[0] + n.slice(1).replaceAll('b', '♭').replaceAll('#', '♯')
 const semis = (intervals: string[]) => intervals.map((i) => Interval.semitones(i)!)
-const formulaOf = (tones: number[]) =>
+export const formulaOf = (tones: number[]) =>
   ['root', ...tones.slice(1).map((t, i) => `+${pc(t - tones[i]!)} half-steps`)].join(', ')
 
 /** Pitch-class names: these spelled notes first, then flats if any is flat, else sharps. */
@@ -325,51 +325,5 @@ export function createAttempt(drill: Drill, shownAt: number): Attempt {
 
 // ---- Picking a drill ----
 
-export type DrillKind = Drill['kind']
-
-const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B']
-const NOTES = [...ROOTS, 'C#', 'Gb']
-const TRIADS = ['maj', 'min', 'dim', 'aug', 'sus2', 'sus4']
-const SEVENTHS = ['maj7', 'm7', '7', 'm7b5']
-const NUMERALS = {
-  major: ['ii', 'iii', 'IV', 'V', 'vi', 'ii7', 'V7', 'IVmaj7'],
-  minor: ['iv', 'v', 'bIII', 'bVI', 'bVII', 'iv7', 'bVImaj7'],
-}
 /** Starting tempo for scale drills (learning-design.md: accuracy first, slow). */
 export const SCALE_BPM = 70
-
-/**
- * A random drill of a kind, never the item just played (interleaving).
- * Practice by type, outside a session (the session builder, P2-T6, picks from due and unlocked
- * items). shortcut: uniform over a fixed vocabulary, no 9ths; drop it with the type chips once
- * P2-T4's manual check, which uses them, has passed.
- */
-export function pickDrill(kind: DrillKind, previous: string | null, random = Math.random): Drill {
-  const one = <T>(xs: readonly T[]) => xs[Math.floor(random() * xs.length)]!
-  for (;;) {
-    let d: Drill
-    if (kind === 'note') d = drillOf(`geo:${one(NOTES)}`)
-    else if (kind === 'scale')
-      d = drillOf(`scale:${one(ROOTS)}:${one(SCALE_QUALITIES)}:${one(Object.keys(RUNS))}`, {
-        bpm: SCALE_BPM,
-      })
-    else if (kind === 'chordInKey') {
-      const mode = one(['major', 'minor'] as const)
-      d = drillOf(`rn:${one(ROOTS)}:${mode}:${one(NUMERALS[mode])}`)
-    } else {
-      const quality = one([...TRIADS, ...SEVENTHS])
-      const variants = [
-        'any',
-        'any',
-        'root',
-        'inv1',
-        'inv2',
-        ...(SEVENTHS.includes(quality) ? ['inv3'] : []),
-      ]
-      d = drillOf(`chord:${one(ROOTS)}:${quality}:${kind === 'build' ? 'any' : one(variants)}`, {
-        build: kind === 'build',
-      })
-    }
-    if (d.item !== previous) return d
-  }
-}

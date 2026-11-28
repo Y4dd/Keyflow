@@ -7,14 +7,7 @@ import type { Grade } from 'ts-fsrs'
 import { create } from 'zustand'
 import { createHeldNotes } from '../analysis/recognize.ts'
 import type { InputEvent } from '../input/types.ts'
-import {
-  createAttempt,
-  pickDrill,
-  type Attempt,
-  type AttemptState,
-  type Drill,
-  type DrillKind,
-} from '../practice/drills.ts'
+import { createAttempt, type Attempt, type AttemptState, type Drill } from '../practice/drills.ts'
 import {
   GRADING,
   hintDelays,
@@ -176,10 +169,6 @@ export const drills = {
         stability = item?.card.stability ?? 0
         schedule()
       })
-  },
-  /** A new drill of a kind, never the item just shown. */
-  pick(kind: DrillKind) {
-    drills.start(pickDrill(kind, useDrillStore.getState().drill?.item ?? null))
   },
   stop() {
     giveUp()

@@ -318,7 +318,6 @@ strong {
 }
 
 .drawer > summary,
-.by-type > summary,
 .keys-help > summary {
   display: inline-block;
   padding: 6px 18px;
@@ -333,20 +332,17 @@ strong {
 }
 
 .drawer > summary::-webkit-details-marker,
-.by-type > summary::-webkit-details-marker,
 .keys-help > summary::-webkit-details-marker {
   display: none;
 }
 
 .drawer > summary:hover,
-.by-type > summary:hover,
 .keys-help > summary:hover {
   border-color: var(--bone-muted);
   background: var(--card-raised);
 }
 
 .drawer[open] > summary,
-.by-type[open] > summary,
 .keys-help[open] > summary {
   border-color: var(--bone);
 }
@@ -362,7 +358,6 @@ strong {
   margin-top: 40px;
 }
 
-.by-type .chips,
 .keys-help p {
   margin-top: 12px;
 }
@@ -1497,4 +1492,95 @@ input[type='range']:disabled {
 .mark[data-level='cold'] {
   border-color: var(--bone);
   background: var(--bone);
+}
+
+/* The library (P2-T10): what to show on the left, what it is on the right, over the pinned keys.
+   The keys carry the shape; this card names it. */
+
+.learn {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+  gap: 16px 48px;
+  align-items: start;
+}
+
+.learn-pick {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+}
+
+.learn-title {
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.learn-formula {
+  margin-top: 4px;
+  font-size: 18px;
+}
+
+.learn-tones,
+.learn-key ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learn-tones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 12px;
+  color: var(--bone-muted);
+}
+
+.learn-tones strong {
+  color: var(--bone);
+  font-weight: 650;
+}
+
+.learn-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+button.chip {
+  padding: 6px 14px;
+  font-weight: 400;
+}
+
+button.chip[aria-pressed='true'] {
+  border-color: var(--bone);
+  background: var(--bone);
+  color: var(--bin);
+  font-weight: 650;
+}
+
+.learn-symbol {
+  color: var(--bone-muted);
+}
+
+[aria-pressed='true'] > .learn-symbol {
+  color: inherit;
+}
+
+.learn-shown > .actions {
+  margin-top: 16px;
+}
+
+@media (max-width: 960px) {
+  .learn {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.learn-roots .chip {
+  min-width: 44px;
+  padding: 6px 10px;
+  text-align: center;
 }

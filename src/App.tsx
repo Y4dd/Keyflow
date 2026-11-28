@@ -27,6 +27,14 @@ const ProgressPanel = lazy<ComponentType>(() =>
   ),
 )
 
+// On demand too: the library's vocabulary is the curriculum's.
+const LearnPanel = lazy<ComponentType>(() =>
+  import('./ui/LearnPanel.tsx').then(
+    (m) => ({ default: m.LearnPanel }),
+    () => ({ default: () => null }),
+  ),
+)
+
 const VIEWS: { route: Route; label: string }[] = [
   { route: 'jam', label: 'Jam' },
   { route: 'practice', label: 'Practice' },
@@ -113,15 +121,9 @@ function PracticeView() {
 
 function LearnView() {
   return (
-    <section className="card" aria-labelledby="learn-tab">
-      <h2 className="tab" id="learn-tab">
-        Learn
-      </h2>
-      <p className="blurb">
-        A chord and scale library comes here: look a chord or scale up in any key, see it on the
-        keys, hear it, and drill it.
-      </p>
-    </section>
+    <Suspense fallback={null}>
+      <LearnPanel />
+    </Suspense>
   )
 }
 

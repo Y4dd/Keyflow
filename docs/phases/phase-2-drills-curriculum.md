@@ -115,7 +115,7 @@ Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, s
 - **Manual:** none (the label is checked by e2e).
 - **Built:** 2026-11-27. `nameHeld` in `src/analysis/recognize.ts` (pure, table-tested): one pitch class is its name, two an interval (lowest up, within the octave), three or more `detectChord`'s first candidate, a plain major triad shown as its root (`G/B`). The numeral is the root's degree from the major scale with the triad's case (`vi`, `vii°`, `♭VII`, no extensions), in the groove's key, and left out while a drill is open (it has its own key). The label leads the readout (`LiveInput`, written to the DOM in its frame after an input event, like the held notes). The setting `chordName` is in Setup's Computer keys card and saved with the settings. e2e in `tests/e2e/input.spec.ts` and `settings.spec.ts`.
 
-### P2-T10: Chord and scale library
+### P2-T10: Chord and scale library [done 2026-11-27]
 **Depends on:** P2-T9, P2-T12 (the library is the Learn view). **Model:** Opus.
 
 Added 2026-11-27 from the P2-T4 check: something to look a chord or scale up in, so drills can be worked out rather than known.
@@ -126,6 +126,7 @@ Added 2026-11-27 from the P2-T4 check: something to look a chord or scale up in,
 - No notation. Content is generated from `tonal` and the curriculum's vocabulary, not hand-typed tables.
 - **Automated:** for a sample of keys, types and inversions, the highlighted MIDI notes match `tonal`; Hear it schedules the right notes (dev inspector or the engine's test hook); Drill this opens the right item.
 - **Manual:** taste only, if the layout has real alternatives (Taste in one round).
+- **Built:** 2026-11-27. `src/practice/library.ts` (pure, see "Library (P2-T10)" in `docs/architecture.md`): the curriculum's triads (min, maj, dim, sus2, sus4), 7ths (m7, 7, maj7) and soloing scales, every root position the curriculum's own item ID. The Learn card (`src/ui/LearnPanel.tsx`) marks the notes on the keys, name in the tag and degree above it, lifted above the split; the key is the root's minor key for a minor chord or scale, else major, with its seven diatonic triads; a chip keeps the key's spelling (C♭ in E♭ minor) and drills the curriculum's item for that pitch class. The pick is kept across Drill this and back. Hear it plays at 100 BPM in eighths through the input bus. Drill this opens the item in Practice; outside a session, Skip and Next go back to Learn. `pickDrill` and the drill-type chips are gone. Unit tests in `src/practice/library.test.ts` (notes against tonal, degrees, curriculum IDs, diatonic spelling); e2e in `tests/e2e/learn.spec.ts` (marks and inversions, the card and keys in view at 1280×720, Hear it's notes and nothing held after leaving, Drill this). No manual check: the layout had no real alternative worth an audition.
 
 ### P2-T11: Take feedback on the piano roll [built 2026-11-27, manual check pending]
 **Depends on:** P2-T12 (it moves the Takes card; waiting avoids a conflict). **Model:** Opus.

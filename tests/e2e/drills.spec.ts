@@ -87,21 +87,6 @@ test('build it, from the formula', async ({ page }) => {
   await expect(result(page)).toContainText('Right,')
 })
 
-test('pick a type, go to the next drill, close', async ({ page }) => {
-  const card = page.getByTestId('drills')
-  await card.getByText('Practice by type').click()
-  await card.getByRole('radio', { name: 'Play the chord' }).check()
-  const first = await card.locator('[data-item]').getAttribute('data-item')
-  expect(first).toMatch(/^chord:/)
-  await card.getByRole('button', { name: 'Skip' }).click()
-  await expect(card.locator('[data-item]')).not.toHaveAttribute('data-item', first!)
-  await card.getByRole('button', { name: 'Close drills' }).click()
-  await expect(prompt(page)).toHaveCount(0)
-  await expect(
-    card.getByRole('radio', { name: 'Play the chord', includeHidden: true }),
-  ).not.toBeChecked() // the closed Practice by type
-})
-
 const logs = (page: Page, item: string) =>
   page.evaluate((item) => (window as DevWindow).__keyflow!.items.logs(item), item)
 

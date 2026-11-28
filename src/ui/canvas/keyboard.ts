@@ -60,7 +60,10 @@ export interface KeyboardView {
   letters: ReadonlyMap<number, string>
   /** What to highlight: the shown harmony, the level, note names by pitch class, and the look. */
   jam: { harmony: HarmonyAt; wheels: Wheels; names: readonly string[]; look: Look }
-  /** A drill hint's keys and their labels, drawn in place of the jam highlighting; or null. */
+  /**
+   * Keys to mark and their labels (a drill hint's, or the library's "E♭\n♭3": a second line is
+   * drawn above the first), in place of the jam highlighting; or null.
+   */
   hint: ReadonlyMap<number, string> | null
 }
 
@@ -148,8 +151,14 @@ export function drawKeyboard(ctx: CanvasRenderingContext2D, view: KeyboardView) 
           ? '700 13px system-ui, sans-serif'
           : `${chord ? 700 : 600} 12px system-ui, sans-serif`
       ctx.fillStyle = inTag ? (k.black ? BIN : BONE) : light ? BIN : BONE
-      const text = hint ? hint.get(k.note)! : jam.names[k.note % 12]!
-      ctx.fillText(text, k.x + k.w / 2, nameY(k, jam.look), nameWidth(k))
+      const [text, over] = (hint ? hint.get(k.note)! : jam.names[k.note % 12]!).split('\n')
+      const y = nameY(k, jam.look)
+      ctx.fillText(text!, k.x + k.w / 2, y, nameWidth(k))
+      if (over) {
+        // above the tag, on the key's own fill
+        ctx.fillStyle = light ? BIN : BONE
+        ctx.fillText(over, k.x + k.w / 2, y - (jam.look === 'tags' ? 22 : 16), nameWidth(k))
+      }
       ctx.font = LABEL_FONT
     }
     // The brown letter on idle ivory; bin on other light fills (dimmed and lit keys).

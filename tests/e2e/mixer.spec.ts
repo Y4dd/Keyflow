@@ -20,7 +20,7 @@ type DevWindow = Window & { __keyflow?: DevApi }
 
 // The Mix is a drawer in Jam, the split a setting in Setup (P2-T12).
 async function go(page: Page, view: 'Jam' | 'Setup') {
-  const link = page.getByRole('link', { name: view, exact: true })
+  const link = page.locator('.topbar').getByRole('link', { name: view, exact: true })
   await link.click()
   await expect(link).toHaveAttribute('aria-current', 'page') // the old view is gone
 }

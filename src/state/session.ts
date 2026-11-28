@@ -65,7 +65,7 @@ export const session = {
   next() {
     const d = queue.shift()
     if (!d) {
-      // an empty session leaves a drill picked by type alone
+      // an empty session leaves a drill opened from the library alone
       if (useSessionStore.getState().at > 0) drills.stop()
       return useSessionStore.setState({ status: 'done' })
     }

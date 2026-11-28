@@ -6,6 +6,7 @@ import { harmonyAt, stepIndexAt } from '../grooves/groove.ts'
 import { noteNames } from '../music/spelling.ts'
 import { useAudioStore } from '../state/audio.ts'
 import { useDrillStore } from '../state/drills.ts'
+import { useLibraryStore } from '../state/library.ts'
 import { shownGroove, shownTick, useGrooveStore } from '../state/groove.ts'
 import { laptopBend, pointerPiano } from '../state/input.ts'
 import { toggleDrawer } from '../state/route.ts'
@@ -21,7 +22,7 @@ const KEY_LABELS: [code: string, label: string][] = Object.keys(KEY_OFFSETS).map
 /**
  * The 61-key canvas keyboard: lights every held note by velocity, whatever the source (MIDI,
  * computer keys, pointer, sim), shows the zones and the split point, highlights the groove's
- * chord and scale tones (a drill's hint keys instead, P2-T4), and plays on click or touch. It redraws in an animation frame after a
+ * chord and scale tones (a drill's hint keys or the library's chord instead, P2-T4, P2-T10), and plays on click or touch. It redraws in an animation frame after a
  * change, reading state there, never through React (hot-path rule 4). While a groove plays it
  * checks each frame whether the shown chord moved on, and redraws only when it did.
  */
@@ -64,7 +65,9 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
       const { drill, hint } = useDrillStore.getState()
       const shown = drill ? 0 : wheels
       const jam = { harmony: harmonyAt(g, tick, scale), wheels: shown, names, look }
-      const marks = hint ? new Map(hint.keys.map((k) => [k.note, k.label])) : null
+      const marks = hint
+        ? new Map(hint.keys.map((k) => [k.note, k.label]))
+        : useLibraryStore.getState().marks
       drawKeyboard(ctx, { ...size, keys: keysRef.current, held, layout, letters, jam, hint: marks })
     }
     const redraw = () => {
@@ -115,6 +118,9 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
     const unsubscribeDrill = useDrillStore.subscribe((s, prev) => {
       if (!s.drill !== !prev.drill || s.hint !== prev.hint) redraw()
     })
+    const unsubscribeLibrary = useLibraryStore.subscribe((s, prev) => {
+      if (s.marks !== prev.marks) redraw()
+    })
     const detachWheel = attachWheelBend(laptopBend, container) // scroll over the keys to bend
     return () => {
       unsubscribe()
@@ -122,6 +128,7 @@ export function OnscreenPiano({ baseNote }: { baseNote: number }) {
       unsubscribeGroove()
       unsubscribeView()
       unsubscribeDrill()
+      unsubscribeLibrary()
       observer.disconnect()
       detachWheel()
       cancelAnimationFrame(frame)

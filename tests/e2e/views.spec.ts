@@ -12,7 +12,7 @@ type DevWindow = Window & { __keyflow?: DevApi; __sameCanvas?: Element }
 const ready = (page: Page) =>
   page.waitForFunction(() => (window as DevWindow).__keyflow !== undefined)
 async function go(page: Page, view: string) {
-  const link = page.getByRole('link', { name: view, exact: true })
+  const link = page.locator('.topbar').getByRole('link', { name: view, exact: true })
   await link.click()
   await expect(link).toHaveAttribute('aria-current', 'page')
 }
@@ -36,10 +36,9 @@ test('every view keeps the one keyboard on screen, and a playing groove plays on
 
   for (const view of ['Practice', 'Learn', 'Setup', 'Jam']) {
     await go(page, view)
-    await expect(page.getByRole('link', { name: view, exact: true })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    await expect(
+      page.locator('.topbar').getByRole('link', { name: view, exact: true }),
+    ).toHaveAttribute('aria-current', 'page')
     await expect(canvas(page)).toBeInViewport({ ratio: 1 })
     expect(
       await page.evaluate(
