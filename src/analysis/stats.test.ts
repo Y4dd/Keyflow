@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ELECTRO_FUNK_VAMP } from '../grooves/library.ts'
-import { suggest, takeStats, type TakeStats } from './stats.ts'
+import { evidence, noteMarks, suggest, takeStats, type TakeStats } from './stats.ts'
 import { TAKE_FORMAT, type Take, type TakeEvent } from './take.ts'
 
 // D minor, i7 (D F A C) for two bars then IV7 (G B D F); at 120 BPM a beat is 500 ms.
@@ -106,6 +106,7 @@ describe('takeStats', () => {
       VAMP,
     )
     expect(s.longestRestMs).toBe(2000)
+    expect(s.longestRest).toEqual({ start: 1600, end: 3600 })
     expect(takeStats(take(played(press(62, 0))), VAMP).longestRestMs).toBeNull()
   })
 
@@ -122,6 +123,7 @@ const stats = (over: Partial<TakeStats>): TakeStats => ({
   inScale: 0.9,
   strongBeats: { notes: 8, chordTones: 6 },
   longestRestMs: 4 * BEAT,
+  longestRest: { start: 0, end: 4 * BEAT },
   lengthBeats: 32,
   pitchClasses: new Set([2, 5, 7, 8, 9, 0]),
   ...over,
@@ -169,5 +171,85 @@ describe('suggest', () => {
     expect(suggest(stats({ longestRestMs: 0, inScale: 0.1, lowest: 60, highest: 61 }), t)).toBe(
       'space',
     )
+  })
+})
+
+describe('noteMarks', () => {
+  // Beat 1 D (chord tone, in scale); beat 3 E (not a chord tone, out of the scale); beat 2 A (in
+  // the scale, not strong); bar 3 beat 1 B (a tone of IV7 but outside D minor pentatonic).
+  const t = take(
+    played(
+      press(62, 0),
+      press(64, 2 * BEAT),
+      press(69, BEAT),
+      press(71, 8 * BEAT),
+      press(60, 9 * BEAT + 250),
+    ),
+  )
+
+  it('flags each note as the stats count it, overlaps included', () => {
+    const flags = noteMarks(t, VAMP).map(({ note, inScale, strong, chordTone }) => [
+      note.note,
+      inScale,
+      strong,
+      chordTone,
+    ])
+    expect(flags).toEqual([
+      [62, true, true, true],
+      [69, true, false, false],
+      [64, false, true, false],
+      [71, false, true, true],
+      [60, true, false, false],
+    ])
+  })
+
+  it('adds up to exactly the stats', () => {
+    const marks = noteMarks(t, VAMP)
+    const s = takeStats(t, VAMP, marks)
+    expect(s.notes).toBe(marks.length)
+    expect(s.inScale! * s.notes).toBeCloseTo(marks.filter((m) => m.inScale).length)
+    expect(s.strongBeats).toEqual({
+      notes: marks.filter((m) => m.strong).length,
+      chordTones: marks.filter((m) => m.chordTone).length,
+    })
+    expect(s).toEqual(takeStats(t, VAMP))
+  })
+
+  it('marks nothing strong without the groove', () => {
+    expect(noteMarks(t, null).some((m) => m.strong || m.chordTone)).toBe(false)
+  })
+})
+
+describe('evidence', () => {
+  it('points space at the busiest bar', () => {
+    // One press in bar 1, three in bar 2.
+    const t = take(
+      played(press(62, 0), press(65, 4 * BEAT), press(67, 5 * BEAT), press(69, 6 * BEAT)),
+    )
+    expect(evidence('space', t, noteMarks(t, VAMP))).toEqual({ kind: 'bar', startTick: 4 * 192 })
+  })
+
+  it('puts the blue note between the first step from the 4th to the 5th', () => {
+    // D minor: G4 (67) then A4 (69) leaves room for A♭4 (68).
+    const t = take(played(press(62, 0), press(67, 1000), press(69, 1500), press(67, 2000)))
+    expect(evidence('blueNote', t, noteMarks(t, VAMP))).toEqual({
+      kind: 'ghost',
+      note: 68,
+      at: 1250,
+    })
+    // An octave apart is no step.
+    const far = take(played(press(67, 0), press(81, 500)))
+    expect(evidence('blueNote', far, noteMarks(far, VAMP))).toBeNull()
+  })
+
+  it('points land and scale at the notes they count', () => {
+    const t = take(played(press(62, 0), press(64, 2 * BEAT), press(63, BEAT)))
+    const marks = noteMarks(t, VAMP)
+    expect(evidence('land', t, marks)).toEqual({ kind: 'notes', notes: [marks[2]!.note] })
+    expect(evidence('scale', t, marks)).toEqual({
+      kind: 'notes',
+      notes: [marks[1]!.note, marks[2]!.note],
+    })
+    expect(evidence('repeat', t, marks)).toBeNull()
   })
 })

@@ -1,4 +1,5 @@
 // Gentle stats after a take (P1-T8): what you played, never a score, and one thing to try next.
+// The roll marks the same per-note flags the numbers count (P2-T11), so they can't disagree.
 // Pure: no DOM, no Tone, no React. Pitches stay MIDI numbers; the Takes card names them.
 //
 // shortcut: the take doesn't store the split or the pedal mode, so left-hand notes count in the
@@ -7,7 +8,7 @@
 
 import { harmonyAt, PPQ, BEATS_PER_BAR, type Groove } from '../grooves/groove.ts'
 import { pc, scalePcs } from '../music/harmony.ts'
-import { takeNotes, tickAt, type Take } from './take.ts'
+import { takeNotes, tickAt, type Take, type TakeNote } from './take.ts'
 
 /**
  * How far from beat 1 or 3 a note may start and still count as on it, in ticks: an eighth of a
@@ -43,6 +44,8 @@ export interface TakeStats {
   strongBeats: { notes: number; chordTones: number } | null
   /** The longest time with every key up between two presses, ms; null under two notes. */
   longestRestMs: number | null
+  /** Where that rest is, take ms (raw, like the notes' times); null under two notes. */
+  longestRest: { start: number; end: number } | null
   /** From the first press to the last, in beats. */
   lengthBeats: number
   /** The pitch classes played. */
@@ -53,36 +56,61 @@ export interface TakeStats {
  * When a note was heard against the beat: its `at` less the calibration offset, with the two clock
  * mappings lined up (each lead is how much later its mapping puts the same audio time, so the
  * take's events sit `leadMs` early and the offset `offsetLeadMs` large, against the plain pair).
+ * The roll draws at this time too, so a note marked on beat 1 sits on beat 1's line.
  */
-const heard = (take: Take, at: number) =>
+export const heard = (take: Take, at: number) =>
   take.offsetMs === null ? at : at - take.offsetMs + (take.leadMs ?? 0) - (take.offsetLeadMs ?? 0)
 
-/**
- * The take's stats. `groove` is the take's groove in the take's key, or null when the app no
- * longer has it (then there are no chords to compare with).
- */
-export function takeStats(take: Take, groove: Groove | null): TakeStats {
-  const notes = takeNotes(take)
+/** One note as the stats count it: the roll marks exactly these flags. */
+export interface NoteMark {
+  note: TakeNote
+  inScale: boolean
+  /** Starts on beat 1 or 3 (within STRONG_BEAT_WINDOW, as heard), after the count-in. */
+  strong: boolean
+  /** A tone of the chord on that beat; false off the strong beats and without the groove. */
+  chordTone: boolean
+}
+
+/** Every note's flags, in press order. `groove` as for takeStats: null leaves `strong` false. */
+export function noteMarks(take: Take, groove: Groove | null): NoteMark[] {
   const scale = scalePcs(take.scale, take.tonic)
+  return takeNotes(take).map((note) => {
+    const tick = tickAt(take, heard(take, note.start))
+    const beat = Math.round(tick / PPQ)
+    const strong =
+      groove !== null &&
+      beat >= 0 &&
+      beat % 2 === 0 &&
+      Math.abs(tick - beat * PPQ) <= STRONG_BEAT_WINDOW
+    return {
+      note,
+      inScale: scale.includes(pc(note.note)),
+      strong,
+      // The chord on the beat itself, so a note a hair early on a change meets the new chord.
+      chordTone: strong && harmonyAt(groove!, beat * PPQ).chordTones.includes(pc(note.note)),
+    }
+  })
+}
+
+/**
+ * The take's stats, counted from `marks` (noteMarks of the same take and groove). `groove` is the
+ * take's groove in the take's key, or null when the app no longer has it (then there are no
+ * chords to compare with).
+ */
+export function takeStats(
+  take: Take,
+  groove: Groove | null,
+  marks: readonly NoteMark[] = noteMarks(take, groove),
+): TakeStats {
+  const notes = marks.map((m) => m.note)
   const pitches = notes.map((n) => n.note)
 
-  let strongBeats: TakeStats['strongBeats'] = null
-  if (groove) {
-    strongBeats = { notes: 0, chordTones: 0 }
-    for (const n of notes) {
-      const tick = tickAt(take, heard(take, n.start))
-      const beat = Math.round(tick / PPQ)
-      if (beat < 0 || beat % 2 !== 0 || Math.abs(tick - beat * PPQ) > STRONG_BEAT_WINDOW) continue
-      strongBeats.notes++
-      // The chord on the beat itself, so a note a hair early on a change meets the new chord.
-      if (harmonyAt(groove, beat * PPQ).chordTones.includes(pc(n.note))) strongBeats.chordTones++
-    }
-  }
-
-  let longestRestMs: number | null = null
+  let longestRest: TakeStats['longestRest'] = null
   let lastUp = -Infinity
   for (const n of notes) {
-    if (lastUp > -Infinity) longestRestMs = Math.max(longestRestMs ?? 0, n.start - lastUp)
+    const rest = n.start - lastUp
+    if (lastUp > -Infinity && (!longestRest || rest > longestRest.end - longestRest.start))
+      longestRest = { start: lastUp, end: Math.max(lastUp, n.start) }
     lastUp = Math.max(lastUp, n.end)
   }
 
@@ -91,11 +119,15 @@ export function takeStats(take: Take, groove: Groove | null): TakeStats {
     notes: notes.length,
     lowest: pitches.length ? Math.min(...pitches) : null,
     highest: pitches.length ? Math.max(...pitches) : null,
-    inScale: notes.length
-      ? pitches.filter((p) => scale.includes(pc(p))).length / notes.length
+    inScale: notes.length ? marks.filter((m) => m.inScale).length / notes.length : null,
+    strongBeats: groove
+      ? {
+          notes: marks.filter((m) => m.strong).length,
+          chordTones: marks.filter((m) => m.chordTone).length,
+        }
       : null,
-    strongBeats,
-    longestRestMs,
+    longestRestMs: longestRest && longestRest.end - longestRest.start,
+    longestRest,
     lengthBeats: notes.length ? (notes.at(-1)!.start - notes[0]!.start) / beatMs : 0,
     pitchClasses: new Set(pitches.map(pc)),
   }
@@ -123,4 +155,53 @@ export function suggest(s: TakeStats, take: Take): Suggestion {
   if (s.highest! - s.lowest! < SUGGEST.minRange) return 'range'
   if (s.inScale! < SUGGEST.inScaleShare) return 'scale'
   return 'repeat'
+}
+
+/**
+ * Where the suggestion's evidence sits on the roll, where it has some:
+ * - bar (space): the busiest bar, the most presses starting in it as heard (the first on a tie):
+ *   the bar with no space in it. Groove ticks of its start, negative in the count-in.
+ * - ghost (blueNote): the first whole-tone step between the 4th and the 5th, either way, where
+ *   the blue note fits: that pitch, halfway between the two presses (take ms, raw).
+ * - notes: the notes on 1 and 3 that aren't chord tones (land), or outside the scale (scale).
+ */
+export type Evidence =
+  | { kind: 'bar'; startTick: number }
+  | { kind: 'ghost'; note: number; at: number }
+  | { kind: 'notes'; notes: readonly TakeNote[] }
+
+export function evidence(s: Suggestion, take: Take, marks: readonly NoteMark[]): Evidence | null {
+  const bar = BEATS_PER_BAR * PPQ
+  switch (s) {
+    case 'space': {
+      const count = new Map<number, number>()
+      let best: number | null = null
+      for (const m of marks) {
+        const b = Math.floor(tickAt(take, heard(take, m.note.start)) / bar)
+        count.set(b, (count.get(b) ?? 0) + 1)
+        if (best === null || count.get(b)! > count.get(best)!) best = b
+      }
+      return best === null ? null : { kind: 'bar', startTick: best * bar }
+    }
+    case 'blueNote': {
+      const ends = [pc(take.tonic + 5), pc(take.tonic + 7)]
+      for (let i = 1; i < marks.length; i++) {
+        const a = marks[i - 1]!.note
+        const b = marks[i]!.note
+        const step = Math.abs(a.note - b.note) === 2
+        if (step && ends.includes(pc(a.note)) && ends.includes(pc(b.note)))
+          return { kind: 'ghost', note: Math.min(a.note, b.note) + 1, at: (a.start + b.start) / 2 }
+      }
+      return null
+    }
+    case 'land':
+      return {
+        kind: 'notes',
+        notes: marks.filter((m) => m.strong && !m.chordTone).map((m) => m.note),
+      }
+    case 'scale':
+      return { kind: 'notes', notes: marks.filter((m) => !m.inScale).map((m) => m.note) }
+    default:
+      return null
+  }
 }

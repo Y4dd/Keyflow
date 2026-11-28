@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useRef } from 'react'
-import { blueNote, suggest, takeStats, type Suggestion } from '../analysis/stats.ts'
-import { takeNotes, takeToMidi, type Take } from '../analysis/take.ts'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import {
+  blueNote,
+  evidence,
+  noteMarks,
+  suggest,
+  takeStats,
+  type Evidence,
+  type NoteMark,
+  type Suggestion,
+  type TakeStats,
+} from '../analysis/stats.ts'
+import { takeToMidi, type Take } from '../analysis/take.ts'
+import type { Groove } from '../grooves/groove.ts'
 import { pc } from '../music/harmony.ts'
 import { transpose } from '../grooves/groove.ts'
 import { GROOVES } from '../grooves/library.ts'
@@ -9,7 +20,7 @@ import type { StoredTake } from '../storage/db.ts'
 import { useAudioStore } from '../state/audio.ts'
 import { groove, grooveOf } from '../state/groove.ts'
 import { canReplay, takes, useTakesStore } from '../state/takes.ts'
-import { drawRoll } from './canvas/roll.ts'
+import { drawRoll, ROLL_LOOKS, type RollFocus, type RollLook } from './canvas/roll.ts'
 
 const clock = (ms: number) => {
   const s = Math.round(ms / 1000)
@@ -51,37 +62,90 @@ function download(take: Take) {
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-/** The chosen take's piano roll, drawn on a take change or a resize only. */
-function Roll({ take }: { take: StoredTake }) {
+/** What the roll and the stats share: one take's marks, stats and evidence (P2-T11). */
+interface Analysis {
+  /** The take's groove in its key, for the roll's chords. */
+  shown: Groove
+  names: readonly string[]
+  marks: NoteMark[]
+  stats: TakeStats
+  suggestion: Suggestion
+  evidence: Evidence | null
+}
+
+function analyse(take: StoredTake): Analysis {
+  const g = grooveOf(take.grooveId)
+  const shown = transpose(g, take.tonic - g.key.tonic)
+  const names = noteNames(shown.key, take.scale)
+  // Without its groove there are no chords to compare with.
+  const compare = canReplay(take) ? shown : null
+  const marks = noteMarks(take, compare)
+  const stats = takeStats(take, compare, marks)
+  const suggestion = suggest(stats, take)
+  return { shown, names, marks, stats, suggestion, evidence: evidence(suggestion, take, marks) }
+}
+
+/** What the roll reads each frame: the stat in focus and the marking look. */
+interface RollState {
+  focus: RollFocus
+  look: RollLook
+}
+
+/**
+ * The chosen take's piano roll. It reads the focus, the look and its size each frame and redraws
+ * only when one changed, so hovering a stat re-renders nothing.
+ */
+function Roll({ take, a, state }: { take: StoredTake; a: Analysis; state: RefObject<RollState> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const canvas = canvasRef.current!
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const g = grooveOf(take.grooveId)
-    const shown = transpose(g, take.tonic - g.key.tonic)
-    const notes = takeNotes(take)
-    const names = noteNames(shown.key, take.scale)
-    const draw = () => {
+    let drawn = ''
+    let frame = 0
+    const tick = () => {
+      frame = requestAnimationFrame(tick)
       const { width, height } = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
+      const { focus, look } = state.current
+      const key = `${width}x${height}@${dpr} ${focus} ${look}`
+      if (key === drawn || width === 0) return
+      drawn = key
       canvas.width = Math.round(width * dpr)
       canvas.height = Math.round(height * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      drawRoll(ctx, { width, height, take, groove: shown, scale: take.scale, notes, names })
+      drawRoll(ctx, {
+        width,
+        height,
+        take,
+        groove: a.shown,
+        scale: take.scale,
+        marks: a.marks,
+        stats: a.stats,
+        evidence: a.evidence,
+        focus,
+        look,
+        names: a.names,
+      })
     }
-    const observer = new ResizeObserver(draw)
-    observer.observe(canvas)
-    return () => observer.disconnect()
-  }, [take])
-  const count = take.events.filter((e) => e.kind === 'noteOn').length
+    tick()
+    return () => cancelAnimationFrame(frame)
+  }, [take, a, state])
+  const { marks } = a
+  const out = marks.filter((m) => !m.inScale).length
+  const strong = marks.filter((m) => m.strong).length
+  const chordTones = marks.filter((m) => m.chordTone).length
   return (
     <div className="roll">
       <canvas
         ref={canvasRef}
         className="roll-canvas"
         role="img"
-        aria-label={`Piano roll: ${count} notes over ${grooveName(take)}, ${clock(take.lengthMs)} long`}
+        data-in-scale={marks.length - out}
+        data-out={out}
+        data-strong={strong}
+        data-chord-tones={chordTones}
+        aria-label={`Piano roll: ${marks.length} notes over ${grooveName(take)}, ${clock(take.lengthMs)} long; ${marks.length - out} in the scale, ${out} outside it${canReplay(take) ? `; ${chordTones} of ${strong} on beats 1 and 3 are chord tones` : ''}`}
       />
     </div>
   )
@@ -119,15 +183,22 @@ function suggestionText(s: Suggestion, take: Take, names: readonly string[]): st
 }
 
 /** What the chosen take holds, and one thing to try next. No score. */
-function Stats({ take }: { take: StoredTake }) {
-  const { stats, names, tip } = useMemo(() => {
-    const g = grooveOf(take.grooveId)
-    const names = noteNames({ tonic: take.tonic, mode: g.key.mode }, take.scale)
-    // Without its groove there are no chords to compare with.
-    const shown = canReplay(take) ? transpose(g, take.tonic - g.key.tonic) : null
-    const stats = takeStats(take, shown)
-    return { stats, names, tip: suggestionText(suggest(stats, take), take, names) }
-  }, [take])
+function Stats({ take, a, state }: { take: StoredTake; a: Analysis; state: RefObject<RollState> }) {
+  const { stats, names } = a
+  const tip = suggestionText(a.suggestion, take, names)
+  // Hover (a mouse) or focus (a tap or Tab) lights the notes a stat counts on the roll.
+  const point = (focus: RollFocus) => ({
+    tabIndex: 0,
+    onFocus: () => (state.current.focus = focus),
+    onBlur: () => (state.current.focus = null),
+    onPointerEnter: (e: { pointerType: string }) => {
+      if (e.pointerType === 'mouse') state.current.focus = focus
+    },
+    onPointerLeave: (e: { pointerType: string; currentTarget: Element }) => {
+      if (e.pointerType === 'mouse' && document.activeElement !== e.currentTarget)
+        state.current.focus = null
+    },
+  })
   // C♭ belongs to the octave above its key, B♯ to the one below.
   const name = (n: number) => {
     const s = names[pc(n)]!
@@ -142,19 +213,19 @@ function Stats({ take }: { take: StoredTake }) {
           <dd>{stats.notes}</dd>
         </div>
         {lowest !== null && highest !== null && (
-          <div>
+          <div {...point('range')}>
             <dt>Range</dt>
             <dd>{lowest === highest ? name(lowest) : `${name(lowest)} to ${name(highest)}`}</dd>
           </div>
         )}
         {inScale !== null && (
-          <div>
+          <div {...point('inScale')}>
             <dt>In the scale</dt>
             <dd>{percent(inScale)}</dd>
           </div>
         )}
         {strongBeats && stats.notes > 0 && (
-          <div>
+          <div {...point('strong')}>
             <dt>Chord tones on 1 and 3</dt>
             <dd>
               {strongBeats.notes === 0
@@ -164,7 +235,7 @@ function Stats({ take }: { take: StoredTake }) {
           </div>
         )}
         {longestRestMs !== null && (
-          <div>
+          <div {...point('rest')}>
             <dt>Longest rest</dt>
             <dd>{restLength(longestRestMs, take.bpm)}</dd>
           </div>
@@ -175,12 +246,80 @@ function Stats({ take }: { take: StoredTake }) {
   )
 }
 
+/**
+ * The marking look, a temporary choice for the P2-T11 taste check; the pick becomes the only look.
+ * shortcut: kept for the visit only, not saved; the chips go once the look is picked.
+ */
+function LookChips({ state }: { state: RefObject<RollState> }) {
+  const [look, setLook] = useState(state.current.look)
+  return (
+    <div className="chips roll-looks" role="radiogroup" aria-label="Roll marks">
+      {ROLL_LOOKS.map((l) => (
+        <label key={l} className="chip">
+          <input
+            type="radio"
+            name="roll-look"
+            value={l}
+            checked={l === look}
+            onChange={() => {
+              state.current.look = l
+              setLook(l)
+            }}
+          />
+          {l[0]!.toUpperCase() + l.slice(1)}
+        </label>
+      ))}
+    </div>
+  )
+}
+
+/** The chosen take: its roll, stats and actions. */
+function TakeView({
+  take,
+  running,
+  recording,
+}: {
+  take: StoredTake
+  running: boolean
+  recording: boolean
+}) {
+  const a = useMemo(() => analyse(take), [take])
+  const state = useRef<RollState>({ focus: null, look: 'fill' })
+  const isReplaying = useTakesStore((s) => s.replaying === take.id)
+  return (
+    <div className="take-view">
+      <Roll take={take} a={a} state={state} />
+      <LookChips state={state} />
+      <Stats take={take} a={a} state={state} />
+      <div className="actions">
+        <button
+          type="button"
+          aria-pressed={isReplaying}
+          disabled={!running || recording || !canReplay(take)}
+          onClick={isReplaying ? groove.stop : () => takes.replay(take.id)}
+        >
+          {isReplaying ? 'Stop replay' : 'Replay'}
+        </button>
+        <button type="button" onClick={() => download(take)}>
+          Export .mid
+        </button>
+        <span className="muted small">
+          {!canReplay(take)
+            ? 'Its groove isn’t in the app any more, so it can’t replay; the export still works.'
+            : running
+              ? 'Replays over its groove, through the sounds set now.'
+              : 'Turn sound on to replay.'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 /** Saved takes: pick one to see its piano roll, replay it over its groove, or export it. */
 export function TakesPanel() {
-  const { takes: list, selected, replaying, recording, error } = useTakesStore()
+  const { takes: list, selected, recording, error } = useTakesStore()
   const running = useAudioStore((s) => s.status === 'running')
   const take = list.find((t) => t.id === selected) ?? list[0]
-  const isReplaying = take !== undefined && replaying === take.id
 
   return (
     <section className="card takes" aria-labelledby="takes-tab" data-testid="takes">
@@ -217,30 +356,7 @@ export function TakesPanel() {
               </label>
             ))}
           </div>
-          <div className="take-view">
-            <Roll take={take} />
-            <Stats take={take} />
-            <div className="actions">
-              <button
-                type="button"
-                aria-pressed={isReplaying}
-                disabled={!running || recording || !canReplay(take)}
-                onClick={isReplaying ? groove.stop : () => takes.replay(take.id)}
-              >
-                {isReplaying ? 'Stop replay' : 'Replay'}
-              </button>
-              <button type="button" onClick={() => download(take)}>
-                Export .mid
-              </button>
-              <span className="muted small">
-                {!canReplay(take)
-                  ? 'Its groove isn’t in the app any more, so it can’t replay; the export still works.'
-                  : running
-                    ? 'Replays over its groove, through the sounds set now.'
-                    : 'Turn sound on to replay.'}
-              </span>
-            </div>
-          </div>
+          <TakeView take={take} running={running} recording={recording} />
         </div>
       )}
     </section>

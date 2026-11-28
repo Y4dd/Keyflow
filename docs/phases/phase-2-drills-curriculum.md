@@ -127,7 +127,7 @@ Added 2026-11-27 from the P2-T4 check: something to look a chord or scale up in,
 - **Automated:** for a sample of keys, types and inversions, the highlighted MIDI notes match `tonal`; Hear it schedules the right notes (dev inspector or the engine's test hook); Drill this opens the right item.
 - **Manual:** taste only, if the layout has real alternatives (Taste in one round).
 
-### P2-T11: Take feedback on the piano roll
+### P2-T11: Take feedback on the piano roll [built 2026-11-27, manual check pending]
 **Depends on:** P2-T12 (it moves the Takes card; waiting avoids a conflict). **Model:** Opus.
 
 Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only as numbers.
@@ -137,6 +137,7 @@ Added 2026-11-27 from the P1-T8 check: show the take stats on the roll, not only
 - The categories come from `src/analysis/stats.ts` (pure), one source for the numbers and the marks.
 - **Automated:** unit tests that every note gets exactly the category the stats count it under; an e2e take recorded through the simulated source shows the expected count per category.
 - **Manual:** taste: the marking look (3 or 4 candidates, Taste in one round).
+- **Built:** 2026-11-27. `noteMarks` in `src/analysis/stats.ts` flags each note (in the scale, on 1 or 3, chord tone) and `takeStats` counts from those flags, so the numbers and the marks share one source; the flags overlap (B over G7 in D minor pentatonic is a chord tone on 1 outside the scale). The roll (`src/ui/canvas/roll.ts`) draws notes at the time heard (the calibration shift the strong-beat stat uses), so a note marked on beat 1 sits on its line: notes outside the scale hollow in `line`, scale tones `bone-muted`, chord tones on 1 and 3 brightest, a tick at the head of other notes on 1 or 3; bar lines and beat 3 behind them, the longest rest shaded. Evidence (`evidence()`, pure): **space** outlines the busiest bar (most presses, the first on a tie); **blueNote** draws a dashed ghost at the blue note halfway between the first whole-tone step between the 4th and 5th, none if there is no such step; **land** and **scale** ring the notes they count; the others have none. Hovering, tapping or tabbing to a stat fades the notes it doesn't count; the roll reads the focus, look and size each frame and redraws only on a change. Four looks behind temporary chips (Fill, Dot, Ring, Kraft; default Fill), kept for the visit only. Unit tests in `src/analysis/stats.test.ts`; e2e in `tests/e2e/takes.spec.ts`. Manual check: [`docs/manual-tests/P2-T11.md`](../manual-tests/P2-T11.md).
 
 ### P2-T12: Views and navigation [built 2026-11-27, manual check pending]
 **Depends on:** none. Runs alone: it rearranges `src/App.tsx` and every card. **Model:** Opus.

@@ -87,7 +87,7 @@ async function recordTake(page: Page, played = PLAYED) {
   await page.evaluate((events) => (window as DevWindow).__keyflow!.inject(events), played)
   await groove.getByRole('button', { name: 'Save take' }).click()
   await expect(groove.getByRole('combobox', { name: 'Groove' })).toBeEnabled()
-  await expect(page.getByTestId('takes').getByRole('radio')).toHaveCount(1)
+  await expect(page.getByRole('radiogroup', { name: 'Takes' }).getByRole('radio')).toHaveCount(1)
 }
 
 test('a take is saved, and replays over its groove with identical events', async ({ page }) => {
@@ -139,7 +139,7 @@ test('a take is saved, and replays over its groove with identical events', async
   // Saved: it's still listed after a reload.
   await page.reload()
   await openTakes(page)
-  await expect(page.getByTestId('takes').getByRole('radio')).toHaveCount(1)
+  await expect(page.getByRole('radiogroup', { name: 'Takes' }).getByRole('radio')).toHaveCount(1)
 })
 
 test('stopping a replay mid-take releases its notes, pedal and bend, and puts Loop back', async ({
@@ -205,7 +205,7 @@ test('notes land at their transport positions, in the count-in and after it', as
   const inBar2 = await pressAfter(900, 64) // early in groove bar 2 (768 ticks a bar)
   expect(inCountIn).toBeLessThan(0)
   await groove.getByRole('button', { name: 'Save take' }).click()
-  await expect(page.getByTestId('takes').getByRole('radio')).toHaveCount(1)
+  await expect(page.getByRole('radiogroup', { name: 'Takes' }).getByRole('radio')).toHaveCount(1)
 
   const [take] = await storedTakes(page)
   const ons = take!.events.filter((e) => e.kind === 'noteOn')
@@ -225,6 +225,35 @@ test('notes land at their transport positions, in the count-in and after it', as
     expect(early).toBeGreaterThan(-10)
     expect(early).toBeLessThan(300) // loose: Firefox under load reads its audio clock late
   }
+})
+
+test('the roll marks each note under the category the stats count it in', async ({ page }) => {
+  // P2-T11: D, F and A are in D minor pentatonic, E♭ isn't. Which notes land on 1 and 3
+  // depends on when the injection lands, so the roll's count must equal the stat's, whatever it is.
+  await open(page)
+  await startSound(page)
+  await recordTake(page, [
+    ...PLAYED,
+    { kind: 'noteOn', note: 63, velocity: 0.7, at: 1100 },
+    { kind: 'noteOff', note: 63, at: 1300 },
+  ])
+  const roll = page.getByTestId('takes').locator('.roll-canvas')
+  await expect(roll).toHaveAttribute('data-in-scale', '3')
+  await expect(roll).toHaveAttribute('data-out', '1')
+  const stats = page.getByTestId('take-stats')
+  await expect(stats).toContainText('In the scale75%')
+  const strong = await roll.getAttribute('data-strong')
+  const chordTones = await roll.getAttribute('data-chord-tones')
+  await expect(stats).toContainText(
+    strong === '0' ? 'No notes on 1 or 3' : `(${chordTones} of ${strong})`,
+  )
+  // A stat in focus redraws the roll, and the look chips switch it, with nothing thrown.
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await stats.locator('dl > div').filter({ hasText: 'In the scale' }).focus()
+  await page.getByRole('radio', { name: 'Dot' }).check()
+  await expect(page.getByRole('radio', { name: 'Dot' })).toBeChecked()
+  expect(errors).toEqual([])
 })
 
 test('a take exports as a MIDI file of the notes played', async ({ page }) => {

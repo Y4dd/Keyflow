@@ -1107,6 +1107,17 @@ kbd {
   color: var(--bone-muted);
 }
 
+/* Pointing at a stat lights its notes on the roll (P2-T11); its label brightens to say so. */
+.take-stats dl > div:hover dt,
+.take-stats dl > div:focus dt {
+  color: var(--bone);
+}
+
+/* shortcut: the P2-T11 taste chips; they go once the look is picked. */
+.roll-looks {
+  margin-top: 12px;
+}
+
 .take-stats dd {
   margin: 2px 0 0;
   font-weight: 650;
