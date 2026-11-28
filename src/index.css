@@ -252,8 +252,14 @@ strong {
   min-width: 10ch;
 }
 
-.readout .live dd:first-of-type {
+.readout .live .held {
   min-width: 20ch;
+}
+
+/* What is played (P2-T9): the readout's lead item. */
+.readout .live .chord-name {
+  min-width: 12ch;
+  font-weight: 700;
 }
 
 .dock-sound {

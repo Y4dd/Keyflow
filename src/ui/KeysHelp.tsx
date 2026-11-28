@@ -17,6 +17,7 @@ export function KeysHelp() {
   // Changes only on Z/X, never per note.
   const base = useSyncExternalStore(computerKeyboard.subscribe, computerKeyboard.getBaseNote)
   const letters = useViewStore((s) => s.keyLetters)
+  const chordName = useViewStore((s) => s.chordName)
   const connected = useMidiStore((s) => s.status === 'granted' && s.inputs.length > 0)
   return (
     <section className="card" aria-labelledby="keys-tab">
@@ -43,6 +44,14 @@ export function KeysHelp() {
           onChange={(e) => view.setKeyLetters(e.target.checked)}
         />
         Show the computer-key letters on the keys
+      </label>
+      <label className="check keys-letters">
+        <input
+          type="checkbox"
+          checked={chordName}
+          onChange={(e) => view.setChordName(e.target.checked)}
+        />
+        Name the chord or interval you play, above the keys
       </label>
     </section>
   )

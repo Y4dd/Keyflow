@@ -104,7 +104,7 @@ _Manual check results (2026-11-27, Chrome): the idea and the grid pass. Look tas
 - **Automated:** export → wipe → import round trip.
 - **Built:** 2026-11-27. The "Your data" card (`src/ui/DataPanel.tsx`) has Export backup and Import backup; the format and its checks are in `src/storage/backup.ts` (see "Export and import (P2-T8)" in `docs/architecture.md`). The file carries the database version, and one from a newer version is refused. Every imported row is checked before anything is written, and one bad row rejects the whole file. The import asks before replacing, writes all four tables in one transaction, then reloads the page. Unit tests in `src/storage/backup.test.ts`; the round trip and the refused files in `tests/e2e/backup.spec.ts`. There is no manual check.
 
-### P2-T9: Played-chord indicator, on by default
+### P2-T9: Played-chord indicator, on by default [done 2026-11-27]
 **Depends on:** P2-T12 (the label lives in the readout line above the pinned keyboard). **Model:** Opus.
 
 Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, so the app names it for them.
@@ -113,6 +113,7 @@ Added 2026-11-27 from the P2-T4 check: the user can't yet name what they play, s
 - On by default, everywhere the keyboard is, drills included (it names what you played, not the target). One setting turns it off, saved with the settings.
 - **Automated:** inject a chord, an inversion, a single note and a pedal-held chord through the simulated source; the label matches. Off setting hides it.
 - **Manual:** none (the label is checked by e2e).
+- **Built:** 2026-11-27. `nameHeld` in `src/analysis/recognize.ts` (pure, table-tested): one pitch class is its name, two an interval (lowest up, within the octave), three or more `detectChord`'s first candidate, a plain major triad shown as its root (`G/B`). The numeral is the root's degree from the major scale with the triad's case (`vi`, `vii°`, `♭VII`, no extensions), in the groove's key, and left out while a drill is open (it has its own key). The label leads the readout (`LiveInput`, written to the DOM in its frame after an input event, like the held notes). The setting `chordName` is in Setup's Computer keys card and saved with the settings. e2e in `tests/e2e/input.spec.ts` and `settings.spec.ts`.
 
 ### P2-T10: Chord and scale library
 **Depends on:** P2-T9, P2-T12 (the library is the Learn view). **Model:** Opus.

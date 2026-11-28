@@ -37,6 +37,8 @@ export interface Settings {
   keyLetters: boolean
   /** Jam mode's highlighting look (P1-T4b). */
   look: Look
+  /** The readout names what is held (P2-T9). */
+  chordName: boolean
   /** Sound was started on an earlier visit, so the page can say a click brings it back. */
   audioStarted: boolean
 }
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   calibration: null,
   keyLetters: true,
   look: 'tags',
+  chordName: true,
   audioStarted: false,
 }
 
@@ -206,6 +209,7 @@ export function parseSettings(raw: unknown): Settings {
     calibration: calibration(v.calibration),
     keyLetters: bool(v.keyLetters, d.keyLetters),
     look: LOOKS.find((l) => l === v.look) ?? d.look,
+    chordName: bool(v.chordName, d.chordName),
     audioStarted: bool(v.audioStarted, d.audioStarted),
   }
 }

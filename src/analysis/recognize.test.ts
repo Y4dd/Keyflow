@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { PedalMode } from '../audio/expression.ts'
 import type { InputEvent } from '../input/types.ts'
 import { pc } from '../music/harmony.ts'
+import { noteNames } from '../music/spelling.ts'
 import {
   checkChord,
   checkScale,
   createHeldNotes,
   detectChord,
+  nameHeld,
   type PlayedNote,
 } from './recognize.ts'
 
@@ -320,6 +322,37 @@ describe('checkScale', () => {
     it('has no timing yet for fewer than two right notes, and a done run then fails', () => {
       expect(checkScale(run([57]), target, { bpm: 70 }).timing).toBeNull()
       expect(checkScale(run([57]), [57], { bpm: 70 })).toMatchObject({ status: 'done', ok: false })
+    })
+  })
+})
+
+describe('nameHeld', () => {
+  const G = { tonic: 7, mode: 'major' as const }
+  const names = noteNames(G, 'major pentatonic')
+  const cases: [string, number[], string, string | null][] = [
+    ['nothing', [], '', null],
+    ['one note', [64], 'E', null],
+    ['one note in two octaves', [64, 76], 'E', null],
+    ['an interval, lowest up', [64, 67], 'minor 3rd', null],
+    ['an interval past the octave', [60, 76], 'major 3rd', null],
+    ['a major triad as its root', [67, 71, 74], 'G', 'I'],
+    ['a first inversion as a slash chord', [71, 74, 79], 'G/B', 'I'],
+    ['a minor triad', [64, 67, 71], 'Em', 'vi'],
+    ['a minor inversion', [55, 64, 71], 'Em/G', 'vi'],
+    ['a 7th', [62, 66, 69, 72], 'D7', 'V'],
+    ['a diminished triad', [66, 69, 72], 'F♯dim', 'vii°'],
+    ['a cluster names nothing', [60, 62, 64], '', null],
+  ]
+  it.each(cases)('%s', (_, held, name, numeral) => {
+    expect(nameHeld(held, names, G)).toEqual({ name, numeral })
+  })
+
+  it('spells by key and gives no numeral without one', () => {
+    const flats = noteNames({ tonic: 3, mode: 'major' }, 'major pentatonic')
+    expect(nameHeld([63, 67, 70], flats, null)).toEqual({ name: 'E♭', numeral: null })
+    expect(nameHeld([70, 75, 79], flats, { tonic: 3, mode: 'major' })).toEqual({
+      name: 'E♭/B♭',
+      numeral: 'I',
     })
   })
 })

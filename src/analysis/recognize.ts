@@ -8,7 +8,8 @@
 import { Chord, Note } from 'tonal'
 import type { PedalMode } from '../audio/expression.ts'
 import type { InputEvent } from '../input/types.ts'
-import { pc } from '../music/harmony.ts'
+import { pc, type Key } from '../music/harmony.ts'
+import { pretty } from '../music/spelling.ts'
 
 // ---- Held notes ----
 
@@ -124,6 +125,58 @@ export function detectChord(held: readonly number[], names?: readonly string[]):
     )
   }
   return spelled.length < 2 ? [] : Chord.detect(spelled)
+}
+
+const INTERVALS = [
+  'octave',
+  'minor 2nd',
+  'major 2nd',
+  'minor 3rd',
+  'major 3rd',
+  'perfect 4th',
+  'tritone',
+  'perfect 5th',
+  'minor 6th',
+  'major 6th',
+  'minor 7th',
+  'major 7th',
+]
+// Degrees count from the major scale in every mode, as the Roman numerals in harmony.ts do.
+const NUMERALS = ['I', '♭II', 'II', '♭III', 'III', 'IV', '♭V', 'V', '♭VI', 'VI', '♭VII', 'VII']
+
+/**
+ * What the readout calls the held notes (P2-T9): one note's name, two pitch classes' interval
+ * (lowest note up, within the octave), or the chord with its bass as a slash chord ("Em/G"),
+ * spelled by `names` (as for detectChord). With a key, a chord also gets its Roman numeral there
+ * ("vi"). The name is empty when nothing is held or no chord fits.
+ * shortcut: the numeral is the root's degree and the triad's case only (no 7 or other
+ * extensions); add the extension if the learner wants "vi7".
+ */
+export function nameHeld(
+  held: readonly number[],
+  names: readonly string[],
+  key: Key | null,
+): { name: string; numeral: string | null } {
+  const notes = sorted(held)
+  const pcs = [...new Set(notes.map(pc))]
+  if (pcs.length === 0) return { name: '', numeral: null }
+  if (pcs.length === 1) return { name: names[pcs[0]!]!, numeral: null }
+  if (pcs.length === 2) return { name: INTERVALS[pc(pcs[1]! - pcs[0]!)]!, numeral: null }
+  const found = detectChord(notes, names)[0]
+  if (!found) return { name: '', numeral: null }
+  const name = pretty(found).replace(/^([A-G][♭♯]?)M(?=\/|$)/, '$1') // a major triad: the root alone
+  const chord = Chord.get(found)
+  if (!key || !chord.tonic) return { name, numeral: null }
+  const degree = NUMERALS[pc(Note.chroma(chord.tonic)! - key.tonic)]!
+  const numeral =
+    chord.quality === 'Minor'
+      ? degree.toLowerCase()
+      : chord.quality === 'Diminished'
+        ? `${degree.toLowerCase()}°`
+        : chord.quality === 'Augmented'
+          ? `${degree}+`
+          : degree
+  return { name, numeral }
 }
 
 // ---- Scales ----

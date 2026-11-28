@@ -9,11 +9,18 @@ export interface ViewState {
   /** The computer-key letters on the canvas keys. */
   keyLetters: boolean
   look: Look
+  /** Name what is held in the readout (P2-T9). */
+  chordName: boolean
 }
 
-export const useViewStore = create<ViewState>(() => ({ keyLetters: true, look: 'tags' }))
+export const useViewStore = create<ViewState>(() => ({
+  keyLetters: true,
+  look: 'tags',
+  chordName: true,
+}))
 
 export const view = {
   setKeyLetters: (keyLetters: boolean) => useViewStore.setState({ keyLetters }),
   setLook: (look: Look) => useViewStore.setState({ look }),
+  setChordName: (chordName: boolean) => useViewStore.setState({ chordName }),
 }

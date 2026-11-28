@@ -129,3 +129,34 @@ test.describe('touch', () => {
     await expect.poll(() => lit(page, 64)).toBe(false)
   })
 })
+
+// P2-T9: the readout names what is held, in the first groove's key (D minor).
+test('the readout names a chord, an inversion, a note and a pedal-held chord', async ({ page }) => {
+  await open(page)
+  const inject = (events: unknown[]) =>
+    page.evaluate((e) => (window as DevWindow).__keyflow!.inject(e), events)
+  const on = (...notes: number[]) => notes.map((note) => ({ kind: 'noteOn', note }))
+  const off = (...notes: number[]) => notes.map((note) => ({ kind: 'noteOff', note }))
+  const label = page.getByTestId('chord-name')
+
+  await inject(on(62, 65, 69))
+  await expect(label).toHaveText('Dm · i')
+  await inject([...off(62, 65, 69), ...on(65, 69, 74)])
+  await expect(label).toHaveText('Dm/F · i')
+  await inject([...off(65, 69, 74), ...on(62)])
+  await expect(label).toHaveText('D')
+  await inject(off(62))
+  await expect(label).toHaveText('–')
+
+  await inject([{ kind: 'pedal', down: true }, ...on(67, 70, 74), ...off(67, 70, 74)])
+  await expect(label).toHaveText('Gm · iv')
+  await inject([{ kind: 'pedal', down: false }])
+  await expect(label).toHaveText('–')
+})
+
+test('one setting hides the chord name', async ({ page }) => {
+  await open(page)
+  await expect(page.getByTestId('chord-name')).toBeVisible()
+  await page.getByLabel(/Name the chord/).uncheck()
+  await expect(page.getByTestId('chord-name')).toBeHidden()
+})

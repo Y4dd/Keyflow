@@ -38,6 +38,7 @@ function collect(): Settings {
         : { offsetMs: c.offsetMs, outputTimestampLeadMs: c.outputTimestampLeadMs },
     keyLetters: useViewStore.getState().keyLetters,
     look: useViewStore.getState().look,
+    chordName: useViewStore.getState().chordName,
     audioStarted: a.startedBefore || a.status === 'running',
   }
 }
@@ -56,6 +57,7 @@ function apply(s: Settings) {
   if (s.calibration) useCalibrationStore.setState(s.calibration)
   view.setKeyLetters(s.keyLetters)
   view.setLook(s.look)
+  view.setChordName(s.chordName)
 }
 
 let timer = 0

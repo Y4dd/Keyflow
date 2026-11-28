@@ -36,6 +36,7 @@ const CHANGED: Settings = {
   calibration: { offsetMs: 41.5, outputTimestampLeadMs: -12 },
   keyLetters: false,
   look: 'spotlight',
+  chordName: false,
   audioStarted: true,
 }
 
